@@ -15,7 +15,8 @@ dependencies = [
     "requests>=2.32.4",
     "MLB-StatsAPI>=1.6.0",
     "pytz>=2025.2",
-    "transformers>=4.46.3"
+    "transformers>=4.46.3",
+    "click>=8.0.0"
 ]
 
 [project.optional-dependencies]
@@ -34,4 +35,4 @@ exclude = [".venv"]
 where = ["src"]
 
 [project.scripts]
-mlb-sentiment = "mlb_sentiment.cli:main"
+mlb-sentiment = "mlb_sentiment.cli:cli"

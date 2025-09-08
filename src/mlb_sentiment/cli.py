@@ -1,36 +1,28 @@
-import argparse
+import click
 from mlb_sentiment.api import fetch_and_save_team_game_threads
 
+@click.group()
+def cli():
+    """A CLI for fetching and analyzing MLB game threads."""
+    pass
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="A CLI for fetching and saving MLB game threads."
-    )
-    parser.add_argument(
-        "team_acronym", type=str, help="The acronym of the MLB team (e.g., 'NYM')."
-    )
-    parser.add_argument(
-        "--posts-limit",
-        type=int,
-        default=10,
-        help="The maximum number of posts to fetch.",
-    )
-    parser.add_argument(
-        "--comments-limit",
-        type=int,
-        default=5,
-        help="The maximum number of comments to save.",
-    )
-
-    args = parser.parse_args()
-
+@cli.command()
+@click.argument("team_acronym", type=str)
+@click.option("--posts-limit", default=10, help="The maximum number of posts to fetch.")
+@click.option("--comments-limit", default=5, help="The maximum number of comments to save.")
+def fetch(team_acronym, posts_limit, comments_limit):
+    """Fetches and saves MLB game threads for a given team."""
     fetch_and_save_team_game_threads(
-        team_acronym=args.team_acronym,
-        limit=args.posts_limit,
-        comments_limit=args.comments_limit,
+        team_acronym=team_acronym,
+        limit=posts_limit,
+        comments_limit=comments_limit,
     )
-    print(f"Successfully fetched and saved game threads for {args.team_acronym}.")
+    click.echo(f"Successfully fetched and saved game threads for {team_acronym}.")
 
+@cli.command()
+def analyze():
+    """Analyzes the sentiment of the saved game threads."""
+    click.echo("Analysis functionality not yet implemented.")
 
 if __name__ == "__main__":
-    main()
+    cli()
