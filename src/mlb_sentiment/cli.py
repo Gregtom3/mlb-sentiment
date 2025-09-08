@@ -1,5 +1,5 @@
 import click
-from mlb_sentiment.api import fetch_and_save_team_game_threads
+from mlb_sentiment.api import fetch_and_save_team_game_threads, analyze_comment_length
 
 
 @click.group()
@@ -27,7 +27,11 @@ def fetch(team_acronym, posts_limit, comments_limit):
 @cli.command()
 def analyze():
     """Analyzes the sentiment of the saved game threads."""
-    click.echo("Analysis functionality not yet implemented.")
+    average_length = analyze_comment_length()
+    if average_length == 0:
+        click.echo("No comments found in the database.")
+    else:
+        click.echo(f"The average comment length is: {average_length:.2f} characters.")
 
 
 if __name__ == "__main__":
