@@ -6,6 +6,12 @@ from mlb_sentiment.fetch.reddit import fetch_post_comments
 from mlb_sentiment.fetch.reddit import fetch_team_game_threads
 
 
+def get_connection():
+    conn = sqlite3.connect("reddit.db", timeout=30.0)
+    conn.execute("PRAGMA journal_mode=WAL;")
+    return conn
+
+
 def save_post_to_db(post, limit=5):
     """
     Save a Reddit post and its top-level comments to the database.
@@ -15,11 +21,7 @@ def save_post_to_db(post, limit=5):
         limit (int): The maximum number of top-level comments to save.
     """
 
-    data_dir = os.path.join(os.path.dirname(__file__), "../../data")
-    os.makedirs(data_dir, exist_ok=True)
-    db_path = os.path.join(data_dir, "reddit.db")
-
-    conn = sqlite3.connect(db_path)
+    conn = get_connection()
     cursor = conn.cursor()
 
     # Create the posts table
@@ -95,7 +97,7 @@ def save_post_to_db(post, limit=5):
                 utility.utc_to_est(comment["created_utc"]),
             ),
         )
-        conn.commit()
+    conn.commit()
 
     conn.close()
 
@@ -104,11 +106,7 @@ def create_sentiment_results_table():
     """
     Create the sentiment_results table if it doesn't exist.
     """
-    data_dir = os.path.join(os.path.dirname(__file__), "../../data")
-    os.makedirs(data_dir, exist_ok=True)
-    db_path = os.path.join(data_dir, "reddit.db")
-
-    conn = sqlite3.connect(db_path)
+    conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute(
@@ -138,11 +136,7 @@ def save_sentiment_result(comment_id, model_type, emotion, score):
         emotion (str): The detected emotion.
         score (float): The sentiment score.
     """
-    data_dir = os.path.join(os.path.dirname(__file__), "../../data")
-    os.makedirs(data_dir, exist_ok=True)
-    db_path = os.path.join(data_dir, "reddit.db")
-
-    conn = sqlite3.connect(db_path)
+    conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute(

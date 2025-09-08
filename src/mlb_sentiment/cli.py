@@ -2,6 +2,7 @@ import click
 from mlb_sentiment.fetch.reddit import fetch_team_game_threads
 from mlb_sentiment.db import save_post_to_db
 from mlb_sentiment.models.analysis import run_sentiment_analysis
+from tqdm import tqdm
 
 
 @click.group()
@@ -19,7 +20,7 @@ def cli():
 def fetch(team_acronym, posts_limit, comments_limit):
     """Fetches and saves MLB game threads for a given team."""
     posts = fetch_team_game_threads(team_acronym, limit=posts_limit)
-    for post in posts:
+    for post in tqdm(posts, desc="Saving posts to DB"):
         save_post_to_db(post, limit=comments_limit)
     click.echo(f"Successfully fetched and saved game threads for {team_acronym}.")
 
