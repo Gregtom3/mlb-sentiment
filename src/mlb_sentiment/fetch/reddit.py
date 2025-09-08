@@ -1,6 +1,7 @@
 from mlb_sentiment import info
 from mlb_sentiment import config
 from mlb_sentiment import utility
+from tqdm import tqdm
 
 
 def fetch_team_game_threads(team_acronym, limit=10):
@@ -24,7 +25,7 @@ def fetch_team_game_threads(team_acronym, limit=10):
     user = reddit.redditor(info.TEAM_INFO[team_acronym]["game_thread_user"])
 
     posts = []
-    for submission in user.submissions.new(limit=MAX_LIMIT):
+    for submission in tqdm(user.submissions.new(limit=MAX_LIMIT), desc="Fetching game threads"):
         if (
             "GAME THREAD" in submission.title.upper()
             and "PREGAME" not in submission.title.upper()
@@ -66,7 +67,7 @@ def fetch_post_comments(post_url, limit=5):
 
     # Fetch the top-level comments
     comments = []
-    for comment in submission.comments[:limit]:
+    for comment in tqdm(submission.comments[:limit], desc="Fetching comments"):
         comments.append(
             {
                 "author": str(comment.author),
