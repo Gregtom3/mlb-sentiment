@@ -14,6 +14,5 @@ def calculate_mean_comment_length():
     if not comments:
         return 0
 
-    
-    comment_lengths = [len(comment['text']) for comment in comments]
+    comment_lengths = [len(comment["text"]) for comment in comments]
     return sum(comment_lengths) / len(comment_lengths)
