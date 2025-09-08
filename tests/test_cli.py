@@ -1,0 +1,12 @@
+import subprocess
+import sys
+
+def test_cli_execution():
+    """
+    Tests that the CLI runs without errors.
+    """
+    command = [sys.executable, "-m", "mlb_sentiment.cli", "NYM", "--limit", "1", "--comments-limit", "1"]
+    result = subprocess.run(command, capture_output=True, text=True)
+
+    assert result.returncode == 0
+    assert "Successfully fetched and saved game threads for NYM." in result.stdout

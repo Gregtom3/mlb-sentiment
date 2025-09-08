@@ -32,3 +32,6 @@ exclude = [".venv"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[project.scripts]
+mlb-sentiment = "mlb_sentiment.cli:main"
