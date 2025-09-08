@@ -26,7 +26,7 @@ def main():
 
     fetch_and_save_team_game_threads(
         team_acronym=args.team_acronym,
-        limit=args.posts - limit,
+        limit=args.posts_limit,
         comments_limit=args.comments_limit,
     )
     print(f"Successfully fetched and saved game threads for {args.team_acronym}.")

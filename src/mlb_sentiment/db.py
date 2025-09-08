@@ -97,5 +97,4 @@ def save_post_to_db(post, limit=5):
         )
         conn.commit()
 
-    # Close the database connection
     conn.close()
