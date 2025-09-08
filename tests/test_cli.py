@@ -7,9 +7,8 @@ def test_cli_execution():
     Tests that the CLI runs without errors.
     """
     command = [
-        sys.executable,
-        "-m",
-        "mlb_sentiment.cli",
+        "mlb-sentiment",
+        "fetch",
         "NYM",
         "--posts-limit",
         "1",
