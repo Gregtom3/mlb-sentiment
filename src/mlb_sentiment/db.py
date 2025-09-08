@@ -18,7 +18,7 @@ def save_post_to_db(post, limit=5):
     data_dir = os.path.join(os.path.dirname(__file__), "../../data")
     os.makedirs(data_dir, exist_ok=True)
     db_path = os.path.join(data_dir, "reddit.db")
-
+ 
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
