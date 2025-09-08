@@ -18,7 +18,7 @@ def cli():
 )
 def fetch(team_acronym, posts_limit, comments_limit):
     """Fetches and saves MLB game threads for a given team."""
-    posts = fetch_team_game_threads(team_acronym, limit=limit)
+    posts = fetch_team_game_threads(team_acronym, limit=posts_limit)
     for post in posts:
         save_post_to_db(post, limit=comments_limit)
     click.echo(f"Successfully fetched and saved game threads for {team_acronym}.")
