@@ -209,3 +209,4 @@ __marimo__/
 # Personal
 playground/
 data/*
+data/reddit.db
