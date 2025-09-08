@@ -44,21 +44,39 @@ def save_post_to_db(post, limit=5):
             author TEXT,
             text TEXT,
             created_est TEXT,
-            FOREIGN KEY (post_id) REFERENCES posts (id)
+            FOREIGN KEY (post_id) REFERENCES posts (id),
+            UNIQUE(author, created_est)
         )
         """
     )
     conn.commit()
 
-    # Insert the post into the posts table
+    # Check if the post already exists
     cursor.execute(
         """
-        INSERT INTO posts (team_acronym, post_title, post_url, created_est)
-        VALUES (?, ?, ?, ?)
+        SELECT id FROM posts WHERE post_url = ?
         """,
-        (post["team_acronym"].upper(), post["title"], post["url"], post["created_est"]),
+        (post["url"],),
     )
-    post_id = cursor.lastrowid  # Get the ID of the inserted post
+    result = cursor.fetchone()
+
+    if result:
+        post_id = result[0]
+    else:
+        # Insert the post into the posts table
+        cursor.execute(
+            """
+            INSERT INTO posts (team_acronym, post_title, post_url, created_est)
+            VALUES (?, ?, ?, ?)
+            """,
+            (
+                post["team_acronym"].upper(),
+                post["title"],
+                post["url"],
+                post["created_est"],
+            ),
+        )
+        post_id = cursor.lastrowid  # Get the ID of the inserted post
 
     # Fetch comments for the post
     comments = fetch_post_comments(post["url"], limit=limit)
@@ -67,7 +85,7 @@ def save_post_to_db(post, limit=5):
     for comment in comments:
         cursor.execute(
             """
-            INSERT INTO comments (post_id, author, text, created_est)
+            INSERT OR IGNORE INTO comments (post_id, author, text, created_est)
             VALUES (?, ?, ?, ?)
             """,
             (
