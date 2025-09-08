@@ -11,7 +11,7 @@ def test_cli_execution():
         "-m",
         "mlb_sentiment.cli",
         "NYM",
-        "--limit",
+        "--posts-limit",
         "1",
         "--comments-limit",
         "1",

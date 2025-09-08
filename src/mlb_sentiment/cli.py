@@ -10,7 +10,10 @@ def main():
         "team_acronym", type=str, help="The acronym of the MLB team (e.g., 'NYM')."
     )
     parser.add_argument(
-        "--limit", type=int, default=10, help="The maximum number of posts to fetch."
+        "--posts-limit",
+        type=int,
+        default=10,
+        help="The maximum number of posts to fetch.",
     )
     parser.add_argument(
         "--comments-limit",
@@ -23,7 +26,7 @@ def main():
 
     fetch_and_save_team_game_threads(
         team_acronym=args.team_acronym,
-        limit=args.limit,
+        limit=args.posts - limit,
         comments_limit=args.comments_limit,
     )
     print(f"Successfully fetched and saved game threads for {args.team_acronym}.")
