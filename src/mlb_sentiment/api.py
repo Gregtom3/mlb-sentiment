@@ -1,6 +1,6 @@
 from mlb_sentiment.fetch.reddit import fetch_team_game_threads
 from mlb_sentiment.db import save_post_to_db
-from mlb_sentiment.models.analysis import calculate_mean_comment_length
+from mlb_sentiment.models.analysis import analyze_sentiment
 
 
 def fetch_and_save_team_game_threads(team_acronym, limit=10, comments_limit=5):
@@ -21,7 +21,5 @@ def analyze_comment_length():
     """
     Analyzes the average length of comments in the database.
 
-    Returns:
-        float: The average length of comments, or 0 if no comments are found.
     """
-    return calculate_mean_comment_length()
+    analyze_sentiment()

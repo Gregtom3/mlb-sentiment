@@ -4,12 +4,9 @@ from mlb_sentiment.db import create_sentiment_results_table, save_sentiment_resu
 from tqdm import tqdm
 
 
-def calculate_mean_comment_length():
+def analyze_sentiment():
     """
-    Calculates the mean length of a list of comments and saves sentiment results.
-
-    Returns:
-        float: The mean length of the comments.
+    Analyzes sentiment of comments in the database and saves results.
     """
 
     create_sentiment_results_table()
@@ -19,9 +16,7 @@ def calculate_mean_comment_length():
     if not comments:
         return 0
 
-    comment_lengths = []
     for comment in tqdm(comments, desc="Processing comments"):
-        comment_lengths.append(len(comment["text"]))
         sentiment_result = get_sentiment(comment["text"], SentimentModelType.VADER)
         save_sentiment_result(
             comment["id"],
@@ -29,5 +24,3 @@ def calculate_mean_comment_length():
             sentiment_result["emotion"],
             sentiment_result["score"],
         )
-
-    return sum(comment_lengths) / len(comment_lengths)
