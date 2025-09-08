@@ -2,6 +2,7 @@ from mlb_sentiment import info
 from mlb_sentiment import config
 from mlb_sentiment import utility
 
+
 def fetch_user_posts(team_acronym, limit=10):
     """
     Fetch recent posts made by the specified team's game thread user.
@@ -22,13 +23,15 @@ def fetch_user_posts(team_acronym, limit=10):
     # Fetch the user's posts
     posts = []
     for submission in user.submissions.new(limit=limit):
-        posts.append({
-            "title": submission.title,
-            "url": submission.url,
-            "created_est": utility.utc_to_est(submission.created_utc),
-            "score": submission.score,
-            "subreddit": str(submission.subreddit)
-        })
+        posts.append(
+            {
+                "title": submission.title,
+                "url": submission.url,
+                "created_est": utility.utc_to_est(submission.created_utc),
+                "score": submission.score,
+                "subreddit": str(submission.subreddit),
+            }
+        )
 
     return posts
 

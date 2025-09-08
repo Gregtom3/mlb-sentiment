@@ -1,6 +1,7 @@
 import pytest
 from mlb_sentiment.fetch import fetch_user_posts
 
+
 def test_fetch_user_posts_nym():
     """
     Test the fetch_user_posts function for the "NYM" team acronym.

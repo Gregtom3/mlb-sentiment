@@ -1,6 +1,7 @@
 from datetime import datetime
 import pytz
 
+
 def utc_to_est(utc_timestamp):
     """
     Convert a UTC timestamp to EST (Eastern Standard Time).
@@ -23,6 +24,7 @@ def utc_to_est(utc_timestamp):
 
     # Return the formatted EST time
     return est_time.strftime("%Y-%m-%d %H:%M:%S")
+
 
 def est_time_delta(est_time1, est_time2):
     """

@@ -1,4 +1,3 @@
-
 TEAM_INFO = {
     "NYM": {
         "name": "New York Mets",
@@ -12,4 +11,3 @@ TEAM_INFO = {
     },
     # TODO: Add additional teams here
 }
-
