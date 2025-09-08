@@ -37,12 +37,43 @@ def fetch_team_game_threads(team_acronym, limit=10):
                     "created_est": utility.utc_to_est(submission.created_utc),
                     "score": submission.score,
                     "subreddit": str(submission.subreddit),
+                    "team_acronym": team_acronym,
                     "num_comments": submission.num_comments,
                 }
             )
         if len(posts) >= limit:
             break
     return posts
+
+
+def fetch_post_comments(post_url, limit=5):
+    """
+    Fetch a limited number of top-level comments for a given Reddit post.
+
+    Args:
+        post_url (str): The URL of the Reddit post.
+        limit (int): The maximum number of top-level comments to fetch.
+
+    Returns:
+        list: A list of dictionaries containing comment details.
+    """
+    reddit = config.load_reddit_client()
+    submission = reddit.submission(url=post_url)
+
+    # Ensure all top-level comments are loaded
+    submission.comments.replace_more(limit=0)
+
+    # Fetch the top-level comments
+    comments = []
+    for comment in submission.comments[:limit]:
+        comments.append(
+            {
+                "author": str(comment.author),
+                "text": comment.body,
+                "created_utc": comment.created_utc,
+            }
+        )
+    return comments
 
 
 if __name__ == "__main__":
@@ -54,6 +85,7 @@ if __name__ == "__main__":
         print(f"  URL: {post['url']}")
         print(f"  Subreddit: {post['subreddit']}")
         print(f"  Created (EST): {post['created_est']}")
-        print(f"  Score: {post['score']}")
+        print(f"  Score: {post['score']}"),
+        print(f"  Team Acronym: {post['team_acronym']}"),
         print(f"  Number of Comments: {post['num_comments']}")
         print()
