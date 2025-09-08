@@ -59,7 +59,8 @@ def fetch_post_comments(post_url, limit=5):
     """
     reddit = config.load_reddit_client()
     submission = reddit.submission(url=post_url)
-
+    # Sort comments by old
+    submission.comment_sort = "old"
     # Ensure all top-level comments are loaded
     submission.comments.replace_more(limit=0)
 
