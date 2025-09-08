@@ -4,7 +4,7 @@ from mlb_sentiment.db import create_sentiment_results_table, save_sentiment_resu
 from tqdm import tqdm
 
 
-def analyze_sentiment():
+def run_sentiment_analysis():
     """
     Analyzes sentiment of comments in the database and saves results.
     """

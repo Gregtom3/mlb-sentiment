@@ -1,5 +1,7 @@
 import click
-from mlb_sentiment.api import fetch_and_save_team_game_threads, analyze_comment_length
+from mlb_sentiment.fetch.reddit import fetch_team_game_threads
+from mlb_sentiment.db import save_post_to_db
+from mlb_sentiment.models.analysis import run_sentiment_analysis
 
 
 @click.group()
@@ -16,22 +18,17 @@ def cli():
 )
 def fetch(team_acronym, posts_limit, comments_limit):
     """Fetches and saves MLB game threads for a given team."""
-    fetch_and_save_team_game_threads(
-        team_acronym=team_acronym,
-        limit=posts_limit,
-        comments_limit=comments_limit,
-    )
+    posts = fetch_team_game_threads(team_acronym, limit=limit)
+    for post in posts:
+        save_post_to_db(post, limit=comments_limit)
     click.echo(f"Successfully fetched and saved game threads for {team_acronym}.")
 
 
 @cli.command()
 def analyze():
     """Analyzes the sentiment of the saved game threads."""
-    average_length = analyze_comment_length()
-    if average_length == 0:
-        click.echo("No comments found in the database.")
-    else:
-        click.echo(f"The average comment length is: {average_length:.2f} characters.")
+    run_sentiment_analysis()
+    click.echo("Sentiment analysis completed.")
 
 
 if __name__ == "__main__":
