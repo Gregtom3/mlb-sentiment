@@ -1,6 +1,6 @@
 from enum import Enum
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-from typing import Tuple
+from typing import Tuple, Dict
 
 
 class SentimentModelType(Enum):
@@ -52,7 +52,7 @@ def _get_hugging_face_sentiment(
     return (results[0]["label"], results[0]["score"])
 
 
-def get_sentiment(comment: str, model_type: SentimentModelType) -> Tuple[str, float]:
+def get_sentiment(comment: str, model_type: SentimentModelType) -> Dict[str, float]:
     """
     Gets the sentiment (emotion and score) of a comment based on the specified model type.
     Returns the dominant emotion, and the sentiment score.
@@ -64,4 +64,7 @@ def get_sentiment(comment: str, model_type: SentimentModelType) -> Tuple[str, fl
     else:
         raise ValueError(f"Unsupported sentiment model type: {model_type}")
 
-    return emotion, score
+    return {
+        "emotion": emotion,
+        "score": score,
+    }

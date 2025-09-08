@@ -98,3 +98,59 @@ def save_post_to_db(post, limit=5):
         conn.commit()
 
     conn.close()
+
+
+def create_sentiment_results_table():
+    """
+    Create the sentiment_results table if it doesn't exist.
+    """
+    data_dir = os.path.join(os.path.dirname(__file__), "../../data")
+    os.makedirs(data_dir, exist_ok=True)
+    db_path = os.path.join(data_dir, "reddit.db")
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS sentiment_results (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            comment_id INTEGER,
+            model_type TEXT,
+            emotion TEXT,
+            score REAL,
+            FOREIGN KEY (comment_id) REFERENCES comments (id),
+            UNIQUE(comment_id, model_type)
+        )
+        """
+    )
+    conn.commit()
+    conn.close()
+
+
+def save_sentiment_result(comment_id, model_type, emotion, score):
+    """
+    Save a sentiment analysis result to the database.
+
+    Args:
+        comment_id (int): The ID of the comment.
+        model_type (str): The type of sentiment model used.
+        emotion (str): The detected emotion.
+        score (float): The sentiment score.
+    """
+    data_dir = os.path.join(os.path.dirname(__file__), "../../data")
+    os.makedirs(data_dir, exist_ok=True)
+    db_path = os.path.join(data_dir, "reddit.db")
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        INSERT OR IGNORE INTO sentiment_results (comment_id, model_type, emotion, score)
+        VALUES (?, ?, ?, ?)
+        """,
+        (comment_id, model_type, emotion, score),
+    )
+    conn.commit()
+    conn.close()
