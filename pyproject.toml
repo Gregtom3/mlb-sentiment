@@ -14,7 +14,8 @@ dependencies = [
     "python-dotenv>=1.0.1",
     "requests>=2.32.4",
     "MLB-StatsAPI>=1.6.0",
-    "pytz>=2025.2"
+    "pytz>=2025.2",
+    "transformers>=4.46.3"
 ]
 
 [project.optional-dependencies]
