@@ -23,7 +23,6 @@ def fetch_team_game_threads(team_acronym, limit=10):
     # Get the user object
     user = reddit.redditor(info.TEAM_INFO[team_acronym]["game_thread_user"])
 
-    # Fetch the user's posts and filter for "GAME THREAD" in the title
     posts = []
     for submission in user.submissions.new(limit=MAX_LIMIT):
         if (
@@ -38,7 +37,7 @@ def fetch_team_game_threads(team_acronym, limit=10):
                     "created_est": utility.utc_to_est(submission.created_utc),
                     "score": submission.score,
                     "subreddit": str(submission.subreddit),
-                    "num_comments": submission.num_comments,  # Add number of comments
+                    "num_comments": submission.num_comments,
                 }
             )
         if len(posts) >= limit:
@@ -47,7 +46,7 @@ def fetch_team_game_threads(team_acronym, limit=10):
 
 
 if __name__ == "__main__":
-    team_acronym = "NYM"  # Example: New York Mets
+    team_acronym = "NYM"
     posts = fetch_team_game_threads(team_acronym, limit=10)
     for i, post in enumerate(posts, start=1):
         print(f"Post {i}:")
