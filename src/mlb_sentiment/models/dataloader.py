@@ -2,7 +2,7 @@ import sqlite3
 import os
 
 
-def load_comments_text():
+def load_comments():
     """
     Loads all comments from the database.
 
@@ -16,10 +16,11 @@ def load_comments_text():
         return []
 
     conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
-    cursor.execute("SELECT text FROM comments")
+    cursor.execute("SELECT * FROM comments")
     comments = cursor.fetchall()
     conn.close()
 
-    return [comment[0] for comment in comments]
+    return comments
