@@ -19,9 +19,13 @@ dependencies = [
 dev = [
     "pytest>=8.0.0",
     "black>=24.0.0",
-    "flake8>=7.0.0",
+    "flake8-pyproject>=1.2.3",
     "mypy>=1.0.0",
 ]
+
+[tool.flake8]
+max-line-length = 200
+exclude = [".venv"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
