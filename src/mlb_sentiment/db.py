@@ -81,11 +81,3 @@ def save_post_to_db(post, limit=5):
 
     # Close the database connection
     conn.close()
-
-
-if __name__ == "__main__":
-
-    team_acronym = "NYM"
-    posts = fetch_team_game_threads(team_acronym, limit=1)
-    if posts:
-        save_post_to_db(posts[0], limit=5)
