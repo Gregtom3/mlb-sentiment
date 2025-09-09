@@ -1,6 +1,6 @@
 import click
 from mlb_sentiment.fetch.reddit import fetch_team_game_threads
-from mlb_sentiment.db import save_post_to_db
+from mlb_sentiment.database.reddit import save_post_to_db
 from mlb_sentiment.models.analysis import run_sentiment_analysis
 from tqdm import tqdm
 
