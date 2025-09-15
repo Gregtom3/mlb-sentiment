@@ -11,7 +11,7 @@ def test_cli_fetch():
         "upload-reddit",
         "--team-acronym",
         "NYM",
-        "--post-date",
+        "--date",
         "09/14/2025",
         "--comments-limit",
         "1",

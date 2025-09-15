@@ -20,24 +20,24 @@ def cli():
     help="The team acronym (e.g., NYY for New York Yankees).",
 )
 @click.option(
-    "--post-date", default=None, help="The date of the posts to fetch (MM/DD/YYYY)."
+    "--date", default=None, help="The date of the posts to fetch (MM/DD/YYYY)."
 )
 @click.option("--start-date", default=None, help="Start date for range (MM/DD/YYYY).")
 @click.option("--end-date", default=None, help="End date for range (MM/DD/YYYY).")
 @click.option(
     "--comments-limit", default=5, help="The maximum number of comments to save."
 )
-def upload_reddit(team_acronym, post_date, start_date, end_date, comments_limit):
+def upload_reddit(team_acronym, date, start_date, end_date, comments_limit):
     """Fetches and saves MLB game threads for a given team, by date or date range."""
-    if post_date:
-        posts = fetch_team_game_threads(team_acronym, date=post_date)
+    if date:
+        posts = fetch_team_game_threads(team_acronym, date=date)
     elif start_date and end_date:
         posts = fetch_team_game_threads(
             team_acronym, start_date=start_date, end_date=end_date
         )
     else:
         click.echo(
-            "You must provide either --post-date or both --start-date and --end-date."
+            "You must provide either --date or both --start-date and --end-date."
         )
         return
     for post in tqdm(posts, desc="Saving posts to DB"):
