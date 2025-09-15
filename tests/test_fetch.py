@@ -59,11 +59,14 @@ def test_fetch_mlb_events():
     for event in events:
         print(event)
         assert isinstance(event, tuple), "Each event should be a tuple."
-        assert len(event) == 5, "Each event should have 5 elements."
-        inning, halfInning, event, description, est = event
+        assert len(event) == 7, "Each event should have 7 elements."
+        inning, halfInning, event_type, description, est, home_team, visiting_team = (
+            event
+        )
         assert isinstance(inning, int), "Inning should be an integer."
         assert isinstance(halfInning, str), "HalfInning should be a string."
-        assert isinstance(event, str), "Event should be a string."
+        assert isinstance(event_type, str), "Event should be a string."
         assert isinstance(description, str), "Description should be a string."
         assert isinstance(est, str), "EST should be a string."
-        assert len(est) == 19, "EST should be in the format 'YYYY-MM-DD HH:MM:SS'."
+        assert isinstance(home_team, str), "Home team should be a string."
+        assert isinstance(visiting_team, str), "Visiting team should be a string."

@@ -1,6 +1,8 @@
 import click
 from mlb_sentiment.fetch.reddit import fetch_team_game_threads
 from mlb_sentiment.database.reddit import save_post_to_db
+from mlb_sentiment.fetch.mlb import fetch_mlb_events
+from mlb_sentiment.database.mlb import save_game_to_db
 from mlb_sentiment.models.analysis import run_sentiment_analysis
 from tqdm import tqdm
 
@@ -21,7 +23,7 @@ def cli():
 @click.option(
     "--comments-limit", default=5, help="The maximum number of comments to save."
 )
-def fetch(team_acronym, post_date, start_date, end_date, comments_limit):
+def upload_reddit(team_acronym, post_date, start_date, end_date, comments_limit):
     """Fetches and saves MLB game threads for a given team, by date or date range."""
     if post_date:
         posts = fetch_team_game_threads(team_acronym, date=post_date)
@@ -37,6 +39,17 @@ def fetch(team_acronym, post_date, start_date, end_date, comments_limit):
     for post in tqdm(posts, desc="Saving posts to DB"):
         save_post_to_db(post, limit=comments_limit)
     click.echo(f"Successfully fetched and saved game threads for {team_acronym}.")
+
+
+@cli.command()
+def upload_mlb():
+    team_acronym = "NYM"
+    date = "09/14/2025"
+    events = fetch_mlb_events(team_acronym, date=date)
+    save_game_to_db(events)
+    click.echo(
+        f"Successfully fetched and saved MLB events for {team_acronym} on {date}."
+    )
 
 
 @cli.command()

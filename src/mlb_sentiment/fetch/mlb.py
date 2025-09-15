@@ -1,7 +1,6 @@
 import statsapi
 from datetime import datetime, timedelta
 from mlb_sentiment import info
-from mlb_sentiment import config
 from mlb_sentiment import utility
 
 
@@ -30,12 +29,12 @@ def fetch_mlb_game(TEAM_ID, date):
     Fetch MLB game events for a specific team on a given date (MM/DD/YYYY).
 
     Returns:
-        list: A list of tuples containing (inning, halfInning, event, description, utc).
+        list: A list of tuples containing (inning, halfInning, event, description, utc, home_team, visiting_team).
     """
     EVENTS = {"single", "double", "triple", "home_run"}
     s = statsapi.schedule(team=TEAM_ID, start_date=date, end_date=date)
     if not s:
-        raise SystemExit(f"No games found for {TEAM_ID} on {date}.")
+        raise SystemExit(f"No games found for the TEAM_ID={TEAM_ID} on {date}.")
     s.sort(key=lambda g: g["game_date"])
     finals = [
         g
@@ -44,6 +43,18 @@ def fetch_mlb_game(TEAM_ID, date):
     ]
     gp = (finals[-1] if finals else s[-1])["game_id"]
     data = statsapi.get("game", {"gamePk": gp})
+    home_team = (
+        data.get("gameData", {})
+        .get("teams", {})
+        .get("home", {})
+        .get("abbreviation", "")
+    )
+    visiting_team = (
+        data.get("gameData", {})
+        .get("teams", {})
+        .get("away", {})
+        .get("abbreviation", "")
+    )
     plays = data.get("liveData", {}).get("plays", {}).get("allPlays", [])
     rows = [
         (
@@ -53,6 +64,8 @@ def fetch_mlb_game(TEAM_ID, date):
             r.get("description", ""),
             utility.iso_to_est(p["about"].get("startTime"))
             or utility.iso_to_est(p["about"].get("endTime")),
+            home_team,
+            visiting_team,
         )
         for p in plays
         for r in [p.get("result", {})]
