@@ -35,7 +35,7 @@ def fetch_mlb_game(TEAM_ID, date):
     EVENTS = {"single", "double", "triple", "home_run"}
     s = statsapi.schedule(team=TEAM_ID, start_date=date, end_date=date)
     if not s:
-        raise SystemExit(f"No games found for {team_acronym} on {date}.")
+        raise SystemExit(f"No games found for {TEAM_ID} on {date}.")
     s.sort(key=lambda g: g["game_date"])
     finals = [
         g
