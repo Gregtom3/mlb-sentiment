@@ -7,7 +7,7 @@ from mlb_sentiment.fetch.reddit import fetch_team_game_threads
 
 
 def get_connection():
-    conn = sqlite3.connect("reddit.db", timeout=30.0)
+    conn = sqlite3.connect("MyDatabase.db", timeout=30.0)
     conn.execute("PRAGMA journal_mode=WAL;")
     return conn
 

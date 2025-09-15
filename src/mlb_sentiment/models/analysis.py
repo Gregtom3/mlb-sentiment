@@ -1,6 +1,9 @@
 from mlb_sentiment.models.dataloader import load_comments
 from mlb_sentiment.models.process import get_sentiment, SentimentModelType
-from mlb_sentiment.database.reddit import create_sentiment_results_table, save_sentiment_result
+from mlb_sentiment.database.reddit import (
+    create_sentiment_results_table,
+    save_sentiment_result,
+)
 from tqdm import tqdm
 
 
