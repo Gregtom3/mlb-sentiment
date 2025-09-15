@@ -42,10 +42,23 @@ def upload_reddit(team_acronym, post_date, start_date, end_date, comments_limit)
 
 
 @cli.command()
-def upload_mlb():
-    team_acronym = "NYM"
-    date = "09/14/2025"
-    events = fetch_mlb_events(team_acronym, date=date)
+@click.argument("team_acronym", type=str)
+@click.option("--date", required=True, help="The date of the game (MM/DD/YYYY).")
+@click.option("--start-date", default=None, help="Start date for range (MM/DD/YYYY).")
+@click.option("--end-date", default=None, help="End date for range (MM/DD/YYYY).")
+def upload_mlb(team_acronym, date, start_date, end_date):
+    """Fetches and saves MLB events for a given team and date or date range."""
+    if date:
+        events = fetch_mlb_events(team_acronym, date=date)
+    elif start_date and end_date:
+        events = fetch_mlb_events(
+            team_acronym, start_date=start_date, end_date=end_date
+        )
+    else:
+        click.echo(
+            "You must provide either --date or both --start-date and --end-date."
+        )
+        return
     save_game_to_db(events)
     click.echo(
         f"Successfully fetched and saved MLB events for {team_acronym} on {date}."

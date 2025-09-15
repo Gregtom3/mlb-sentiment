@@ -23,7 +23,8 @@ def save_game_to_db(game):
             description TEXT,
             est TEXT,
             home_team TEXT,
-            visiting_team TEXT
+            visiting_team TEXT,
+            UNIQUE(inning, halfInning, event, est, home_team, visiting_team)
         )
         """
     )
@@ -31,7 +32,7 @@ def save_game_to_db(game):
     # Insert game data into the table
     cursor.executemany(
         """
-        INSERT INTO games (inning, halfInning, event, description, est, home_team, visiting_team)
+        INSERT OR IGNORE INTO games (inning, halfInning, event, description, est, home_team, visiting_team)
         VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
         game,
