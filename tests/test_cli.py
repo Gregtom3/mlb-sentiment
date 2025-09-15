@@ -10,8 +10,8 @@ def test_cli_fetch():
         "mlb-sentiment",
         "fetch",
         "NYM",
-        "--posts-limit",
-        "1",
+        "--post-date",
+        "09/14/2025",
         "--comments-limit",
         "1",
     ]
