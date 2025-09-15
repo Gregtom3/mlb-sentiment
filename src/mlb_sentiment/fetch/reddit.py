@@ -3,19 +3,22 @@ from mlb_sentiment import config
 from mlb_sentiment import utility
 
 
-def fetch_team_game_threads(team_acronym, limit=10):
+def fetch_team_game_threads(team_acronym, date=None, start_date=None, end_date=None):
     """
-    Fetch recent game thread posts made by the specified team's game thread user.
+    Fetch game thread posts made by the specified team's game thread user for a specific date (MM/DD/YYYY)
+    or for a date range (start_date to end_date, both MM/DD/YYYY).
 
     Args:
         team_acronym (str): Acronym of the MLB team (e.g., "NYM" for New York Mets).
-        limit (int): The maximum number of posts to fetch.
+        date (str, optional): Date in MM/DD/YYYY format to filter posts.
+        start_date (str, optional): Start date in MM/DD/YYYY format for range filtering.
+        end_date (str, optional): End date in MM/DD/YYYY format for range filtering.
 
     Returns:
-        list: A list of dictionaries containing game thread post details.
+        list: A list of dictionaries containing game thread post details for the specified date or range.
     """
 
-    MAX_LIMIT = 10000
+    MAX_LOOKUP = 1000
 
     # Load Reddit client from info.py
     reddit = config.load_reddit_client()
@@ -23,26 +26,42 @@ def fetch_team_game_threads(team_acronym, limit=10):
     # Get the user object
     user = reddit.redditor(info.TEAM_INFO[team_acronym]["game_thread_user"])
 
+    from datetime import datetime
+
     posts = []
-    for submission in user.submissions.new(limit=MAX_LIMIT):
+    # Parse date range if provided
+    if start_date and end_date:
+        start_dt = datetime.strptime(start_date, "%m/%d/%Y")
+        end_dt = datetime.strptime(end_date, "%m/%d/%Y")
+    else:
+        start_dt = end_dt = None
+
+    for submission in user.submissions.new(limit=MAX_LOOKUP):
         if (
             "GAME THREAD" in submission.title.upper()
             and "PREGAME" not in submission.title.upper()
             and "POST" not in submission.title.upper()
         ):
-            posts.append(
-                {
-                    "title": submission.title,
-                    "url": submission.url,
-                    "created_est": utility.utc_to_est(submission.created_utc),
-                    "score": submission.score,
-                    "subreddit": str(submission.subreddit),
-                    "team_acronym": team_acronym,
-                    "num_comments": submission.num_comments,
-                }
-            )
-        if len(posts) >= limit:
-            break
+            created_est = utility.utc_to_est(submission.created_utc)
+            post_date_str = created_est.strftime("%m/%d/%Y")
+            post_dt = datetime.strptime(post_date_str, "%m/%d/%Y")
+            match = False
+            if date:
+                match = post_date_str == date
+            elif start_dt and end_dt:
+                match = start_dt <= post_dt <= end_dt
+            if match:
+                posts.append(
+                    {
+                        "title": submission.title,
+                        "url": submission.url,
+                        "created_est": created_est,
+                        "score": submission.score,
+                        "subreddit": str(submission.subreddit),
+                        "team_acronym": team_acronym,
+                        "num_comments": submission.num_comments,
+                    }
+                )
     return posts
 
 
@@ -75,18 +94,3 @@ def fetch_post_comments(post_url, limit=5):
             }
         )
     return comments
-
-
-if __name__ == "__main__":
-    team_acronym = "NYM"
-    posts = fetch_team_game_threads(team_acronym, limit=10)
-    for i, post in enumerate(posts, start=1):
-        print(f"Post {i}:")
-        print(f"  Title: {post['title']}")
-        print(f"  URL: {post['url']}")
-        print(f"  Subreddit: {post['subreddit']}")
-        print(f"  Created (EST): {post['created_est']}")
-        print(f"  Score: {post['score']}"),
-        print(f"  Team Acronym: {post['team_acronym']}"),
-        print(f"  Number of Comments: {post['num_comments']}")
-        print()
