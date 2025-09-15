@@ -8,7 +8,7 @@ def test_cli_fetch():
     """
     command = [
         "mlb-sentiment",
-        "fetch",
+        "upload_reddit",
         "NYM",
         "--post-date",
         "09/14/2025",
