@@ -42,8 +42,10 @@ def fetch_team_game_threads(team_acronym, date=None, start_date=None, end_date=N
             and "PREGAME" not in submission.title.upper()
             and "POST" not in submission.title.upper()
         ):
-            created_est = utility.utc_to_est(submission.created_utc)
-            post_date_str = created_est.strftime("%m/%d/%Y")
+            created_est_str = utility.utc_to_est(submission.created_utc)  # returns str
+            # Parse the string to a datetime object
+            created_est_dt = datetime.strptime(created_est_str, "%Y-%m-%d %H:%M:%S")
+            post_date_str = created_est_dt.strftime("%m/%d/%Y")
             post_dt = datetime.strptime(post_date_str, "%m/%d/%Y")
             match = False
             if date:
@@ -55,7 +57,7 @@ def fetch_team_game_threads(team_acronym, date=None, start_date=None, end_date=N
                     {
                         "title": submission.title,
                         "url": submission.url,
-                        "created_est": created_est,
+                        "created_est": created_est_str,
                         "score": submission.score,
                         "subreddit": str(submission.subreddit),
                         "team_acronym": team_acronym,
@@ -94,3 +96,15 @@ def fetch_post_comments(post_url, limit=5):
             }
         )
     return comments
+
+
+def main():
+    team_acronym = "NYM"
+    date = "09/14/2025"
+    posts = fetch_team_game_threads(team_acronym, date=date)
+    for post in posts:
+        print(post)
+
+
+if __name__ == "__main__":
+    main()

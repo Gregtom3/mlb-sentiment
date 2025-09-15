@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import pytz
 
 
@@ -48,3 +48,33 @@ def est_time_delta(est_time1, est_time2):
     delta = (time2 - time1).total_seconds()
 
     return int(delta)
+
+
+def iso_to_utc(iso):
+    """
+    Convert an ISO 8601 timestamp to UTC.
+    Args:
+        iso (str): The ISO 8601 timestamp (e.g., "2023-10-01T15:30:00Z").
+    Returns:
+        str: The converted time in UTC as an ISO 8601 formatted string.
+    """
+    if not iso:
+        return ""
+    if iso.endswith("Z"):
+        iso = iso[:-1] + "+00:00"
+    return datetime.fromisoformat(iso).astimezone(timezone.utc).isoformat()
+
+
+def iso_to_est(iso):
+    """
+    Convert an ISO 8601 timestamp to EST (Eastern Standard Time).
+    Args:
+        iso (str): The ISO 8601 timestamp (e.g., "2023-10-01T15:30:00Z").
+    Returns:
+        str: The converted time in EST as a formatted string (e.g., "YYYY-MM-DD HH:MM:SS").
+    """
+    if not iso:
+        return ""
+    if iso.endswith("Z"):
+        iso = iso[:-1] + "+00:00"
+    return utc_to_est(datetime.fromisoformat(iso).timestamp())
