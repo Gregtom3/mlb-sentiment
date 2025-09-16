@@ -41,7 +41,7 @@ def upload_reddit(team_acronym, date, start_date, end_date, comments_limit):
         )
         return
     for post in tqdm(posts, desc="Saving posts to DB"):
-        save_post_to_db(post, limit=comments_limit)
+        save_post_to_delta(post, limit=comments_limit)
     click.echo(f"Successfully fetched and saved game threads for {team_acronym}.")
 
 
