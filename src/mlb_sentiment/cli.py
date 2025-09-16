@@ -51,7 +51,7 @@ def upload_reddit(team_acronym, date, start_date, end_date, comments_limit):
     required=True,
     help="The team acronym (e.g., NYY for New York Yankees).",
 )
-@click.option("--date", required=True, help="The date of the game (MM/DD/YYYY).")
+@click.option("--date", default=None, help="The date of the game (MM/DD/YYYY).")
 @click.option("--start-date", default=None, help="Start date for range (MM/DD/YYYY).")
 @click.option("--end-date", default=None, help="End date for range (MM/DD/YYYY).")
 def upload_mlb(team_acronym, date, start_date, end_date):
