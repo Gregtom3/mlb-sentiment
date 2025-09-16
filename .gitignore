@@ -209,4 +209,5 @@ __marimo__/
 # Personal
 playground/
 MyDatabase.db
+run_pipeline.py
 

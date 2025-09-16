@@ -1,44 +1,59 @@
-import sqlite3
+from pyspark.sql import SparkSession
+
+# Create Spark session
+spark = SparkSession.builder.getOrCreate()
 
 
-def get_connection():
-    conn = sqlite3.connect("MyDatabase.db", timeout=30.0)
-    conn.execute("PRAGMA journal_mode=WAL;")
-    return conn
+def save_game_to_delta(game):
+    """
+    Save MLB game events to Delta table.
 
+    Args:
+        game (list of tuples): Each tuple contains (inning, halfInning, event, description, est, home_team, visiting_team)
+    """
+    # Convert game data to DataFrame
+    columns = [
+        "inning",
+        "halfInning",
+        "event",
+        "description",
+        "est",
+        "home_team",
+        "visiting_team",
+    ]
+    game_df = spark.createDataFrame(game, columns)
 
-def save_game_to_db(game):
-
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    # Create the game data table
-    cursor.execute(
+    # Create Delta table if not exists
+    spark.sql(
         """
-        CREATE TABLE IF NOT EXISTS games (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            inning INTEGER,
-            halfInning TEXT,
-            event TEXT,
-            description TEXT,
-            est TEXT,
-            home_team TEXT,
-            visiting_team TEXT,
-            UNIQUE(inning, halfInning, event, est, home_team, visiting_team)
+        CREATE TABLE IF NOT EXISTS mlb_sentiment_games (
+            inning INT,
+            halfInning STRING,
+            event STRING,
+            description STRING,
+            est STRING,
+            home_team STRING,
+            visiting_team STRING
         )
-        """
+        USING DELTA
+    """
     )
 
-    # Insert game data into the table
-    cursor.executemany(
+    # Deduplicate and insert using MERGE
+    game_df.createOrReplaceTempView("new_games")
+    spark.sql(
         """
-        INSERT OR IGNORE INTO games (inning, halfInning, event, description, est, home_team, visiting_team)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        """,
-        game,
+        MERGE INTO mlb_sentiment_games AS target
+        USING new_games AS source
+        ON target.inning = source.inning
+           AND target.halfInning = source.halfInning
+           AND target.event = source.event
+           AND target.est = source.est
+           AND target.home_team = source.home_team
+           AND target.visiting_team = source.visiting_team
+        WHEN NOT MATCHED THEN
+          INSERT *
+    """
     )
-
-    conn.commit()
-    conn.close()
-    print(f"Saved {len(game)} game events to the database.")
+    print(f"Saved {game_df.count()} game events to Delta table.")
     return True
