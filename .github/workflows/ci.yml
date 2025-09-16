@@ -42,3 +42,8 @@ jobs:
         REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT }}
       run: |
         pytest
+    
+    - name: Test CLI
+      run: |
+        mlb-sentiment upload-reddit --team-acronym NYM --date "09/14/2025" --comments-limit 10
+        mlb-sentiment analyze

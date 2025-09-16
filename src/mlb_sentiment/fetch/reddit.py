@@ -1,49 +1,39 @@
+import asyncpraw
+import asyncio
 from mlb_sentiment import info
 from mlb_sentiment import config
 from mlb_sentiment import utility
 
 
-def fetch_team_game_threads(team_acronym, date=None, start_date=None, end_date=None):
+async def fetch_team_game_threads(
+    team_acronym, date=None, start_date=None, end_date=None
+):
     """
-    Fetch game thread posts made by the specified team's game thread user for a specific date (MM/DD/YYYY)
+    Async: Fetch game thread posts made by the specified team's game thread user for a specific date (MM/DD/YYYY)
     or for a date range (start_date to end_date, both MM/DD/YYYY).
-
-    Args:
-        team_acronym (str): Acronym of the MLB team (e.g., "NYM" for New York Mets).
-        date (str, optional): Date in MM/DD/YYYY format to filter posts.
-        start_date (str, optional): Start date in MM/DD/YYYY format for range filtering.
-        end_date (str, optional): End date in MM/DD/YYYY format for range filtering.
-
-    Returns:
-        list: A list of dictionaries containing game thread post details for the specified date or range.
     """
-
     MAX_LOOKUP = 1000
-
-    # Load Reddit client from info.py
-    reddit = config.load_reddit_client()
-
-    # Get the user object
-    user = reddit.redditor(info.TEAM_INFO[team_acronym]["game_thread_user"])
-
+    reddit = asyncpraw.Reddit(
+        client_id=config.REDDIT_CLIENT_ID,
+        client_secret=config.REDDIT_CLIENT_SECRET,
+        user_agent=config.REDDIT_USER_AGENT,
+    )
+    user = await reddit.redditor(info.TEAM_INFO[team_acronym]["game_thread_user"])
     from datetime import datetime
 
     posts = []
-    # Parse date range if provided
     if start_date and end_date:
         start_dt = datetime.strptime(start_date, "%m/%d/%Y")
         end_dt = datetime.strptime(end_date, "%m/%d/%Y")
     else:
         start_dt = end_dt = None
-
-    for submission in user.submissions.new(limit=MAX_LOOKUP):
+    async for submission in user.submissions.new(limit=MAX_LOOKUP):
         if (
             "GAME THREAD" in submission.title.upper()
             and "PREGAME" not in submission.title.upper()
             and "POST" not in submission.title.upper()
         ):
-            created_est_str = utility.utc_to_est(submission.created_utc)  # returns str
-            # Parse the string to a datetime object
+            created_est_str = utility.utc_to_est(submission.created_utc)
             created_est_dt = datetime.strptime(created_est_str, "%Y-%m-%d %H:%M:%S")
             post_date_str = created_est_dt.strftime("%m/%d/%Y")
             post_dt = datetime.strptime(post_date_str, "%m/%d/%Y")
@@ -64,30 +54,27 @@ def fetch_team_game_threads(team_acronym, date=None, start_date=None, end_date=N
                         "num_comments": submission.num_comments,
                     }
                 )
+    await reddit.close()
     return posts
 
 
-def fetch_post_comments(post_url, limit=5):
+async def fetch_post_comments(post_url, limit=5):
     """
-    Fetch a limited number of top-level comments for a given Reddit post.
-
-    Args:
-        post_url (str): The URL of the Reddit post.
-        limit (int): The maximum number of top-level comments to fetch.
-
-    Returns:
-        list: A list of dictionaries containing comment details.
+    Async: Fetch a limited number of top-level comments for a given Reddit post.
     """
-    reddit = config.load_reddit_client()
-    submission = reddit.submission(url=post_url)
-    # Sort comments by old
+    reddit = asyncpraw.Reddit(
+        client_id=config.REDDIT_CLIENT_ID,
+        client_secret=config.REDDIT_CLIENT_SECRET,
+        user_agent=config.REDDIT_USER_AGENT,
+    )
+    submission = await reddit.submission(url=post_url)
     submission.comment_sort = "old"
-    # Ensure all top-level comments are loaded
-    submission.comments.replace_more(limit=0)
-
-    # Fetch the top-level comments
+    await submission.comments.replace_more(limit=0)
     comments = []
-    for comment in submission.comments.list()[:limit]:
+    count = 0
+    async for comment in submission.comments:
+        if count >= limit:
+            break
         comments.append(
             {
                 "author": str(comment.author),
@@ -95,16 +82,18 @@ def fetch_post_comments(post_url, limit=5):
                 "created_utc": comment.created_utc,
             }
         )
+        count += 1
+    await reddit.close()
     return comments
 
 
-def main():
+async def main():
     team_acronym = "NYM"
     date = "09/14/2025"
-    posts = fetch_team_game_threads(team_acronym, date=date)
+    posts = await fetch_team_game_threads(team_acronym, date=date)
     for post in posts:
         print(post)
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
