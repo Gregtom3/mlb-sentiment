@@ -1,8 +1,8 @@
 import click
 from mlb_sentiment.fetch.reddit import fetch_team_game_threads
-from mlb_sentiment.database.reddit import save_post_to_delta
+from mlb_sentiment.database.reddit import save_post_to_db
 from mlb_sentiment.fetch.mlb import fetch_mlb_events
-from mlb_sentiment.database.mlb import save_game_to_delta
+from mlb_sentiment.database.mlb import save_game_to_db
 from mlb_sentiment.models.analysis import run_sentiment_analysis
 from tqdm import tqdm
 
@@ -67,7 +67,7 @@ def upload_mlb(team_acronym, date, start_date, end_date):
             "You must provide either --date or both --start-date and --end-date."
         )
         return
-    save_game_to_delta(events)
+    save_game_to_db(events)
     click.echo(
         f"Successfully fetched and saved MLB events for {team_acronym} on {date}."
     )

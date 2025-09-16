@@ -210,4 +210,5 @@ __marimo__/
 playground/
 MyDatabase.db
 run_pipeline.py
-
+*.ipynb
+init.sh
