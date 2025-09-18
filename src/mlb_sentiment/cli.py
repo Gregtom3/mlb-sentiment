@@ -97,7 +97,7 @@ def upload_reddit(
     is_flag=True,
     help="Also export the saved data to CSV file(s) after writing to the DB.",
 )
-def upload_mlb(team_acronym, date, start_date, end_date, db_filename, azure):
+def upload_mlb(team_acronym, date, start_date, end_date, db_filename, azure, as_csv):
     """Fetches and saves MLB events for a given team and date or date range."""
     if date:
         game_events = fetch_mlb_events(team_acronym, date=date)
