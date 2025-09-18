@@ -3,7 +3,7 @@ import os
 from mlb_sentiment.fetch.reddit import fetch_team_game_threads
 from mlb_sentiment.database.reddit import save_posts_to_db
 from mlb_sentiment.fetch.mlb import fetch_mlb_events
-from mlb_sentiment.database.mlb import save_game_to_db
+from mlb_sentiment.database.mlb import save_game_events_to_db
 from mlb_sentiment.models.analysis import run_sentiment_analysis
 from mlb_sentiment.config import load_azure_client
 from mlb_sentiment.utility import upload_to_azure_blob
@@ -38,10 +38,15 @@ def cli():
     help="The SQLite database filename to save data to.",
 )
 @click.option(
+    "--as-csv",
+    is_flag=True,
+    help="Also export the saved data to CSV file(s) after writing to the DB.",
+)
+@click.option(
     "--azure", is_flag=True, help="Upload to Azure Blob Storage instead of local DB."
 )
 def upload_reddit(
-    team_acronym, date, start_date, end_date, comments_limit, db_filename, azure
+    team_acronym, date, start_date, end_date, comments_limit, db_filename, as_csv, azure
 ):
     """Fetches and saves MLB game threads for a given team, by date or date range."""
     if date:
@@ -56,9 +61,15 @@ def upload_reddit(
         )
         return
 
-    save_posts_to_db(posts, limit=comments_limit, db_filename=db_filename)
+    save_posts_to_db(
+        posts, limit=comments_limit, db_filename=db_filename, as_csv=as_csv
+    )
     if azure:
-        blob_name = f"reddit_{team_acronym}_{date or start_date}_{end_date or ''}.db"
+        blob_name = (
+            f"reddit_{team_acronym}_{date or start_date}_{end_date or ''}.db".replace(
+                "/", "-"
+            )
+        )
         upload_to_azure_blob(db_filename, blob_name)
         click.echo(f"\t Blob name: {blob_name}")
 
@@ -81,12 +92,17 @@ def upload_reddit(
     show_default=True,
     help="The SQLite database filename to save data to.",
 )
+@click.option(
+    "--as-csv",
+    is_flag=True,
+    help="Also export the saved data to CSV file(s) after writing to the DB.",
+)
 def upload_mlb(team_acronym, date, start_date, end_date, db_filename, azure):
     """Fetches and saves MLB events for a given team and date or date range."""
     if date:
-        events = fetch_mlb_events(team_acronym, date=date)
+        game_events = fetch_mlb_events(team_acronym, date=date)
     elif start_date and end_date:
-        events = fetch_mlb_events(
+        game_events = fetch_mlb_events(
             team_acronym, start_date=start_date, end_date=end_date
         )
     else:
@@ -95,9 +111,13 @@ def upload_mlb(team_acronym, date, start_date, end_date, db_filename, azure):
         )
         return
     # Save events to the database
-    save_game_to_db(events, db_filename=db_filename)
+    save_game_events_to_db(game_events, db_filename=db_filename, as_csv=as_csv)
     if azure:
-        blob_name = f"mlb_{team_acronym}_{date or start_date}_{end_date or ''}.db"
+        blob_name = (
+            f"mlb_{team_acronym}_{date or start_date}_{end_date or ''}.db".replace(
+                "/", "-"
+            )
+        )
         upload_to_azure_blob(db_filename, blob_name)
         click.echo(f"\t Blob name: {blob_name}")
 

@@ -1,4 +1,6 @@
 import sqlite3
+import os
+import pandas as pd
 
 
 def get_connection(db_filename: str = "MyDatabase.db"):
@@ -7,7 +9,9 @@ def get_connection(db_filename: str = "MyDatabase.db"):
     return conn
 
 
-def save_game_to_db(game, db_filename: str = "MyDatabase.db"):
+def save_game_events_to_db(
+    game_events, db_filename: str = "MyDatabase.db", as_csv: bool = False
+):
 
     conn = get_connection(db_filename)
     cursor = conn.cursor()
@@ -35,10 +39,26 @@ def save_game_to_db(game, db_filename: str = "MyDatabase.db"):
         INSERT OR IGNORE INTO games (inning, halfInning, event, description, est, home_team, visiting_team)
         VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
-        game,
+        game_events,
     )
 
     conn.commit()
     conn.close()
-    print(f"Saved {len(game)} game events to the database ({db_filename}).")
+    print(f"Saved {len(game_events)} game events to the database ({db_filename}).")
+
+    # Optionally export to CSV
+    if as_csv:
+        # Derive csv filename from db_filename
+        base, ext = os.path.splitext(db_filename)
+        csv_filename = base + (".csv" if ext.lower() != ".csv" else "")
+        if not csv_filename.lower().endswith(".csv"):
+            csv_filename = csv_filename + ".csv"
+        # Read the games table into a DataFrame and write to CSV
+        conn = sqlite3.connect(db_filename)
+        try:
+            df = pd.read_sql_query("SELECT * FROM games", conn)
+            df.to_csv(csv_filename, index=False)
+            print(f"Exported games table to CSV: {csv_filename}")
+        finally:
+            conn.close()
     return True

@@ -1,5 +1,6 @@
 import sqlite3
 import os
+import pandas as pd
 from mlb_sentiment import config
 from mlb_sentiment import utility
 from mlb_sentiment.fetch.reddit import fetch_post_comments
@@ -12,7 +13,9 @@ def get_connection(db_filename: str = "MyDatabase.db"):
     return conn
 
 
-def save_posts_to_db(posts, limit=5, db_filename: str = "MyDatabase.db"):
+def save_posts_to_db(
+    posts, limit=5, db_filename: str = "MyDatabase.db", as_csv: bool = False
+):
     """
     Save multiple Reddit posts and their top-level comments to the database.
 
@@ -22,6 +25,29 @@ def save_posts_to_db(posts, limit=5, db_filename: str = "MyDatabase.db"):
     """
     for post in posts:
         save_post_to_db(post, limit=limit, db_filename=db_filename)
+
+    # Optionally export to CSV after all posts saved
+    if as_csv:
+        base, ext = os.path.splitext(db_filename)
+        # Create filenames for posts and comments
+        posts_csv = base + "_posts.csv"
+        comments_csv = base + "_comments.csv"
+        # Ensure .csv extension
+        if not posts_csv.lower().endswith(".csv"):
+            posts_csv = posts_csv + ".csv"
+        if not comments_csv.lower().endswith(".csv"):
+            comments_csv = comments_csv + ".csv"
+
+        conn = sqlite3.connect(db_filename)
+        try:
+            posts_df = pd.read_sql_query("SELECT * FROM posts", conn)
+            comments_df = pd.read_sql_query("SELECT * FROM comments", conn)
+            posts_df.to_csv(posts_csv, index=False)
+            comments_df.to_csv(comments_csv, index=False)
+            print(f"Exported posts to CSV: {posts_csv}")
+            print(f"Exported comments to CSV: {comments_csv}")
+        finally:
+            conn.close()
 
 
 def save_post_to_db(post, limit=5, db_filename: str = "MyDatabase.db"):
