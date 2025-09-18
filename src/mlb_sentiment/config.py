@@ -15,3 +15,21 @@ def load_reddit_client():
         client_secret=REDDIT_SECRET,
         user_agent=REDDIT_USER_AGENT,
     )
+
+
+def load_azure_client():
+    """
+    Loads Azure Blob Storage configuration from .env and/or GitHub secrets.
+    Returns:
+        dict: { 'container': str, 'connection_string': str }
+    """
+    # Load from .env
+    container = os.getenv("AZURE_BLOB_CONTAINER")
+    connection_string = os.getenv("AZURE_BLOB_CONNECTION_STRING")
+    # Optionally, load from GitHub secrets if available
+    # For local dev, .env is primary
+    if not container or not connection_string:
+        raise RuntimeError(
+            "Azure Blob Storage configuration missing in .env or secrets."
+        )
+    return {"container": container, "connection_string": connection_string}

@@ -1,15 +1,15 @@
 import sqlite3
 
 
-def get_connection():
-    conn = sqlite3.connect("MyDatabase.db", timeout=30.0)
+def get_connection(db_filename: str = "MyDatabase.db"):
+    conn = sqlite3.connect(db_filename, timeout=30.0)
     conn.execute("PRAGMA journal_mode=WAL;")
     return conn
 
 
-def save_game_to_db(game):
+def save_game_to_db(game, db_filename: str = "MyDatabase.db"):
 
-    conn = get_connection()
+    conn = get_connection(db_filename)
     cursor = conn.cursor()
 
     # Create the game data table
@@ -40,5 +40,5 @@ def save_game_to_db(game):
 
     conn.commit()
     conn.close()
-    print(f"Saved {len(game)} game events to the database.")
+    print(f"Saved {len(game)} game events to the database ({db_filename}).")
     return True

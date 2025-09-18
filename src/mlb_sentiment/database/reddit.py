@@ -6,13 +6,25 @@ from mlb_sentiment.fetch.reddit import fetch_post_comments
 from mlb_sentiment.fetch.reddit import fetch_team_game_threads
 
 
-def get_connection():
-    conn = sqlite3.connect("MyDatabase.db", timeout=30.0)
+def get_connection(db_filename: str = "MyDatabase.db"):
+    conn = sqlite3.connect(db_filename, timeout=30.0)
     conn.execute("PRAGMA journal_mode=WAL;")
     return conn
 
 
-def save_post_to_db(post, limit=5):
+def save_posts_to_db(posts, limit=5, db_filename: str = "MyDatabase.db"):
+    """
+    Save multiple Reddit posts and their top-level comments to the database.
+
+    Args:
+        posts (list): A list of dictionaries containing post details (output from fetch_team_game_threads).
+        limit (int): The maximum number of top-level comments to save per post.
+    """
+    for post in posts:
+        save_post_to_db(post, limit=limit, db_filename=db_filename)
+
+
+def save_post_to_db(post, limit=5, db_filename: str = "MyDatabase.db"):
     """
     Save a Reddit post and its top-level comments to the database.
 
@@ -21,7 +33,7 @@ def save_post_to_db(post, limit=5):
         limit (int): The maximum number of top-level comments to save.
     """
 
-    conn = get_connection()
+    conn = get_connection(db_filename)
     cursor = conn.cursor()
 
     # Create the posts table
@@ -100,6 +112,7 @@ def save_post_to_db(post, limit=5):
     conn.commit()
 
     conn.close()
+    print(f"Saved post '{post.get('title')}' and comments to database ({db_filename}).")
 
 
 def create_sentiment_results_table():

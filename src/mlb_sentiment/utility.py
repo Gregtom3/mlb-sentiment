@@ -1,5 +1,9 @@
+from mlb_sentiment.config import load_azure_client
 from datetime import datetime, timezone
+from azure.storage.blob import BlobServiceClient
 import pytz
+import os
+import json
 
 
 def utc_to_est(utc_timestamp):
@@ -78,3 +82,24 @@ def iso_to_est(iso):
     if iso.endswith("Z"):
         iso = iso[:-1] + "+00:00"
     return utc_to_est(datetime.fromisoformat(iso).timestamp())
+
+
+def upload_to_azure_blob(file_path, blob_name):
+    """
+    Uploads a file to Azure Blob Storage.
+    Args:
+        file_path (str): Path to the local file to upload.
+        blob_name (str): Name for the blob in Azure.
+    """
+    azure_config = load_azure_client()
+    blob_service_client = BlobServiceClient.from_connection_string(
+        azure_config["connection_string"]
+    )
+    blob_client = blob_service_client.get_blob_client(
+        container=azure_config["container"], blob=blob_name
+    )
+    with open(file_path, "rb") as data:
+        blob_client.upload_blob(data, overwrite=True)
+    print(
+        f"Uploaded {file_path} to Azure Blob Storage as {blob_name} in container {azure_config['container']}."
+    )
