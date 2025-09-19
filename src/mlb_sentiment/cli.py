@@ -10,7 +10,7 @@ from mlb_sentiment.config import load_azure_client
 from mlb_sentiment.utility import upload_to_azure_blob
 import tempfile, json
 from tqdm import tqdm
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 @click.group()
@@ -45,6 +45,9 @@ def cli():
 @click.option(
     "--keep-local", is_flag=True, help="Keep local file after uploading to Azure."
 )
+@click.option(
+    "--yesterday", is_flag=True, help="Set the date to one day before the current date."
+)
 def upload_reddit(
     team_acronym,
     date,
@@ -54,8 +57,11 @@ def upload_reddit(
     filename,
     azure,
     keep_local,
+    yesterday,
 ):
     """Fetches and saves MLB game threads for a given team, by date or date range."""
+    if yesterday:
+        date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
     save_date = datetime.now().strftime("%Y-%m-%d")
     # Infer mode from file extension
     mode = "csv" if filename.endswith(".csv") else "db"
@@ -114,8 +120,15 @@ def upload_reddit(
 @click.option(
     "--keep-local", is_flag=True, help="Keep local file after uploading to Azure."
 )
-def upload_mlb(team_acronym, date, start_date, end_date, filename, azure, keep_local):
+@click.option(
+    "--yesterday", is_flag=True, help="Set the date to one day before the current date."
+)
+def upload_mlb(
+    team_acronym, date, start_date, end_date, filename, azure, keep_local, yesterday
+):
     """Fetches and saves MLB events for a given team and date or date range."""
+    if yesterday:
+        date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
     save_date = datetime.now().strftime("%Y-%m-%d")
     # Infer mode from file extension
     mode = "csv" if filename.endswith(".csv") else "db"
