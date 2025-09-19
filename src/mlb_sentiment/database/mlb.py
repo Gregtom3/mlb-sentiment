@@ -86,7 +86,11 @@ def save_game_events(game_events, filename: str = "MyDatabase", mode: str = "db"
                 "captivatingIndex",
             ],
         )
-        df.to_csv(csv_filename, index=False, encoding="utf-8", quoting=csv.QUOTE_ALL)
+        # Replace commas in all string columns with "..."
+        for col in df.columns:
+            if df[col].dtype == object:  # only apply to text fields
+                df[col] = df[col].astype(str).str.replace(",", "...")
+        df.to_csv(csv_filename, index=False, encoding="utf-8")
         print(f"Saved {len(game_events)} events into CSV: {csv_filename}")
 
     else:

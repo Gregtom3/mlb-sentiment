@@ -61,8 +61,8 @@ def upload_reddit(
 
     save_posts(posts, limit=comments_limit, filename=filename, mode=mode)
     if azure:
-        blob_name = f"reddit_{team_acronym}_{date or start_date}_{end_date or ''}.{mode}".replace(
-            "/", "-"
+        blob_name = create_blob_name(
+            "reddit", team_acronym, date or start_date, end_date, mode
         )
         upload_to_azure_blob(filename, blob_name)
         click.echo(f"\t Blob name: {blob_name}")
@@ -104,10 +104,8 @@ def upload_mlb(team_acronym, date, start_date, end_date, filename, azure):
     # Save events to the database
     save_game_events(game_events, filename=filename, mode=mode)
     if azure:
-        blob_name = (
-            f"mlb_{team_acronym}_{date or start_date}_{end_date or ''}.{mode}".replace(
-                "/", "-"
-            )
+        blob_name = create_blob_name(
+            "mlb", team_acronym, date or start_date, end_date, mode
         )
         upload_to_azure_blob(filename, blob_name)
         click.echo(f"\t Blob name: {blob_name}")
@@ -118,6 +116,21 @@ def analyze():
     """Analyzes the sentiment of the saved game threads."""
     # run_sentiment_analysis()
     click.echo("Sentiment analysis completed.")
+
+
+# Create blob name
+def create_blob_name(prefix, team_acronym, date_or_start, end_date, extension):
+    blob_name = (
+        f"{prefix}_{team_acronym}_{date_or_start}_{end_date or ''}.{extension}".replace(
+            "/", "-"
+        )
+    )
+    # Test if blob_name ends with something weird like "myBlob_.csv" and remove the _
+    if blob_name.endswith("_.csv"):
+        blob_name = blob_name.replace("_.csv", ".csv")
+    elif blob_name.endswith("_.db"):
+        blob_name = blob_name.replace("_.db", ".db")
+    return blob_name
 
 
 # Remove the as_csv parameter from the function
