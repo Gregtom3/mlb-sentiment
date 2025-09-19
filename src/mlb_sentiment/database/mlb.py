@@ -43,7 +43,11 @@ def save_game_events(game_events, filename: str = "MyDatabase", mode: str = "db"
                 est TEXT,
                 home_team TEXT,
                 visiting_team TEXT,
-                UNIQUE(inning, halfInning, event, est, home_team, visiting_team)
+                home_score INTEGER,
+                away_score INTEGER,
+                outs INTEGER,
+                captivatingIndex INTEGER,
+                UNIQUE(inning, halfInning, event, est, home_team, visiting_team, home_score, away_score, outs, captivatingIndex)
             )
             """
         )
@@ -51,8 +55,8 @@ def save_game_events(game_events, filename: str = "MyDatabase", mode: str = "db"
         # Insert game data into the table
         cursor.executemany(
             """
-            INSERT OR IGNORE INTO games (inning, halfInning, event, description, est, home_team, visiting_team)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT OR IGNORE INTO games (inning, halfInning, event, description, est, home_team, visiting_team, home_score, away_score, outs, captivatingIndex)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             game_events,
         )
@@ -76,6 +80,10 @@ def save_game_events(game_events, filename: str = "MyDatabase", mode: str = "db"
                 "est",
                 "home_team",
                 "visiting_team",
+                "home_score",
+                "away_score",
+                "outs",
+                "captivatingIndex",
             ],
         )
         df.to_csv(csv_filename, index=False, encoding="utf-8", quoting=csv.QUOTE_ALL)

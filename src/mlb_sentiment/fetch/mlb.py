@@ -2,6 +2,11 @@ import statsapi
 from datetime import datetime, timedelta
 from mlb_sentiment import info
 from mlb_sentiment import utility
+import json
+
+
+def print_json(data):
+    print(json.dumps(data, indent=4))
 
 
 def fetch_mlb_events(team_acronym, date=None, start_date=None, end_date=None):
@@ -24,14 +29,44 @@ def fetch_mlb_events(team_acronym, date=None, start_date=None, end_date=None):
     return all_events
 
 
+def fetch_game_data(game_id):
+    """Fetch game data from statsapi for a given game ID."""
+    return statsapi.get("game", {"gamePk": game_id})
+
+
+def parse_plays(data):
+    """Extract and return all plays from game data."""
+    return data.get("liveData", {}).get("plays", {}).get("allPlays", [])
+
+
+def create_event_row(play, home_team, visiting_team):
+    """Create a single event row from play data."""
+    about = play.get("about", {})
+    result = play.get("result", {})
+    count = play.get("count", {})
+    return (
+        about.get("inning"),
+        about.get("halfInning"),
+        result.get("event", ""),
+        result.get("description", ""),
+        utility.iso_to_est(about.get("startTime"))
+        or utility.iso_to_est(about.get("endTime")),
+        home_team,
+        visiting_team,
+        result.get("homeScore", ""),
+        result.get("awayScore", ""),
+        count.get("outs", ""),
+        about.get("captivatingIndex", ""),
+    )
+
+
 def fetch_mlb_game(TEAM_ID, date):
     """
     Fetch MLB game events for a specific team on a given date (MM/DD/YYYY).
 
     Returns:
-        list: A list of tuples containing (inning, halfInning, event, description, utc, home_team, visiting_team).
+        list: A list of tuples containing (inning, halfInning, event, description, utc, home_team, visiting_team, home_score, visiting_score, outs).
     """
-    EVENTS = {"single", "double", "triple", "home_run"}
     s = statsapi.schedule(team=TEAM_ID, start_date=date, end_date=date)
     if not s:
         raise SystemExit(f"No games found for the TEAM_ID={TEAM_ID} on {date}.")
@@ -42,7 +77,7 @@ def fetch_mlb_game(TEAM_ID, date):
         if (g.get("status", "").lower() in ("final", "game over", "completed early"))
     ]
     gp = (finals[-1] if finals else s[-1])["game_id"]
-    data = statsapi.get("game", {"gamePk": gp})
+    data = fetch_game_data(gp)
     home_team = (
         data.get("gameData", {})
         .get("teams", {})
@@ -55,22 +90,20 @@ def fetch_mlb_game(TEAM_ID, date):
         .get("away", {})
         .get("abbreviation", "")
     )
-    plays = data.get("liveData", {}).get("plays", {}).get("allPlays", [])
-    rows = [
-        (
-            p["about"]["inning"],
-            p["about"]["halfInning"],
-            r.get("event", ""),
-            r.get("description", ""),
-            utility.iso_to_est(p["about"].get("startTime"))
-            or utility.iso_to_est(p["about"].get("endTime")),
-            home_team,
-            visiting_team,
-        )
-        for p in plays
-        for r in [p.get("result", {})]
-        if r.get("eventType", "").lower() in EVENTS
-    ]
+    plays = parse_plays(data)
+
+    rows = []
+    home_score = 0
+    away_score = 0
+    outs = 0
+
+    for play in plays:
+        rows.append(create_event_row(play, home_team, visiting_team))
+
+        # Ensure the final out of the game is registered as an event
+        if play.get("about", {}).get("isGameEnd"):
+            rows.append(create_event_row(play, home_team, visiting_team))
+
     return rows
 
 

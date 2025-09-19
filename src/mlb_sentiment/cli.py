@@ -39,19 +39,14 @@ def cli():
     help="The SQLite database filename to save data to.",
 )
 @click.option(
-    "--as-csv",
-    is_flag=True,
-    help="Also export the saved data to CSV file(s) after writing to the DB.",
-)
-@click.option(
     "--azure", is_flag=True, help="Upload to Azure Blob Storage instead of local DB."
 )
 def upload_reddit(
-    team_acronym, date, start_date, end_date, comments_limit, filename, as_csv, azure
+    team_acronym, date, start_date, end_date, comments_limit, filename, azure
 ):
     """Fetches and saves MLB game threads for a given team, by date or date range."""
-    # Ensure correct file extension
-    filename = correct_filename_extension(filename, as_csv)
+    # Infer mode from file extension
+    mode = "csv" if filename.endswith(".csv") else "db"
     if date:
         posts = fetch_team_game_threads(team_acronym, date=date)
     elif start_date and end_date:
@@ -64,14 +59,9 @@ def upload_reddit(
         )
         return
 
-    save_posts(
-        posts,
-        limit=comments_limit,
-        filename=filename,
-        mode="csv" if as_csv else "db",
-    )
+    save_posts(posts, limit=comments_limit, filename=filename, mode=mode)
     if azure:
-        blob_name = f"reddit_{team_acronym}_{date or start_date}_{end_date or ''}.{'csv' if as_csv else 'db'}".replace(
+        blob_name = f"reddit_{team_acronym}_{date or start_date}_{end_date or ''}.{mode}".replace(
             "/", "-"
         )
         upload_to_azure_blob(filename, blob_name)
@@ -96,15 +86,10 @@ def upload_reddit(
     show_default=True,
     help="The SQLite database filename to save data to.",
 )
-@click.option(
-    "--as-csv",
-    is_flag=True,
-    help="Also export the saved data to CSV file(s) after writing to the DB.",
-)
-def upload_mlb(team_acronym, date, start_date, end_date, filename, azure, as_csv):
+def upload_mlb(team_acronym, date, start_date, end_date, filename, azure):
     """Fetches and saves MLB events for a given team and date or date range."""
-    # Ensure correct file extension
-    filename = correct_filename_extension(filename, as_csv)
+    # Infer mode from file extension
+    mode = "csv" if filename.endswith(".csv") else "db"
     if date:
         game_events = fetch_mlb_events(team_acronym, date=date)
     elif start_date and end_date:
@@ -117,10 +102,12 @@ def upload_mlb(team_acronym, date, start_date, end_date, filename, azure, as_csv
         )
         return
     # Save events to the database
-    save_game_events(game_events, filename=filename, mode="csv" if as_csv else "db")
+    save_game_events(game_events, filename=filename, mode=mode)
     if azure:
-        blob_name = f"mlb_{team_acronym}_{date or start_date}_{end_date or ''}.{'csv' if as_csv else 'db'}".replace(
-            "/", "-"
+        blob_name = (
+            f"mlb_{team_acronym}_{date or start_date}_{end_date or ''}.{mode}".replace(
+                "/", "-"
+            )
         )
         upload_to_azure_blob(filename, blob_name)
         click.echo(f"\t Blob name: {blob_name}")
@@ -133,12 +120,12 @@ def analyze():
     click.echo("Sentiment analysis completed.")
 
 
-def correct_filename_extension(filename, as_csv):
-    if as_csv and not filename.endswith(".csv"):
-        filename += ".csv"
+# Remove the as_csv parameter from the function
+def correct_filename_extension(filename):
+    if filename.endswith(".csv"):
         if filename.endswith(".db.csv"):
             filename = filename.replace(".db", "")
-    elif not as_csv and not filename.endswith(".db"):
+    elif not filename.endswith(".db"):
         filename += ".db"
         if filename.endswith(".csv.db"):
             filename = filename.replace(".csv", "")
