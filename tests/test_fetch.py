@@ -60,7 +60,7 @@ def test_fetch_mlb_events():
         print(event)
         assert isinstance(event, tuple), "Each event should be a tuple."
         # Now returning additional columns: home_score, visiting_score, outs
-        assert len(event) == 11, "Each event should have 11 elements."
+        assert len(event) == 12, "Each event should have 12 elements."
         (
             inning,
             halfInning,
@@ -72,6 +72,7 @@ def test_fetch_mlb_events():
             home_score,
             visiting_score,
             outs,
+            people_on_base,
             captivatingIndex,
         ) = event
         assert (
@@ -88,6 +89,7 @@ def test_fetch_mlb_events():
         assert isinstance(home_score, int), "Home score should be an integer."
         assert isinstance(visiting_score, int), "Visiting score should be an integer."
         assert isinstance(outs, int), "Outs should be an integer."
+        assert isinstance(people_on_base, int), "People on base should be an integer."
         assert (
             isinstance(captivatingIndex, int) or captivatingIndex is None
         ), "CaptivatingIndex should be an integer or None."
