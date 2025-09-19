@@ -4,6 +4,7 @@ from mlb_sentiment.fetch.reddit import fetch_team_game_threads
 from mlb_sentiment.database.reddit import save_posts
 from mlb_sentiment.fetch.mlb import fetch_mlb_events
 from mlb_sentiment.database.mlb import save_game_events
+
 # from mlb_sentiment.models.analysis import run_sentiment_analysis
 from mlb_sentiment.config import load_azure_client
 from mlb_sentiment.utility import upload_to_azure_blob
@@ -33,7 +34,7 @@ def cli():
 )
 @click.option(
     "--filename",
-    default="MyDatabase.db",
+    default="MyDatabase.csv",
     show_default=True,
     help="The SQLite database filename to save data to.",
 )
@@ -49,6 +50,8 @@ def upload_reddit(
     team_acronym, date, start_date, end_date, comments_limit, filename, as_csv, azure
 ):
     """Fetches and saves MLB game threads for a given team, by date or date range."""
+    # Ensure correct file extension
+    filename = correct_filename_extension(filename, as_csv)
     if date:
         posts = fetch_team_game_threads(team_acronym, date=date)
     elif start_date and end_date:
@@ -89,7 +92,7 @@ def upload_reddit(
 )
 @click.option(
     "--filename",
-    default="MyDatabase.db",
+    default="MyDatabase.csv",
     show_default=True,
     help="The SQLite database filename to save data to.",
 )
@@ -100,6 +103,8 @@ def upload_reddit(
 )
 def upload_mlb(team_acronym, date, start_date, end_date, filename, azure, as_csv):
     """Fetches and saves MLB events for a given team and date or date range."""
+    # Ensure correct file extension
+    filename = correct_filename_extension(filename, as_csv)
     if date:
         game_events = fetch_mlb_events(team_acronym, date=date)
     elif start_date and end_date:
@@ -112,9 +117,7 @@ def upload_mlb(team_acronym, date, start_date, end_date, filename, azure, as_csv
         )
         return
     # Save events to the database
-    save_game_events(
-        game_events, filename=filename, mode="csv" if as_csv else "db"
-    )
+    save_game_events(game_events, filename=filename, mode="csv" if as_csv else "db")
     if azure:
         blob_name = f"mlb_{team_acronym}_{date or start_date}_{end_date or ''}.{'csv' if as_csv else 'db'}".replace(
             "/", "-"
@@ -126,8 +129,20 @@ def upload_mlb(team_acronym, date, start_date, end_date, filename, azure, as_csv
 @cli.command()
 def analyze():
     """Analyzes the sentiment of the saved game threads."""
-    #run_sentiment_analysis()
+    # run_sentiment_analysis()
     click.echo("Sentiment analysis completed.")
+
+
+def correct_filename_extension(filename, as_csv):
+    if as_csv and not filename.endswith(".csv"):
+        filename += ".csv"
+        if filename.endswith(".db.csv"):
+            filename = filename.replace(".db", "")
+    elif not as_csv and not filename.endswith(".db"):
+        filename += ".db"
+        if filename.endswith(".csv.db"):
+            filename = filename.replace(".csv", "")
+    return filename
 
 
 if __name__ == "__main__":

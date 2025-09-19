@@ -1,6 +1,7 @@
 import sqlite3
 import os
 import pandas as pd
+import csv
 
 
 def get_connection(db_filename: str = "MyDatabase.db"):
@@ -62,6 +63,8 @@ def save_game_events(game_events, filename: str = "MyDatabase", mode: str = "db"
 
     elif mode == "csv":
         csv_filename = filename if filename.endswith(".csv") else filename + ".csv"
+        if ".db" in csv_filename:
+            csv_filename = csv_filename.replace(".db", "")
         # Convert to DataFrame for easy CSV export
         df = pd.DataFrame(
             game_events,
@@ -75,7 +78,7 @@ def save_game_events(game_events, filename: str = "MyDatabase", mode: str = "db"
                 "visiting_team",
             ],
         )
-        df.to_csv(csv_filename, index=False, encoding="utf-8")
+        df.to_csv(csv_filename, index=False, encoding="utf-8", quoting=csv.QUOTE_ALL)
         print(f"Saved {len(game_events)} events into CSV: {csv_filename}")
 
     else:
