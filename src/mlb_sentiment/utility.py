@@ -94,11 +94,7 @@ def upload_to_azure_blob(
         blob_name (str): Name for the blob in Azure.
         subdirectory (str): Subdirectory in the container to upload the blob to.
         remove_local (bool): Whether to remove the local file after upload.
-    Raises:
-        ValueError: If subdirectory is not 'passiveDatabase' or 'activeDatabase'.
     """
-    assert subdirectory in ["passiveDatabase", "activeDatabase"], "Invalid subdirectory"
-    subdirectory += f"/saved={datetime.now().strftime('%Y-%m-%d')}"
     azure_config = load_azure_client()
     blob_service_client = BlobServiceClient.from_connection_string(
         azure_config["connection_string"]

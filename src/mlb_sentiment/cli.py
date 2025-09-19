@@ -56,6 +56,7 @@ def upload_reddit(
     keep_local,
 ):
     """Fetches and saves MLB game threads for a given team, by date or date range."""
+    save_date = datetime.now().strftime("%Y-%m-%d")
     # Infer mode from file extension
     mode = "csv" if filename.endswith(".csv") else "db"
     if date:
@@ -73,26 +74,23 @@ def upload_reddit(
     save_posts(posts, limit=comments_limit, filename=filename, mode=mode)
 
     if azure:
-        blob_name = create_blob_name(
-            "reddit", team_acronym, date or start_date, end_date, mode
-        )
+        blob_name = create_blob_name("reddit", team_acronym, mode, save_date)
         if mode == "csv":
             upload_to_azure_blob(
                 filename + "_comments.csv",
-                blob_name.replace(".csv", "_comments.csv"),
+                subdirectory="passiveDatabase/comments",
                 remove_local=not keep_local,
             )
             upload_to_azure_blob(
                 filename + "_posts.csv",
-                blob_name.replace(".csv", "_posts.csv"),
+                subdirectory="passiveDatabase/posts",
                 remove_local=not keep_local,
             )
             click.echo(
                 f"\t Blob names: {blob_name.replace('.csv', '_comments.csv')}, {blob_name.replace('.csv', '_posts.csv')}"
             )
         else:
-            upload_to_azure_blob(filename, blob_name, remove_local=not keep_local)
-            click.echo(f"\t Blob name: {blob_name}")
+            raise ValueError("Azure upload is only supported for CSV mode.")
 
 
 @cli.command()
@@ -118,6 +116,7 @@ def upload_reddit(
 )
 def upload_mlb(team_acronym, date, start_date, end_date, filename, azure, keep_local):
     """Fetches and saves MLB events for a given team and date or date range."""
+    save_date = datetime.now().strftime("%Y-%m-%d")
     # Infer mode from file extension
     mode = "csv" if filename.endswith(".csv") else "db"
     if date:
@@ -134,10 +133,13 @@ def upload_mlb(team_acronym, date, start_date, end_date, filename, azure, keep_l
     # Save events to the database
     save_game_events(game_events, filename=filename, mode=mode)
     if azure:
-        blob_name = create_blob_name(
-            "mlb", team_acronym, date or start_date, end_date, mode
+        blob_name = create_blob_name("mlb", team_acronym, mode, save_date)
+        upload_to_azure_blob(
+            filename,
+            blob_name,
+            subdirectory="passiveDatabase/mlb",
+            remove_local=not keep_local,
         )
-        upload_to_azure_blob(filename, blob_name, remove_local=not keep_local)
         click.echo(f"\t Blob name: {blob_name}")
 
 
@@ -149,11 +151,9 @@ def analyze():
 
 
 # Create blob name
-def create_blob_name(prefix, team_acronym, date_or_start, end_date, extension):
-    blob_name = (
-        f"{prefix}_{team_acronym}_{date_or_start}_{end_date or ''}.{extension}".replace(
-            "/", "-"
-        )
+def create_blob_name(prefix, team_acronym, extension, save_date):
+    blob_name = f"{prefix}_{team_acronym}_saved={save_date}.{extension}".replace(
+        "/", "-"
     )
     # Test if blob_name ends with something weird like "myBlob_.csv" and remove the _
     if blob_name.endswith("_.csv"):
