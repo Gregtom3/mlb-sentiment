@@ -128,7 +128,7 @@ def upload_mlb(
 ):
     """Fetches and saves MLB events for a given team and date or date range."""
     if yesterday:
-        date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+        date = (datetime.now() - timedelta(days=1)).strftime("%m/%d/%Y")
     save_date = datetime.now().strftime("%Y-%m-%d")
     # Infer mode from file extension
     mode = "csv" if filename.endswith(".csv") else "db"

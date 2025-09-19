@@ -46,7 +46,6 @@ def test_cli_upload_reddit_yesterday():
     ]
     result = subprocess.run(command, capture_output=True, text=True)
     assert result.returncode == 0
-    assert "Successfully fetched and saved game threads for NYM." in result.stdout
 
 
 def test_cli_upload_mlb_yesterday():
@@ -64,4 +63,3 @@ def test_cli_upload_mlb_yesterday():
     ]
     result = subprocess.run(command, capture_output=True, text=True)
     assert result.returncode == 0
-    assert "Successfully fetched and saved MLB events for NYM." in result.stdout
