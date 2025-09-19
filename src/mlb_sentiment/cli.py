@@ -62,13 +62,14 @@ def upload_reddit(
         return
 
     save_posts_to_db(
-        posts, limit=comments_limit, db_filename=db_filename, as_csv=as_csv
+        posts,
+        limit=comments_limit,
+        db_filename=db_filename,
+        mode="csv" if as_csv else "db",
     )
     if azure:
-        blob_name = (
-            f"reddit_{team_acronym}_{date or start_date}_{end_date or ''}.db".replace(
-                "/", "-"
-            )
+        blob_name = f"reddit_{team_acronym}_{date or start_date}_{end_date or ''}.{'csv' if as_csv else 'db'}".replace(
+            "/", "-"
         )
         upload_to_azure_blob(db_filename, blob_name)
         click.echo(f"\t Blob name: {blob_name}")
@@ -111,12 +112,12 @@ def upload_mlb(team_acronym, date, start_date, end_date, db_filename, azure, as_
         )
         return
     # Save events to the database
-    save_game_events_to_db(game_events, db_filename=db_filename, as_csv=as_csv)
+    save_game_events_to_db(
+        game_events, db_filename=db_filename, mode="csv" if as_csv else "db"
+    )
     if azure:
-        blob_name = (
-            f"mlb_{team_acronym}_{date or start_date}_{end_date or ''}.db".replace(
-                "/", "-"
-            )
+        blob_name = f"mlb_{team_acronym}_{date or start_date}_{end_date or ''}.{'csv' if as_csv else 'db'}".replace(
+            "/", "-"
         )
         upload_to_azure_blob(db_filename, blob_name)
         click.echo(f"\t Blob name: {blob_name}")

@@ -44,10 +44,7 @@ def _get_hugging_face_sentiment(
 ) -> Tuple[str, float]:
     from transformers import pipeline
 
-    sentiment_pipeline = pipeline(
-        "sentiment-analysis",
-        model=model_type.value,
-    )
+    sentiment_pipeline = pipeline("sentiment-analysis", model=model_type.value)
     results = sentiment_pipeline([comment])
     return (results[0]["label"], results[0]["score"])
 
@@ -64,7 +61,4 @@ def get_sentiment(comment: str, model_type: SentimentModelType) -> Dict[str, flo
     else:
         raise ValueError(f"Unsupported sentiment model type: {model_type}")
 
-    return {
-        "emotion": emotion,
-        "score": score,
-    }
+    return {"emotion": emotion, "score": score}

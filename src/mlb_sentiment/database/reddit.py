@@ -13,56 +13,74 @@ def get_connection(db_filename: str = "MyDatabase.db"):
     return conn
 
 
-def save_posts_to_db(
-    posts, limit=5, db_filename: str = "MyDatabase.db", as_csv: bool = False
-):
+def save_posts(posts, limit=5, filename: str = "MyDatabase", mode: str = "db"):
     """
-    Save multiple Reddit posts and their top-level comments to the database.
+    Save multiple Reddit posts and their top-level comments to either a DB or CSV.
 
     Args:
-        posts (list): A list of dictionaries containing post details (output from fetch_team_game_threads).
-        limit (int): The maximum number of top-level comments to save per post.
+        posts (list): A list of dictionaries (from fetch_team_game_threads).
+        limit (int): Number of top-level comments to save per post.
+        filename (str): Base filename (extension auto-added).
+        mode (str): 'db' (SQLite) or 'csv' (flat files).
     """
-    for post in posts:
-        save_post_to_db(post, limit=limit, db_filename=db_filename)
+    if mode == "db":
+        db_filename = filename if filename.endswith(".db") else filename + ".db"
+        for post in posts:
+            save_post_to_db(post, limit=limit, db_filename=db_filename)
 
-    # Optionally export to CSV after all posts saved
-    if as_csv:
-        base, ext = os.path.splitext(db_filename)
-        # Create filenames for posts and comments
-        posts_csv = base + "_posts.csv"
-        comments_csv = base + "_comments.csv"
-        # Ensure .csv extension
-        if not posts_csv.lower().endswith(".csv"):
-            posts_csv = posts_csv + ".csv"
-        if not comments_csv.lower().endswith(".csv"):
-            comments_csv = comments_csv + ".csv"
+    elif mode == "csv":
+        posts_csv = (
+            filename if filename.endswith("_posts.csv") else filename + "_posts.csv"
+        )
+        comments_csv = (
+            filename
+            if filename.endswith("_comments.csv")
+            else filename + "_comments.csv"
+        )
 
-        conn = sqlite3.connect(db_filename)
-        try:
-            posts_df = pd.read_sql_query("SELECT * FROM posts", conn)
-            comments_df = pd.read_sql_query("SELECT * FROM comments", conn)
-            posts_df.to_csv(posts_csv, index=False)
-            comments_df.to_csv(comments_csv, index=False)
-            print(f"Exported posts to CSV: {posts_csv}")
-            print(f"Exported comments to CSV: {comments_csv}")
-        finally:
-            conn.close()
+        all_posts = []
+        all_comments = []
+
+        for post in posts:
+            # Collect post info
+            post_row = {
+                "team_acronym": post["team_acronym"].upper(),
+                "post_title": post["title"],
+                "post_url": post["url"],
+                "created_est": post["created_est"],
+            }
+            all_posts.append(post_row)
+
+            # Fetch and collect comments
+            comments = fetch_post_comments(post["url"], limit=limit)
+            for c in comments:
+                all_comments.append(
+                    {
+                        "post_url": post["url"],
+                        "author": c["author"],
+                        "text": c["text"],
+                        "created_est": utility.utc_to_est(c["created_utc"]),
+                    }
+                )
+
+        # Write both CSVs
+        pd.DataFrame(all_posts).to_csv(posts_csv, index=False, encoding="utf-8")
+        pd.DataFrame(all_comments).to_csv(comments_csv, index=False, encoding="utf-8")
+        print(f"Exported posts to CSV: {posts_csv}")
+        print(f"Exported comments to CSV: {comments_csv}")
+
+    else:
+        raise ValueError("Mode must be either 'db' or 'csv'")
 
 
 def save_post_to_db(post, limit=5, db_filename: str = "MyDatabase.db"):
     """
-    Save a Reddit post and its top-level comments to the database.
-
-    Args:
-        post (dict): A dictionary containing post details (output from fetch_team_game_threads).
-        limit (int): The maximum number of top-level comments to save.
+    Save a Reddit post and its top-level comments to the SQLite database.
     """
-
     conn = get_connection(db_filename)
     cursor = conn.cursor()
 
-    # Create the posts table
+    # Create tables if not exist
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS posts (
@@ -75,7 +93,6 @@ def save_post_to_db(post, limit=5, db_filename: str = "MyDatabase.db"):
         """
     )
 
-    # Create the comments table
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS comments (
@@ -91,19 +108,12 @@ def save_post_to_db(post, limit=5, db_filename: str = "MyDatabase.db"):
     )
     conn.commit()
 
-    # Check if the post already exists
-    cursor.execute(
-        """
-        SELECT id FROM posts WHERE post_url = ?
-        """,
-        (post["url"],),
-    )
+    # Insert post if new
+    cursor.execute("SELECT id FROM posts WHERE post_url = ?", (post["url"],))
     result = cursor.fetchone()
-
     if result:
         post_id = result[0]
     else:
-        # Insert the post into the posts table
         cursor.execute(
             """
             INSERT INTO posts (team_acronym, post_title, post_url, created_est)
@@ -116,74 +126,19 @@ def save_post_to_db(post, limit=5, db_filename: str = "MyDatabase.db"):
                 post["created_est"],
             ),
         )
-        post_id = cursor.lastrowid  # Get the ID of the inserted post
+        post_id = cursor.lastrowid
 
-    # Fetch comments for the post
+    # Insert comments
     comments = fetch_post_comments(post["url"], limit=limit)
-
-    # Insert the comments into the comments table
-    for comment in comments:
+    for c in comments:
         cursor.execute(
             """
             INSERT OR IGNORE INTO comments (post_id, author, text, created_est)
             VALUES (?, ?, ?, ?)
             """,
-            (
-                post_id,
-                comment["author"],
-                comment["text"],
-                utility.utc_to_est(comment["created_utc"]),
-            ),
+            (post_id, c["author"], c["text"], utility.utc_to_est(c["created_utc"])),
         )
-    conn.commit()
 
+    conn.commit()
     conn.close()
     print(f"Saved post '{post.get('title')}' and comments to database ({db_filename}).")
-
-
-def create_sentiment_results_table():
-    """
-    Create the sentiment_results table if it doesn't exist.
-    """
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute(
-        """
-        CREATE TABLE IF NOT EXISTS sentiment_results (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            comment_id INTEGER,
-            model_type TEXT,
-            emotion TEXT,
-            score REAL,
-            FOREIGN KEY (comment_id) REFERENCES comments (id),
-            UNIQUE(comment_id, model_type)
-        )
-        """
-    )
-    conn.commit()
-    conn.close()
-
-
-def save_sentiment_result(comment_id, model_type, emotion, score):
-    """
-    Save a sentiment analysis result to the database.
-
-    Args:
-        comment_id (int): The ID of the comment.
-        model_type (str): The type of sentiment model used.
-        emotion (str): The detected emotion.
-        score (float): The sentiment score.
-    """
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute(
-        """
-        INSERT OR IGNORE INTO sentiment_results (comment_id, model_type, emotion, score)
-        VALUES (?, ?, ?, ?)
-        """,
-        (comment_id, model_type, emotion, score),
-    )
-    conn.commit()
-    conn.close()
