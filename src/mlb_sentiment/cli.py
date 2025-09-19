@@ -84,11 +84,13 @@ def upload_reddit(
         if mode == "csv":
             upload_to_azure_blob(
                 filename + "_comments.csv",
+                blob_name,
                 subdirectory="passiveDatabase/comments",
                 remove_local=not keep_local,
             )
             upload_to_azure_blob(
                 filename + "_posts.csv",
+                blob_name,
                 subdirectory="passiveDatabase/posts",
                 remove_local=not keep_local,
             )
