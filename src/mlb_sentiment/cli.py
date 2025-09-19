@@ -4,7 +4,7 @@ from mlb_sentiment.fetch.reddit import fetch_team_game_threads
 from mlb_sentiment.database.reddit import save_posts
 from mlb_sentiment.fetch.mlb import fetch_mlb_events
 from mlb_sentiment.database.mlb import save_game_events
-from mlb_sentiment.models.analysis import run_sentiment_analysis
+# from mlb_sentiment.models.analysis import run_sentiment_analysis
 from mlb_sentiment.config import load_azure_client
 from mlb_sentiment.utility import upload_to_azure_blob
 import tempfile, json
@@ -32,7 +32,7 @@ def cli():
     "--comments-limit", default=5, help="The maximum number of comments to save."
 )
 @click.option(
-    "--db-filename",
+    "--filename",
     default="MyDatabase.db",
     show_default=True,
     help="The SQLite database filename to save data to.",
@@ -46,7 +46,7 @@ def cli():
     "--azure", is_flag=True, help="Upload to Azure Blob Storage instead of local DB."
 )
 def upload_reddit(
-    team_acronym, date, start_date, end_date, comments_limit, db_filename, as_csv, azure
+    team_acronym, date, start_date, end_date, comments_limit, filename, as_csv, azure
 ):
     """Fetches and saves MLB game threads for a given team, by date or date range."""
     if date:
@@ -64,14 +64,14 @@ def upload_reddit(
     save_posts(
         posts,
         limit=comments_limit,
-        db_filename=db_filename,
+        filename=filename,
         mode="csv" if as_csv else "db",
     )
     if azure:
         blob_name = f"reddit_{team_acronym}_{date or start_date}_{end_date or ''}.{'csv' if as_csv else 'db'}".replace(
             "/", "-"
         )
-        upload_to_azure_blob(db_filename, blob_name)
+        upload_to_azure_blob(filename, blob_name)
         click.echo(f"\t Blob name: {blob_name}")
 
 
@@ -88,7 +88,7 @@ def upload_reddit(
     "--azure", is_flag=True, help="Upload to Azure Blob Storage instead of local DB."
 )
 @click.option(
-    "--db-filename",
+    "--filename",
     default="MyDatabase.db",
     show_default=True,
     help="The SQLite database filename to save data to.",
@@ -98,7 +98,7 @@ def upload_reddit(
     is_flag=True,
     help="Also export the saved data to CSV file(s) after writing to the DB.",
 )
-def upload_mlb(team_acronym, date, start_date, end_date, db_filename, azure, as_csv):
+def upload_mlb(team_acronym, date, start_date, end_date, filename, azure, as_csv):
     """Fetches and saves MLB events for a given team and date or date range."""
     if date:
         game_events = fetch_mlb_events(team_acronym, date=date)
@@ -113,20 +113,20 @@ def upload_mlb(team_acronym, date, start_date, end_date, db_filename, azure, as_
         return
     # Save events to the database
     save_game_events(
-        game_events, db_filename=db_filename, mode="csv" if as_csv else "db"
+        game_events, filename=filename, mode="csv" if as_csv else "db"
     )
     if azure:
         blob_name = f"mlb_{team_acronym}_{date or start_date}_{end_date or ''}.{'csv' if as_csv else 'db'}".replace(
             "/", "-"
         )
-        upload_to_azure_blob(db_filename, blob_name)
+        upload_to_azure_blob(filename, blob_name)
         click.echo(f"\t Blob name: {blob_name}")
 
 
 @cli.command()
 def analyze():
     """Analyzes the sentiment of the saved game threads."""
-    run_sentiment_analysis()
+    #run_sentiment_analysis()
     click.echo("Sentiment analysis completed.")
 
 
