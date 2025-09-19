@@ -41,8 +41,18 @@ def cli():
 @click.option(
     "--azure", is_flag=True, help="Upload to Azure Blob Storage instead of local DB."
 )
+@click.option(
+    "--keep-local", is_flag=True, help="Keep local file after uploading to Azure."
+)
 def upload_reddit(
-    team_acronym, date, start_date, end_date, comments_limit, filename, azure
+    team_acronym,
+    date,
+    start_date,
+    end_date,
+    comments_limit,
+    filename,
+    azure,
+    keep_local,
 ):
     """Fetches and saves MLB game threads for a given team, by date or date range."""
     # Infer mode from file extension
@@ -60,12 +70,28 @@ def upload_reddit(
         return
 
     save_posts(posts, limit=comments_limit, filename=filename, mode=mode)
+
     if azure:
         blob_name = create_blob_name(
             "reddit", team_acronym, date or start_date, end_date, mode
         )
-        upload_to_azure_blob(filename, blob_name)
-        click.echo(f"\t Blob name: {blob_name}")
+        if mode == "csv":
+            upload_to_azure_blob(
+                filename + "_comments.csv",
+                blob_name.replace(".csv", "_comments.csv"),
+                remove_local=not keep_local,
+            )
+            upload_to_azure_blob(
+                filename + "_posts.csv",
+                blob_name.replace(".csv", "_posts.csv"),
+                remove_local=not keep_local,
+            )
+            click.echo(
+                f"\t Blob names: {blob_name.replace('.csv', '_comments.csv')}, {blob_name.replace('.csv', '_posts.csv')}"
+            )
+        else:
+            upload_to_azure_blob(filename, blob_name, remove_local=not keep_local)
+            click.echo(f"\t Blob name: {blob_name}")
 
 
 @cli.command()
@@ -86,7 +112,10 @@ def upload_reddit(
     show_default=True,
     help="The SQLite database filename to save data to.",
 )
-def upload_mlb(team_acronym, date, start_date, end_date, filename, azure):
+@click.option(
+    "--keep-local", is_flag=True, help="Keep local file after uploading to Azure."
+)
+def upload_mlb(team_acronym, date, start_date, end_date, filename, azure, keep_local):
     """Fetches and saves MLB events for a given team and date or date range."""
     # Infer mode from file extension
     mode = "csv" if filename.endswith(".csv") else "db"
@@ -107,7 +136,7 @@ def upload_mlb(team_acronym, date, start_date, end_date, filename, azure):
         blob_name = create_blob_name(
             "mlb", team_acronym, date or start_date, end_date, mode
         )
-        upload_to_azure_blob(filename, blob_name)
+        upload_to_azure_blob(filename, blob_name, remove_local=not keep_local)
         click.echo(f"\t Blob name: {blob_name}")
 
 

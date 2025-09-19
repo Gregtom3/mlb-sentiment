@@ -84,13 +84,18 @@ def iso_to_est(iso):
     return utc_to_est(datetime.fromisoformat(iso).timestamp())
 
 
-def upload_to_azure_blob(file_path, blob_name, subdirectory="passiveDatabase"):
+def upload_to_azure_blob(
+    file_path, blob_name, subdirectory="passiveDatabase", remove_local=False
+):
     """
     Uploads a file to Azure Blob Storage.
     Args:
         file_path (str): Path to the local file to upload.
         blob_name (str): Name for the blob in Azure.
         subdirectory (str): Subdirectory in the container to upload the blob to.
+        remove_local (bool): Whether to remove the local file after upload.
+    Raises:
+        ValueError: If subdirectory is not 'passiveDatabase' or 'activeDatabase'.
     """
     assert subdirectory in ["passiveDatabase", "activeDatabase"], "Invalid subdirectory"
     azure_config = load_azure_client()
@@ -105,3 +110,6 @@ def upload_to_azure_blob(file_path, blob_name, subdirectory="passiveDatabase"):
     print(
         f"Uploaded {file_path} to Azure Blob Storage as {blob_name} in container {azure_config['container']}/{subdirectory}."
     )
+    if remove_local:
+        os.remove(file_path)
+        print(f"Removed local file: {file_path}")

@@ -13,6 +13,27 @@ def get_connection(db_filename: str = "MyDatabase.db"):
     return conn
 
 
+def format_reddit_text(text):
+    """
+    Format Reddit text by replacing newlines and commas to ensure CSV compatibility.
+
+    Args:
+        text (str): The original Reddit text.
+    Returns:
+        str: The formatted text.
+    """
+    if text is None:
+        return ""
+    if not isinstance(text, str):
+        text = str(text)
+    text = (
+        text.replace("\n", " ").replace("\r", " ").replace(",", " ").replace("* ", " ")
+    )
+    if len(text) > 255:
+        text = text[:255] + "..."
+    return text
+
+
 def save_posts(posts, limit=5, filename: str = "MyDatabase", mode: str = "db"):
     """
     Save multiple Reddit posts and their top-level comments to either a DB or CSV.
@@ -40,10 +61,12 @@ def save_posts(posts, limit=5, filename: str = "MyDatabase", mode: str = "db"):
 
         all_posts = []
         all_comments = []
+        post_id_counter = 1  # mimic autoincrement ids
 
         for post in posts:
-            # Collect post info
+            # Collect post info with an ID
             post_row = {
+                "id": post_id_counter,
                 "team_acronym": post["team_acronym"].upper(),
                 "post_title": post["title"],
                 "post_url": post["url"],
@@ -56,12 +79,15 @@ def save_posts(posts, limit=5, filename: str = "MyDatabase", mode: str = "db"):
             for c in comments:
                 all_comments.append(
                     {
-                        "post_url": post["url"],
+                        "id": None,  # will be auto-assigned if DB, leave None in CSV
+                        "post_id": post_id_counter,
                         "author": c["author"],
-                        "text": c["text"],
+                        "text": format_reddit_text(c["text"]),
                         "created_est": utility.utc_to_est(c["created_utc"]),
                     }
                 )
+
+            post_id_counter += 1
 
         # Write both CSVs
         pd.DataFrame(all_posts).to_csv(posts_csv, index=False, encoding="utf-8")
@@ -89,7 +115,7 @@ def save_post_to_db(post, limit=5, db_filename: str = "MyDatabase.db"):
             post_title TEXT,
             post_url TEXT,
             created_est TEXT
-        )
+        ) 
         """
     )
 
