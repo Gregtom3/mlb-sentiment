@@ -39,11 +39,24 @@ def parse_plays(data):
     return data.get("liveData", {}).get("plays", {}).get("allPlays", [])
 
 
+def get_people_on_base(play):
+    """Get the number of unique runners on base who are not out or scoring."""
+    unique_runners = set()
+    for runner in play.get("runners", []):
+        if not runner["movement"]["isOut"] and runner["movement"]["end"] not in [
+            "score",
+            "None",
+        ]:
+            unique_runners.add(runner["details"]["runner"]["fullName"])
+    return len(unique_runners)
+
+
 def create_event_row(play, home_team, visiting_team):
     """Create a single event row from play data."""
     about = play.get("about", {})
     result = play.get("result", {})
     count = play.get("count", {})
+    people_on_base = get_people_on_base(play)
     return (
         about.get("inning"),
         about.get("halfInning"),
@@ -56,6 +69,7 @@ def create_event_row(play, home_team, visiting_team):
         result.get("homeScore", ""),
         result.get("awayScore", ""),
         count.get("outs", ""),
+        people_on_base,
         about.get("captivatingIndex", ""),
     )
 
