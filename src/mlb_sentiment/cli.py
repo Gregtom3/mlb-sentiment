@@ -1,9 +1,9 @@
 import click
 import os
 from mlb_sentiment.fetch.reddit import fetch_team_game_threads
-from mlb_sentiment.database.reddit import save_posts_to_db
+from mlb_sentiment.database.reddit import save_posts
 from mlb_sentiment.fetch.mlb import fetch_mlb_events
-from mlb_sentiment.database.mlb import save_game_events_to_db
+from mlb_sentiment.database.mlb import save_game_events
 from mlb_sentiment.models.analysis import run_sentiment_analysis
 from mlb_sentiment.config import load_azure_client
 from mlb_sentiment.utility import upload_to_azure_blob
@@ -61,7 +61,7 @@ def upload_reddit(
         )
         return
 
-    save_posts_to_db(
+    save_posts(
         posts,
         limit=comments_limit,
         db_filename=db_filename,
@@ -112,7 +112,7 @@ def upload_mlb(team_acronym, date, start_date, end_date, db_filename, azure, as_
         )
         return
     # Save events to the database
-    save_game_events_to_db(
+    save_game_events(
         game_events, db_filename=db_filename, mode="csv" if as_csv else "db"
     )
     if azure:
