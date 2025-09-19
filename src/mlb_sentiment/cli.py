@@ -10,6 +10,7 @@ from mlb_sentiment.config import load_azure_client
 from mlb_sentiment.utility import upload_to_azure_blob
 import tempfile, json
 from tqdm import tqdm
+from datetime import datetime
 
 
 @click.group()

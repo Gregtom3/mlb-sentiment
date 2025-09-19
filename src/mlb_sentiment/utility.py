@@ -98,6 +98,7 @@ def upload_to_azure_blob(
         ValueError: If subdirectory is not 'passiveDatabase' or 'activeDatabase'.
     """
     assert subdirectory in ["passiveDatabase", "activeDatabase"], "Invalid subdirectory"
+    subdirectory += f"/saved={datetime.now().strftime('%Y-%m-%d')}"
     azure_config = load_azure_client()
     blob_service_client = BlobServiceClient.from_connection_string(
         azure_config["connection_string"]

@@ -5,6 +5,7 @@ from mlb_sentiment import config
 from mlb_sentiment import utility
 from mlb_sentiment.fetch.reddit import fetch_post_comments
 from mlb_sentiment.fetch.reddit import fetch_team_game_threads
+from datetime import date
 
 
 def get_connection(db_filename: str = "MyDatabase.db"):
@@ -62,7 +63,7 @@ def save_posts(posts, limit=5, filename: str = "MyDatabase", mode: str = "db"):
         all_posts = []
         all_comments = []
         post_id_counter = 1  # mimic autoincrement ids
-
+        today = date.today().strftime("%Y-%m-%d")
         for post in posts:
             # Collect post info with an ID
             post_row = {
@@ -71,6 +72,7 @@ def save_posts(posts, limit=5, filename: str = "MyDatabase", mode: str = "db"):
                 "post_title": post["title"],
                 "post_url": post["url"],
                 "created_est": post["created_est"],
+                "save_date": today,
             }
             all_posts.append(post_row)
 
@@ -84,6 +86,7 @@ def save_posts(posts, limit=5, filename: str = "MyDatabase", mode: str = "db"):
                         "author": c["author"],
                         "text": format_reddit_text(c["text"]),
                         "created_est": utility.utc_to_est(c["created_utc"]),
+                        "save_date": today,
                     }
                 )
 
@@ -105,7 +108,7 @@ def save_post_to_db(post, limit=5, db_filename: str = "MyDatabase.db"):
     """
     conn = get_connection(db_filename)
     cursor = conn.cursor()
-
+    today = date.today().strftime("%Y-%m-%d")
     # Create tables if not exist
     cursor.execute(
         """
@@ -114,7 +117,8 @@ def save_post_to_db(post, limit=5, db_filename: str = "MyDatabase.db"):
             team_acronym TEXT,
             post_title TEXT,
             post_url TEXT,
-            created_est TEXT
+            created_est TEXT,
+            save_date TEXT
         ) 
         """
     )
@@ -127,8 +131,9 @@ def save_post_to_db(post, limit=5, db_filename: str = "MyDatabase.db"):
             author TEXT,
             text TEXT,
             created_est TEXT,
+            save_date TEXT,
             FOREIGN KEY (post_id) REFERENCES posts (id),
-            UNIQUE(author, created_est)
+            UNIQUE(author, created_est, save_date)
         )
         """
     )
@@ -142,14 +147,15 @@ def save_post_to_db(post, limit=5, db_filename: str = "MyDatabase.db"):
     else:
         cursor.execute(
             """
-            INSERT INTO posts (team_acronym, post_title, post_url, created_est)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO posts (team_acronym, post_title, post_url, created_est, save_date)
+            VALUES (?, ?, ?, ?, ?)
             """,
             (
                 post["team_acronym"].upper(),
                 post["title"],
                 post["url"],
                 post["created_est"],
+                today,
             ),
         )
         post_id = cursor.lastrowid
@@ -159,10 +165,16 @@ def save_post_to_db(post, limit=5, db_filename: str = "MyDatabase.db"):
     for c in comments:
         cursor.execute(
             """
-            INSERT OR IGNORE INTO comments (post_id, author, text, created_est)
-            VALUES (?, ?, ?, ?)
+            INSERT OR IGNORE INTO comments (post_id, author, text, created_est, save_date)
+            VALUES (?, ?, ?, ?, ?)
             """,
-            (post_id, c["author"], c["text"], utility.utc_to_est(c["created_utc"])),
+            (
+                post_id,
+                c["author"],
+                c["text"],
+                utility.utc_to_est(c["created_utc"]),
+                today,
+            ),
         )
 
     conn.commit()

@@ -2,6 +2,7 @@ import sqlite3
 import os
 import pandas as pd
 import csv
+from datetime import date
 
 
 def get_connection(db_filename: str = "MyDatabase.db"):
@@ -12,13 +13,15 @@ def get_connection(db_filename: str = "MyDatabase.db"):
 
 def save_game_events(game_events, filename: str = "MyDatabase", mode: str = "db"):
     """
-    Save game events to either a SQLite database (.db) or a CSV file (.csv).
+    Save game events to either a SQLite database (.db) or a CSV file (.csv),
+    and append today's date to each row.
 
     Parameters
     ----------
     game_events : list of tuples
         Each tuple represents one row of game data
-        (inning, halfInning, event, description, est, home_team, visiting_team).
+        (inning, halfInning, event, description, est, home_team, visiting_team,
+         home_score, away_score, outs, people_on_base, captivatingIndex).
     filename : str
         Base filename (no extension needed, .db or .csv is added automatically).
     mode : str
@@ -26,12 +29,16 @@ def save_game_events(game_events, filename: str = "MyDatabase", mode: str = "db"
         "csv" -> save directly into CSV
     """
 
+    # Add today's date to each row
+    today = date.today().strftime("%Y-%m-%d")
+    events_with_date = [row + (today,) for row in game_events]
+
     if mode == "db":
         db_filename = filename if filename.endswith(".db") else filename + ".db"
         conn = get_connection(db_filename)
         cursor = conn.cursor()
 
-        # Create the game data table
+        # Create the game data table with save_date column
         cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS games (
@@ -48,7 +55,9 @@ def save_game_events(game_events, filename: str = "MyDatabase", mode: str = "db"
                 outs INTEGER,
                 people_on_base INTEGER,
                 captivatingIndex INTEGER,
-                UNIQUE(inning, halfInning, event, est, home_team, visiting_team, home_score, away_score, outs, people_on_base, captivatingIndex)
+                save_date TEXT,
+                UNIQUE(inning, halfInning, event, est, home_team, visiting_team,
+                       home_score, away_score, outs, people_on_base, captivatingIndex, save_date)
             )
             """
         )
@@ -56,23 +65,28 @@ def save_game_events(game_events, filename: str = "MyDatabase", mode: str = "db"
         # Insert game data into the table
         cursor.executemany(
             """
-            INSERT OR IGNORE INTO games (inning, halfInning, event, description, est, home_team, visiting_team, home_score, away_score, outs, people_on_base, captivatingIndex)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT OR IGNORE INTO games (
+                inning, halfInning, event, description, est, home_team,
+                visiting_team, home_score, away_score, outs,
+                people_on_base, captivatingIndex, save_date
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            game_events,
+            events_with_date,
         )
 
         conn.commit()
         conn.close()
-        print(f"Saved {len(game_events)} events into database: {db_filename}")
+        print(f"Saved {len(events_with_date)} events into database: {db_filename}")
 
     elif mode == "csv":
         csv_filename = filename if filename.endswith(".csv") else filename + ".csv"
         if ".db" in csv_filename:
             csv_filename = csv_filename.replace(".db", "")
+
         # Convert to DataFrame for easy CSV export
         df = pd.DataFrame(
-            game_events,
+            events_with_date,
             columns=[
                 "inning",
                 "halfInning",
@@ -86,14 +100,17 @@ def save_game_events(game_events, filename: str = "MyDatabase", mode: str = "db"
                 "outs",
                 "people_on_base",
                 "captivatingIndex",
+                "save_date",
             ],
         )
+
         # Replace commas in all string columns with "..."
         for col in df.columns:
-            if df[col].dtype == object:  # only apply to text fields
+            if df[col].dtype == object:
                 df[col] = df[col].astype(str).str.replace(",", "...")
+
         df.to_csv(csv_filename, index=False, encoding="utf-8")
-        print(f"Saved {len(game_events)} events into CSV: {csv_filename}")
+        print(f"Saved {len(events_with_date)} events into CSV: {csv_filename}")
 
     else:
         raise ValueError("Mode must be either 'db' or 'csv'")
