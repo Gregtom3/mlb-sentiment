@@ -35,7 +35,6 @@ def fetch_team_game_threads(team_acronym, date=None, start_date=None, end_date=N
         end_dt = datetime.strptime(end_date, "%m/%d/%Y")
     else:
         start_dt = end_dt = None
-
     for submission in user.submissions.new(limit=MAX_LOOKUP):
         if (
             "GAME THREAD" in submission.title.upper()
@@ -64,6 +63,10 @@ def fetch_team_game_threads(team_acronym, date=None, start_date=None, end_date=N
                         "num_comments": submission.num_comments,
                     }
                 )
+            if start_dt and end_dt and post_dt < start_dt:
+                break
+            if date and post_date_str < date:
+                break
     return posts
 
 
