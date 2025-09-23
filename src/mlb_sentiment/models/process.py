@@ -4,6 +4,7 @@ from typing import Tuple, Dict
 
 
 class SentimentModelType(Enum):
+    NULL = "null"
     VADER = "vader"
     DISTILBERT_BASE_UNCASED_FINETUNED_SST_2_ENGLISH = (
         "distilbert-base-uncased-finetuned-sst-2-english"
@@ -18,6 +19,19 @@ HUGGING_FACE_MODELS = [
     SentimentModelType.BERT_BASE_UNCASED_EMOTION,
     SentimentModelType.DISTILBERT_BASE_UNCASED_EMOTION,
 ]
+
+
+def get_model_from_string(model_str: str) -> SentimentModelType:
+    """Convert a string to the corresponding SentimentModelType enum."""
+    model_str = model_str.lower()
+    if model_str == "vader":
+        return SentimentModelType.VADER
+    elif model_str == "distilbert-base-uncased-finetuned-sst-2-english":
+        return SentimentModelType.DISTILBERT_BASE_UNCASED_FINETUNED_SST_2_ENGLISH
+    elif model_str == "null":
+        return SentimentModelType.NULL
+    else:
+        raise ValueError(f"Unsupported sentiment model string: {model_str}")
 
 
 def _get_vader_sentiment(comment: str) -> Tuple[str, float]:
@@ -58,6 +72,8 @@ def get_sentiment(comment: str, model_type: SentimentModelType) -> Dict[str, flo
         emotion, score = _get_vader_sentiment(comment)
     elif model_type in HUGGING_FACE_MODELS:
         emotion, score = _get_hugging_face_sentiment(comment, model_type)
+    elif model_type == SentimentModelType.NULL:
+        emotion, score = "neutral", 0.0
     else:
         raise ValueError(f"Unsupported sentiment model type: {model_type}")
 

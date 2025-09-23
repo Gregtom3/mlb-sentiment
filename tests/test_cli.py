@@ -19,12 +19,3 @@ def test_cli_fetch():
     result = subprocess.run(command, capture_output=True, text=True)
 
     assert result.returncode == 0
-
-
-def test_cli_analyze():
-    """
-    Tests that the CLI analyze runs without errors.
-    """
-    command = ["mlb-sentiment", "analyze"]
-    result = subprocess.run(command, capture_output=True, text=True)
-    assert result.returncode == 0

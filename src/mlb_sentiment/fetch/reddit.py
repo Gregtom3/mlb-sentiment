@@ -1,6 +1,7 @@
 from mlb_sentiment import info
 from mlb_sentiment import config
 from mlb_sentiment import utility
+from mlb_sentiment.models.process import get_sentiment, SentimentModelType
 
 
 def fetch_reddit_posts(team_acronym, date=None, start_date=None, end_date=None):
@@ -94,7 +95,7 @@ def fetch_reddit_posts(team_acronym, date=None, start_date=None, end_date=None):
     return posts
 
 
-def fetch_reddit_comments(posts, limit=5):
+def fetch_reddit_comments(posts, limit=5, sentiment_model=SentimentModelType.NULL):
     """
     Fetch a limited number of top-level comments for a given Reddit post.
 
@@ -117,10 +118,12 @@ def fetch_reddit_comments(posts, limit=5):
         for comment in submission.comments.list()[:limit]:
             comments.append(
                 {
+                    "game_id": game_id,
                     "author": str(comment.author),
                     "text": comment.body,
                     "created_utc": comment.created_utc,
-                    "game_id": game_id,
+                    "sentiment": get_sentiment(comment.body, sentiment_model),
                 }
             )
+
     return comments

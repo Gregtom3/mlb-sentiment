@@ -69,6 +69,8 @@ def save_reddit_comments(
                 "text": format_reddit_text(comment["text"]),
                 "created_est": utility.utc_to_est(comment["created_utc"]),
                 "save_date": today,
+                "sentiment": comment["sentiment"]["emotion"],
+                "sentiment_score": comment["sentiment"]["score"],
             }
             all_comments.append(comment_row)
             comment_id_counter += 1
