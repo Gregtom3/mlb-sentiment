@@ -2,12 +2,6 @@ import pandas as pd
 from datetime import date
 
 
-def get_connection(db_filename: str = "MyDatabase.db"):
-    conn = sqlite3.connect(db_filename, timeout=30.0)
-    conn.execute("PRAGMA journal_mode=WAL;")
-    return conn
-
-
 def save_mlb_games(games, filename: str = "MyDatabase"):
     """
     Save MLB game data to a CSV file (.csv).
