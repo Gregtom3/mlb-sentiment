@@ -8,7 +8,7 @@ def test_cli_fetch():
     """
     command = [
         "mlb-sentiment",
-        "upload-reddit",
+        "upload",
         "--team-acronym",
         "NYM",
         "--date",
@@ -36,29 +36,12 @@ def test_cli_upload_reddit_yesterday():
     """
     command = [
         "mlb-sentiment",
-        "upload-reddit",
+        "upload",
         "--team-acronym",
         "NYM",
         "--yesterday",
         "--comments-limit",
         "1",
-    ]
-    result = subprocess.run(command, capture_output=True, text=True)
-    assert result.returncode == 0
-
-
-def test_cli_upload_mlb_yesterday():
-    """
-    Tests that the CLI upload-mlb with --yesterday flag runs without errors.
-    """
-    command = [
-        "mlb-sentiment",
-        "upload-mlb",
-        "--team-acronym",
-        "NYM",
-        "--yesterday",
-        "--filename",
-        "MyDatabase.csv",
     ]
     result = subprocess.run(command, capture_output=True, text=True)
     assert result.returncode == 0

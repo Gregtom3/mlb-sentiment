@@ -23,7 +23,7 @@ jobs:
         pip install -e .[dev]
         pip install -r requirements.txt
 
-    - name: Upload MLB Data
+    - name: Upload Data 
       env:
         REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
         REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
@@ -31,14 +31,4 @@ jobs:
         AZURE_BLOB_CONNECTION_STRING: ${{ secrets.AZURE_BLOB_CONNECTION_STRING }}
         AZURE_BLOB_CONTAINER: ${{ secrets.AZURE_BLOB_CONTAINER }}
       run: |
-        mlb-sentiment upload-mlb --team-acronym NYM --yesterday --azure
-
-    - name: Upload Reddit Data
-      env:
-        REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
-        REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
-        REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT }}
-        AZURE_BLOB_CONNECTION_STRING: ${{ secrets.AZURE_BLOB_CONNECTION_STRING }}
-        AZURE_BLOB_CONTAINER: ${{ secrets.AZURE_BLOB_CONTAINER }}
-      run: |
-        mlb-sentiment upload-reddit --team-acronym NYM --yesterday --azure
+        mlb-sentiment upload --team-acronym NYM --yesterday --azure
