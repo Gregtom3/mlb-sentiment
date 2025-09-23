@@ -24,7 +24,7 @@ def fetch_reddit_posts(team_acronym, date=None, start_date=None, end_date=None):
     reddit = config.load_reddit_client()
 
     # Get the user object
-    user = reddit.redditor(info.TEAM_INFO[team_acronym]["game_thread_user"])
+    user = reddit.redditor(info.get_team_info(team_acronym, "game_thread_user"))
 
     from datetime import datetime
 

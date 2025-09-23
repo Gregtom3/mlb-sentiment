@@ -144,7 +144,7 @@ def team_record_on_date(team_id, date_str):
 def fetch_game_ids(team_acronym, date=None, start_date=None, end_date=None):
     """
     Fetch all game IDs for the specified team on a given date or date range.
-
+    NOTE: We append the team
     Returns:
         list: A list of game IDs.
     """
