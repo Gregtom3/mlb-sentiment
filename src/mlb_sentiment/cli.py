@@ -35,7 +35,7 @@ def cli():
     "--filename",
     default="MyDatabase.csv",
     show_default=True,
-    help="Output filename (extension determines mode: .csv or .db).",
+    help="Output filename.",
 )
 @click.option(
     "--azure",
@@ -76,11 +76,9 @@ def upload(
     """
     # Handle yesterday flag
     if yesterday:
-        date = (datetime.now() - timedelta(days=1)).strftime("%m/%d/%Y")
-    save_date = datetime.now().strftime("%Y-%m-%d")
+        date = (datetime.now() - timedelta(days=1)).strftime("")
+    save_date = datetime.now().strftime("%m/%d/%Y")
 
-    # Infer mode
-    mode = "csv" if filename.endswith(".csv") else "db"
     # --------------------------
     # Pretty options summary
     # --------------------------
@@ -94,7 +92,6 @@ def upload(
         click.echo(f"{'Date Range:':20} {start_date} → {end_date}")
     click.echo(f"{'Comments Limit:':20} {comments_limit}")
     click.echo(f"{'Output File:':20} {filename}")
-    click.echo(f"{'Mode:':20} {mode.upper()}")
     click.echo(f"{'Azure Upload:':20} {'Yes' if azure else 'No'}")
     if azure:
         click.echo(f"{'Keep Local Copy:':20} {'Yes' if keep_local else 'No'}")
@@ -130,19 +127,16 @@ def upload(
         return
 
     # Save locally
-    save_reddit_posts(posts, limit=comments_limit, filename=filename, mode=mode)
-    save_reddit_comments(comments, limit=comments_limit, filename=filename, mode=mode)
-    save_mlb_events(game_events, filename=filename, mode=mode)
-    save_mlb_games(games, filename=filename, mode=mode)
+    save_reddit_posts(posts, limit=comments_limit, filename=filename)
+    save_reddit_comments(comments, limit=comments_limit, filename=filename)
+    save_mlb_events(game_events, filename=filename)
+    save_mlb_games(games, filename=filename)
     # --------------------------
     # Optional Azure upload
     # --------------------------
     if azure:
-        if mode != "csv":
-            raise ValueError("Azure upload is only supported for CSV mode.")
-
         # Reddit
-        reddit_blob = create_blob_name("reddit", team_acronym, mode, save_date)
+        reddit_blob = create_blob_name("reddit", team_acronym, save_date)
         upload_to_azure_blob(
             filename + "_comments.csv",
             reddit_blob,
@@ -162,7 +156,7 @@ def upload(
         )
 
         # MLB
-        mlb_blob = create_blob_name("mlb", team_acronym, mode, save_date)
+        mlb_blob = create_blob_name("mlb", team_acronym, save_date)
         upload_to_azure_blob(
             filename + "_games.csv",
             mlb_blob,
@@ -181,26 +175,11 @@ def upload(
 # --------------------------
 # Helpers
 # --------------------------
-def create_blob_name(prefix, team_acronym, extension, save_date):
-    blob_name = f"{prefix}_{team_acronym}_saved={save_date}.{extension}".replace(
-        "/", "-"
-    )
+def create_blob_name(prefix, team_acronym, save_date):
+    blob_name = f"{prefix}_{team_acronym}_saved={save_date}.csv".replace("/", "-")
     if blob_name.endswith("_.csv"):
         blob_name = blob_name.replace("_.csv", ".csv")
-    elif blob_name.endswith("_.db"):
-        blob_name = blob_name.replace("_.db", ".db")
     return blob_name
-
-
-def correct_filename_extension(filename):
-    if filename.endswith(".csv"):
-        if filename.endswith(".db.csv"):
-            filename = filename.replace(".db", "")
-    elif not filename.endswith(".db"):
-        filename += ".db"
-        if filename.endswith(".csv.db"):
-            filename = filename.replace(".csv", "")
-    return filename
 
 
 if __name__ == "__main__":
