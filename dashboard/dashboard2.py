@@ -3,6 +3,7 @@ import pandas as pd
 from mlb_sentiment.config import load_synapse_engine
 import numpy as np
 from utility import safe_read_sql
+import altair as alt
 
 st.title("MLB Game Score Dashboard")
 
@@ -97,11 +98,12 @@ else:
 # -------------------
 # Plot sentiment moving average
 # -------------------
+click = alt.selection_point(fields=["created_est"], nearest=True, on="click")
+
 if not comments_df.empty:
-    # Make sure timestamp is datetime
     comments_df["created_est"] = pd.to_datetime(comments_df["created_est"])
 
-    # Resample into 30-second bins, compute mean sentiment
+    # Resample into 2-min bins, mean sentiment
     sentiment_ts = (
         comments_df.set_index("created_est")
         .resample("2Min")["sentiment_score"]
@@ -109,14 +111,96 @@ if not comments_df.empty:
         .reset_index()
     )
 
-    # Optional: rolling average smoothing (if bins are sparse)
+    # Rolling smooth
     sentiment_ts["sentiment_smooth"] = (
         sentiment_ts["sentiment_score"]
         .rolling(window=3, min_periods=1, center=True)
         .mean()
     )
 
+    # -------------------
+    # Build tooltip text for each window
+    # -------------------
+    def summarize_comments(window_start, window_end):
+        # filter comments in this window
+        mask = (comments_df["created_est"] >= window_start) & (
+            comments_df["created_est"] < window_end
+        )
+        subset = comments_df.loc[mask]
+
+        if subset.empty:
+            return "", ""
+
+        # top 3 positive
+        top_pos = (
+            subset.nlargest(3, "sentiment_score")[["author", "text", "sentiment_score"]]
+            .apply(
+                lambda r: f"{r['author']}: {r['text']} ({r['sentiment_score']:.2f})",
+                axis=1,
+            )
+            .tolist()
+        )
+        top_pos_str = " | ".join(top_pos)
+
+        # top 3 negative
+        top_neg = (
+            subset.nsmallest(3, "sentiment_score")[
+                ["author", "text", "sentiment_score"]
+            ]
+            .apply(
+                lambda r: f"{r['author']}: {r['text']} ({r['sentiment_score']:.2f})",
+                axis=1,
+            )
+            .tolist()
+        )
+        top_neg_str = " | ".join(top_neg)
+
+        return top_pos_str, top_neg_str
+
+    # Create aligned window ranges for tooltips
+    sentiment_ts["window_start"] = sentiment_ts["created_est"]
+    sentiment_ts["window_end"] = sentiment_ts["created_est"] + pd.Timedelta(minutes=2)
+
+    # Fill columns with top comments
+    sentiment_ts[["top_pos", "top_neg"]] = sentiment_ts.apply(
+        lambda r: pd.Series(summarize_comments(r["window_start"], r["window_end"])),
+        axis=1,
+    )
+
     st.subheader("Fan Sentiment (2Min bins)")
-    st.line_chart(data=sentiment_ts, x="created_est", y="sentiment_smooth", height=400)
+
+    x_min = sentiment_ts["created_est"].min()
+    x_max = sentiment_ts["created_est"].max()
+
+    chart = (
+        alt.Chart(sentiment_ts)
+        .mark_line(color="steelblue", point=True)
+        .encode(
+            x=alt.X(
+                "created_est:T",
+                title="Time (EST)",
+                scale=alt.Scale(domain=[x_min, x_max], clamp=True),
+            ),
+            y=alt.Y(
+                "sentiment_smooth:Q",
+                title="Sentiment",
+                scale=alt.Scale(domain=[-1, 1], clamp=True),
+            ),
+            tooltip=[
+                alt.Tooltip("created_est:T", title="Time"),
+                alt.Tooltip("sentiment_smooth:Q", title="Sentiment", format=".2f"),
+                alt.Tooltip("top_pos:N", title="Top Positive Comments"),
+                alt.Tooltip("top_neg:N", title="Top Negative Comments"),
+            ],
+        )
+        .properties(width=1200, height=500)
+        .add_params(click)
+        .interactive()
+    )
+
+    chart = chart.configure_view(stroke="black")
+    selected = st.altair_chart(chart, use_container_width=True)
+    if selected is not None:
+        print("HERE")
 else:
     st.info("No comments found for this game.")
