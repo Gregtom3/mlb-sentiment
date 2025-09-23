@@ -124,15 +124,3 @@ def fetch_reddit_comments(posts, limit=5):
                 }
             )
     return comments
-
-
-def main():
-    team_acronym = "NYM"
-    date = "09/14/2025"
-    posts = fetch_team_game_threads(team_acronym, date=date)
-    for post in posts:
-        print(post)
-
-
-if __name__ == "__main__":
-    main()
