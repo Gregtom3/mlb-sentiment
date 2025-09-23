@@ -23,7 +23,7 @@ def fetch_mlb_events(team_acronym, date=None, start_date=None, end_date=None):
     end_dt = datetime.strptime(end_date, "%m/%d/%Y")
     while current_date <= end_dt:
         date_str = current_date.strftime("%Y-%m-%d")
-        events = fetch_mlb_game(TEAM_ID, date_str)
+        events = fetch_events(TEAM_ID, date_str)
         all_events.extend(events)
         current_date += timedelta(days=1)
     return all_events
@@ -51,7 +51,7 @@ def get_people_on_base(play):
     return len(unique_runners)
 
 
-def create_event_row(play, home_team, visiting_team):
+def create_event_row(play, home_team, visiting_team, game_id):
     """Create a single event row from play data."""
     about = play.get("about", {})
     result = play.get("result", {})
@@ -71,83 +71,116 @@ def create_event_row(play, home_team, visiting_team):
         count.get("outs", ""),
         people_on_base,
         about.get("captivatingIndex", ""),
+        game_id,
     )
 
 
-def fetch_mlb_game(TEAM_ID, date):
+def fetch_events(TEAM_ID, date):
     """
-    Fetch MLB game events for a specific team on a given date (MM/DD/YYYY).
+    Fetch MLB game events for a specific team on a given date (YYYY-MM-DD).
 
     Returns:
-        list: A list of tuples containing (inning, halfInning, event, description, utc, home_team, visiting_team, home_score, visiting_score, outs).
+        list: A list of tuples containing (inning, halfInning, event, description, utc, home_team,
+              visiting_team, home_score, visiting_score, outs, people_on_base, captivatingIndex, game_id).
     """
     s = statsapi.schedule(team=TEAM_ID, start_date=date, end_date=date)
     if not s:
         raise SystemExit(f"No games found for the TEAM_ID={TEAM_ID} on {date}.")
     s.sort(key=lambda g: g["game_date"])
-    finals = [
-        g
-        for g in s
-        if (g.get("status", "").lower() in ("final", "game over", "completed early"))
-    ]
-    gp = (finals[-1] if finals else s[-1])["game_id"]
-    data = fetch_game_data(gp)
-    home_team = (
-        data.get("gameData", {})
-        .get("teams", {})
-        .get("home", {})
-        .get("abbreviation", "")
-    )
-    visiting_team = (
-        data.get("gameData", {})
-        .get("teams", {})
-        .get("away", {})
-        .get("abbreviation", "")
-    )
-    plays = parse_plays(data)
 
     rows = []
-    home_score = 0
-    away_score = 0
-    outs = 0
 
-    for play in plays:
-        rows.append(create_event_row(play, home_team, visiting_team))
+    # Loop through ALL games on that date (handle double headers)
+    for game in s:
+        gp = game["game_id"]
+        data = fetch_game_data(gp)
+        home_team = (
+            data.get("gameData", {})
+            .get("teams", {})
+            .get("home", {})
+            .get("abbreviation", "")
+        )
+        visiting_team = (
+            data.get("gameData", {})
+            .get("teams", {})
+            .get("away", {})
+            .get("abbreviation", "")
+        )
+        plays = parse_plays(data)
 
-        # Ensure the final out of the game is registered as an event
-        if play.get("about", {}).get("isGameEnd"):
-            rows.append(create_event_row(play, home_team, visiting_team))
+        for play in plays:
+            rows.append(create_event_row(play, home_team, visiting_team, gp))
+
+            # Ensure the final out of the game is registered as an event
+            if play.get("about", {}).get("isGameEnd"):
+                rows.append(create_event_row(play, home_team, visiting_team, gp))
 
     return rows
 
 
-def get_game_results(team_acronym, date):
-    """Fetch the final score for the specified team on a given date."""
+def get_team_abbreviation(team_name):
+    """Get the team abbreviation for a given team name."""
+    teams = statsapi.get("teams", {})
+    for team in teams.get("teams", []):
+        if team.get("name", "").lower() == team_name.lower():
+            return team.get("abbreviation", "")
+    return None
+
+
+def fetch_mlb_games(team_acronym, date):
+    """
+    Fetch all game results for the specified team on a given date.
+    Handles potential double headers in the statsapi response by returning a list of tuples.
+
+    Returns:
+        list of tuples in the form:
+        (home_team, visiting_team, home_score, visiting_score, game_id)
+    """
     TEAM_ID = info.get_team_info(team_acronym, "team_id")
     s = statsapi.schedule(team=TEAM_ID, start_date=date, end_date=date)
     if not s:
-        return None
+        return []
+
+    # Sort by game date (should also order double headers correctly)
     s.sort(key=lambda g: g["game_date"])
-    finals = [
-        g
-        for g in s
-        if (g.get("status", "").lower() in ("final", "game over", "completed early"))
-    ]
-    game = finals[-1] if finals else s[-1]
-    return {
-        "home_team": game["home_name_abbrev"],
-        "visiting_team": game["away_name_abbrev"],
-        "home_score": game["home_score"],
-        "visiting_score": game["away_score"],
-    }
+
+    results = []
+    for g in s:
+        # Only include finished or in-progress games we want to track
+        if g.get("status", "").lower() in ("final", "game over", "completed early"):
+            results.append(
+                (
+                    get_team_abbreviation(g["home_name"]),
+                    get_team_abbreviation(g["away_name"]),
+                    g["home_score"],
+                    g["away_score"],
+                    g["game_id"],
+                )
+            )
+
+    # If no finals, still include scheduled/incomplete games
+    if not results:
+        results = [
+            (
+                get_team_abbreviation(g["home_name"]),
+                get_team_abbreviation(g["away_name"]),
+                g["home_score"],
+                g["away_score"],
+                g["game_id"],
+            )
+            for g in s
+        ]
+
+    return results
 
 
 def main():
     team_acronym = "NYM"
     date = "09/14/2025"
     events = fetch_mlb_events(team_acronym, date=date)
-    for event in events:
-        print(event)
+    # for event in events:
+    #     print(event)
+    print(fetch_mlb_games(team_acronym, date))
 
 
 if __name__ == "__main__":

@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from mlb_sentiment.fetch.reddit import fetch_team_game_threads
 from mlb_sentiment.database.reddit import save_posts
 from mlb_sentiment.fetch.mlb import fetch_mlb_events
-from mlb_sentiment.database.mlb import save_game_events
+from mlb_sentiment.database.mlb import save_mlb_events
 from mlb_sentiment.utility import upload_to_azure_blob
 
 
@@ -92,7 +92,7 @@ def upload(
 
     # Save locally
     save_posts(posts, limit=comments_limit, filename=filename, mode=mode)
-    save_game_events(game_events, filename=filename, mode=mode)
+    save_mlb_events(game_events, filename=filename, mode=mode)
 
     # --------------------------
     # Optional Azure upload

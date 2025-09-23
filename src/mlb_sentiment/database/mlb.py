@@ -11,7 +11,86 @@ def get_connection(db_filename: str = "MyDatabase.db"):
     return conn
 
 
-def save_game_events(game_events, filename: str = "MyDatabase", mode: str = "db"):
+def save_mlb_games(games, filename: str = "MyDatabase", mode: str = "db"):
+    """
+    Save MLB game data to either a SQLite database (.db) or a CSV file (.csv).
+
+    Parameters
+    ----------
+    games : list of dicts
+        Each dict represents one game's data.
+    filename : str
+        Base filename (no extension needed, .db or .csv is added automatically).
+    mode : str
+        "db"  -> save into SQLite database
+        "csv" -> save directly into CSV
+    """
+
+    if mode == "db":
+        db_filename = filename if filename.endswith(".db") else filename + ".db"
+        conn = get_connection(db_filename)
+        cursor = conn.cursor()
+
+        # Create the games table
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS games (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                game_id INTEGER,
+                home_team TEXT,
+                away_team TEXT,
+                game_date TEXT,
+                venue TEXT,
+                UNIQUE(game_id)
+            )
+            """
+        )
+
+        # Insert game data into the table
+        for game in games:
+            cursor.execute(
+                """
+                INSERT OR IGNORE INTO games (
+                    game_id, home_team, away_team, game_date, venue
+                )
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    game["game_id"],
+                    game["home_team"],
+                    game["away_team"],
+                    game["game_date"],
+                    game["venue"],
+                ),
+            )
+
+        conn.commit()
+        conn.close()
+        print(f"Saved {len(games)} games into database: {db_filename}")
+
+    elif mode == "csv":
+        csv_filename = filename if filename.endswith(".csv") else filename + ".csv"
+        if ".db" in csv_filename:
+            csv_filename = csv_filename.replace(".db", "")
+
+        # Convert to DataFrame for easy CSV export
+        df = pd.DataFrame(games)
+
+        # Replace commas in all string columns with "..."
+        for col in df.columns:
+            if df[col].dtype == object:
+                df[col] = df[col].astype(str).str.replace(",", "...")
+
+        df.to_csv(csv_filename, index=False, encoding="utf-8")
+        print(f"Saved {len(games)} games into CSV: {csv_filename}")
+
+    else:
+        raise ValueError("Mode must be either 'db' or 'csv'")
+
+    return True
+
+
+def save_mlb_events(game_events, filename: str = "MyDatabase", mode: str = "db"):
     """
     Save game events to either a SQLite database (.db) or a CSV file (.csv),
     and append today's date to each row.
@@ -56,8 +135,9 @@ def save_game_events(game_events, filename: str = "MyDatabase", mode: str = "db"
                 people_on_base INTEGER,
                 captivatingIndex INTEGER,
                 save_date TEXT,
+                game_id INTEGER,
                 UNIQUE(inning, halfInning, event, est, home_team, visiting_team,
-                       home_score, away_score, outs, people_on_base, captivatingIndex, save_date)
+                       home_score, away_score, outs, people_on_base, captivatingIndex, save_date, game_id)
             )
             """
         )
@@ -68,9 +148,9 @@ def save_game_events(game_events, filename: str = "MyDatabase", mode: str = "db"
             INSERT OR IGNORE INTO games (
                 inning, halfInning, event, description, est, home_team,
                 visiting_team, home_score, away_score, outs,
-                people_on_base, captivatingIndex, save_date
+                people_on_base, captivatingIndex, save_date, game_id
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             events_with_date,
         )
@@ -101,6 +181,7 @@ def save_game_events(game_events, filename: str = "MyDatabase", mode: str = "db"
                 "people_on_base",
                 "captivatingIndex",
                 "save_date",
+                "game_id",
             ],
         )
 
