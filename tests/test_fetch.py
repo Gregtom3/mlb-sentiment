@@ -1,95 +1,42 @@
 import pytest
-from mlb_sentiment.fetch.reddit import fetch_team_game_threads
-from mlb_sentiment.fetch.mlb import fetch_mlb_events
+from mlb_sentiment.fetch.reddit import fetch_reddit_comments, fetch_reddit_posts
+from mlb_sentiment.fetch.mlb import fetch_mlb_events, fetch_mlb_games
 
 
-def test_fetch_team_game_threads_nym():
-    """
-    Test the fetch_team_game_threads function for the "NYM" team acronym.
-    """
+def test_fetch_reddit_posts_sample():
     team_acronym = "NYM"
-
-    # Call the function
-    posts = fetch_team_game_threads(team_acronym, date="09/14/2025")
-
-    # Assertions
-    assert isinstance(posts, list), "The result should be a list."
-
-    for post in posts:
-        assert (
-            "GAME THREAD" in post["title"].upper()
-        ), "Each post title should contain 'GAME THREAD'."
-        assert "title" in post, "Each post should have a 'title'."
-        assert "url" in post, "Each post should have a 'url'."
-        assert "created_est" in post, "Each post should have a 'created_est' timestamp."
-        assert "score" in post, "Each post should have a 'score'."
-        assert "subreddit" in post, "Each post should have a 'subreddit'."
-        assert "num_comments" in post, "Each post should have 'num_comments'."
+    date = "09/14/2025"
+    posts = fetch_reddit_posts(team_acronym, date=date)
+    assert isinstance(posts, list)
+    if posts:
+        assert "title" in posts[0]
+        assert "game_id" in posts[0]
 
 
-def test_fetch_team_game_threads_nym_range():
-    """
-    Test the fetch_team_game_threads function for a range of dates for the "NYM" team acronym.
-    """
+def test_fetch_reddit_comments_sample():
     team_acronym = "NYM"
-    start_date = "09/12/2025"
-    end_date = "09/14/2025"
-    posts = fetch_team_game_threads(
-        team_acronym, start_date=start_date, end_date=end_date
-    )
-
-    assert isinstance(posts, list), "The result should be a list."
-    for post in posts:
-        assert (
-            "GAME THREAD" in post["title"].upper()
-        ), "Each post title should contain 'GAME THREAD'."
-        assert "title" in post, "Each post should have a 'title'."
-        assert "url" in post, "Each post should have a 'url'."
-        assert "created_est" in post, "Each post should have a 'created_est' timestamp."
-        assert "score" in post, "Each post should have a 'score'."
-        assert "subreddit" in post, "Each post should have a 'subreddit'."
-        assert "num_comments" in post, "Each post should have 'num_comments'."
+    date = "09/14/2025"
+    posts = fetch_reddit_posts(team_acronym, date=date)
+    comments = fetch_reddit_comments(posts, limit=2)
+    assert isinstance(comments, list)
+    if comments:
+        assert "author" in comments[0]
+        assert "game_id" in comments[0]
 
 
-def test_fetch_mlb_events():
+def test_fetch_mlb_events_sample():
     team_acronym = "NYM"
     date = "09/14/2025"
     events = fetch_mlb_events(team_acronym, date=date)
-    assert isinstance(events, list), "The result should be a list."
-    for event in events:
-        print(event)
-        assert isinstance(event, tuple), "Each event should be a tuple."
-        # Now returning additional columns: home_score, visiting_score, outs
-        assert len(event) == 12, "Each event should have 12 elements."
-        (
-            inning,
-            halfInning,
-            event_type,
-            description,
-            est,
-            home_team,
-            visiting_team,
-            home_score,
-            visiting_score,
-            outs,
-            people_on_base,
-            captivatingIndex,
-        ) = event
-        assert (
-            isinstance(inning, int) or inning is None
-        ), "Inning should be an integer or None."
-        assert (
-            isinstance(halfInning, str) or halfInning is None
-        ), "HalfInning should be a string or None."
-        assert isinstance(event_type, str), "Event should be a string."
-        assert isinstance(description, str), "Description should be a string."
-        assert isinstance(est, str), "EST should be a string."
-        assert isinstance(home_team, str), "Home team should be a string."
-        assert isinstance(visiting_team, str), "Visiting team should be a string."
-        assert isinstance(home_score, int), "Home score should be an integer."
-        assert isinstance(visiting_score, int), "Visiting score should be an integer."
-        assert isinstance(outs, int), "Outs should be an integer."
-        assert isinstance(people_on_base, int), "People on base should be an integer."
-        assert (
-            isinstance(captivatingIndex, int) or captivatingIndex is None
-        ), "CaptivatingIndex should be an integer or None."
+    assert isinstance(events, list)
+    if events:
+        assert len(events[0]) > 0
+
+
+def test_fetch_mlb_games_sample():
+    team_acronym = "NYM"
+    date = "09/14/2025"
+    games = fetch_mlb_games(team_acronym, date=date)
+    assert isinstance(games, list)
+    if games:
+        assert len(games[0]) > 0

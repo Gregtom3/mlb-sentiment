@@ -35,6 +35,8 @@ def fetch_reddit_posts(team_acronym, date=None, start_date=None, end_date=None):
         end_dt = datetime.strptime(end_date, "%m/%d/%Y")
     else:
         start_dt = end_dt = None
+
+    # Collect posts
     for submission in user.submissions.new(limit=MAX_LOOKUP):
         if (
             "GAME THREAD" in submission.title.upper()
@@ -42,7 +44,6 @@ def fetch_reddit_posts(team_acronym, date=None, start_date=None, end_date=None):
             and "POST" not in submission.title.upper()
         ):
             created_est_str = utility.utc_to_est(submission.created_utc)  # returns str
-            # Parse the string to a datetime object
             created_est_dt = datetime.strptime(created_est_str, "%Y-%m-%d %H:%M:%S")
             post_date_str = created_est_dt.strftime("%m/%d/%Y")
             post_dt = datetime.strptime(post_date_str, "%m/%d/%Y")
@@ -61,12 +62,35 @@ def fetch_reddit_posts(team_acronym, date=None, start_date=None, end_date=None):
                         "subreddit": str(submission.subreddit),
                         "team_acronym": team_acronym,
                         "num_comments": submission.num_comments,
+                        "created_est_dt": created_est_dt,
+                        # game_id will be added later
                     }
                 )
             if start_dt and end_dt and post_dt < start_dt:
                 break
             if date and post_date_str < date:
                 break
+
+    # Sort posts chronologically
+    posts.sort(key=lambda p: p["created_est_dt"])
+
+    # Get game_ids for the date/range
+    from mlb_sentiment.fetch.mlb import fetch_game_ids
+
+    if date:
+        game_ids = fetch_game_ids(team_acronym, date=date)
+    elif start_date and end_date:
+        game_ids = fetch_game_ids(
+            team_acronym, start_date=start_date, end_date=end_date
+        )
+    else:
+        game_ids = []
+
+    # Assign game_id to each post (chronologically)
+    for i, post in enumerate(posts):
+        post["game_id"] = game_ids[i] if i < len(game_ids) else None
+        del post["created_est_dt"]  # Remove temp field
+
     return posts
 
 
@@ -85,19 +109,18 @@ def fetch_reddit_comments(posts, limit=5):
     comments = []
     for post in posts:
         post_url = post["url"]
+        game_id = post.get("game_id")
         submission = reddit.submission(url=post_url)
-        # Sort comments by old
         submission.comment_sort = "old"
-        # Ensure all top-level comments are loaded
         submission.comments.replace_more(limit=0)
 
-        # Fetch the top-level comments
         for comment in submission.comments.list()[:limit]:
             comments.append(
                 {
                     "author": str(comment.author),
                     "text": comment.body,
                     "created_utc": comment.created_utc,
+                    "game_id": game_id,
                 }
             )
     return comments

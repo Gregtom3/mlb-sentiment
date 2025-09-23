@@ -141,6 +141,35 @@ def team_record_on_date(team_id, date_str):
     return 0, 0
 
 
+def fetch_game_ids(team_acronym, date=None, start_date=None, end_date=None):
+    """
+    Fetch all game IDs for the specified team on a given date or date range.
+
+    Returns:
+        list: A list of game IDs.
+    """
+    if date:
+        start_date = end_date = date
+    elif not (start_date and end_date):
+        raise ValueError(
+            "You must provide either 'date' or both 'start_date' and 'end_date'."
+        )
+
+    TEAM_ID = info.get_team_info(team_acronym, "team_id")
+    game_ids = []
+    current_date = datetime.strptime(start_date, "%m/%d/%Y")
+    end_dt = datetime.strptime(end_date, "%m/%d/%Y")
+
+    while current_date <= end_dt:
+        date_str = current_date.strftime("%m/%d/%Y")
+        s = statsapi.schedule(team=TEAM_ID, start_date=date_str, end_date=date_str)
+        for g in s:
+            game_ids.append(g["game_id"])
+        current_date += timedelta(days=1)
+
+    return game_ids
+
+
 def fetch_mlb_games(team_acronym, date=None, start_date=None, end_date=None):
     """
     Fetch all game results for the specified team on a given date or date range.

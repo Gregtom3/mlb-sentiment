@@ -64,6 +64,7 @@ def save_reddit_comments(
             # Collect comment info with an ID
             comment_row = {
                 "id": comment_id_counter,
+                "game_id": comment.get("game_id"),
                 "author": comment["author"],
                 "text": format_reddit_text(comment["text"]),
                 "created_est": utility.utc_to_est(comment["created_utc"]),
@@ -107,6 +108,7 @@ def save_reddit_posts(posts, limit=5, filename: str = "MyDatabase", mode: str = 
             # Collect post info with an ID
             post_row = {
                 "id": post_id_counter,
+                "game_id": post["game_id"],
                 "team_acronym": post["team_acronym"].upper(),
                 "post_title": post["title"],
                 "post_url": post["url"],
@@ -137,6 +139,7 @@ def save_comment_to_db(comment, post_id, db_filename: str = "MyDatabase.db"):
         CREATE TABLE IF NOT EXISTS comments (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             post_id INTEGER,
+            game_id INTEGER,
             author TEXT,
             text TEXT,
             created_est TEXT,
@@ -151,11 +154,13 @@ def save_comment_to_db(comment, post_id, db_filename: str = "MyDatabase.db"):
     # Insert comment
     cursor.execute(
         """
-        INSERT OR IGNORE INTO comments (post_id, author, text, created_est, save_date)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT OR IGNORE INTO comments (post_id, game_id, author, text, created_est, save_date)
+        VALUES (?, ?, ?, ?, ?, ?)
         """,
         (
             post_id,
+            comment.get("game_id"),
+            comment["author"],
             comment["author"],
             comment["text"],
             utility.utc_to_est(comment["created_utc"]),
@@ -180,6 +185,7 @@ def save_post_to_db(post, limit=5, db_filename: str = "MyDatabase.db"):
         """
         CREATE TABLE IF NOT EXISTS posts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            game_id INTEGER,
             team_acronym TEXT,
             post_title TEXT,
             post_url TEXT,
@@ -194,6 +200,7 @@ def save_post_to_db(post, limit=5, db_filename: str = "MyDatabase.db"):
         CREATE TABLE IF NOT EXISTS comments (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             post_id INTEGER,
+            game_id INTEGER,
             author TEXT,
             text TEXT,
             created_est TEXT,
@@ -213,8 +220,8 @@ def save_post_to_db(post, limit=5, db_filename: str = "MyDatabase.db"):
     else:
         cursor.execute(
             """
-            INSERT INTO posts (team_acronym, post_title, post_url, created_est, save_date)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO posts (team_acronym, post_title, post_url, created_est, save_date, game_id)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
                 post["team_acronym"].upper(),
@@ -231,11 +238,12 @@ def save_post_to_db(post, limit=5, db_filename: str = "MyDatabase.db"):
     for c in comments:
         cursor.execute(
             """
-            INSERT OR IGNORE INTO comments (post_id, author, text, created_est, save_date)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT OR IGNORE INTO comments (post_id, game_id, author, text, created_est, save_date)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
                 post_id,
+                c.get("game_id"),
                 c["author"],
                 c["text"],
                 utility.utc_to_est(c["created_utc"]),
