@@ -35,21 +35,24 @@ def load_azure_client():
     return {"container": container, "connection_string": connection_string}
 
 
-def load_synapse_client():
+def load_synapse_connection():
     """
-    Loads Azure Synapse configuration from .env and/or GitHub secrets.
+    Loads Azure Synapse Connction from .env and/or GitHub secrets.
     Returns:
-        dict: { 'server': str, 'database': str, 'username': str, 'password': str }
+        pyodbc.Connection: Connection object to Azure Synapse.
     """
+    import pyodbc
+
     server = os.getenv("SYNAPSE_SERVER")
     database = os.getenv("SYNAPSE_DATABASE")
     username = os.getenv("SYNAPSE_USERNAME")
     password = os.getenv("SYNAPSE_PASSWORD")
     if not server or not database or not username or not password:
         raise RuntimeError("Azure Synapse configuration missing in .env or secrets.")
-    return {
-        "server": server,
-        "database": database,
-        "username": username,
-        "password": password,
-    }
+    conn_str = (
+        f"DRIVER={{ODBC Driver 18 for SQL Server}};"
+        f"SERVER={server};DATABASE={database};"
+        f"UID={username};PWD={password};"
+        "Encrypt=yes;TrustServerCertificate=no;"
+    )
+    return pyodbc.connect(conn_str)

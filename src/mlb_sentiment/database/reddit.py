@@ -46,7 +46,6 @@ def save_reddit_comments(comments, limit=5, filename: str = "MyDatabase"):
 
     all_comments = []
     comment_id_counter = 1  # mimic autoincrement ids
-    today = date.today().strftime("%Y-%m-%d")
     for comment in comments:
         # Collect comment info with an ID
         comment_row = {
@@ -55,7 +54,6 @@ def save_reddit_comments(comments, limit=5, filename: str = "MyDatabase"):
             "author": comment["author"],
             "text": format_reddit_text(comment["text"]),
             "created_est": utility.utc_to_est(comment["created_utc"]),
-            "save_date": today,
             "sentiment": comment["sentiment"]["emotion"],
             "sentiment_score": comment["sentiment"]["score"],
         }
@@ -80,7 +78,6 @@ def save_reddit_posts(posts, limit=5, filename: str = "MyDatabase"):
 
     all_posts = []
     post_id_counter = 1  # mimic autoincrement ids
-    today = date.today().strftime("%Y-%m-%d")
     for post in posts:
         # Collect post info with an ID
         post_row = {
@@ -90,7 +87,6 @@ def save_reddit_posts(posts, limit=5, filename: str = "MyDatabase"):
             "post_title": post["title"],
             "post_url": post["url"],
             "created_est": post["created_est"],
-            "save_date": today,
         }
         all_posts.append(post_row)
         post_id_counter += 1

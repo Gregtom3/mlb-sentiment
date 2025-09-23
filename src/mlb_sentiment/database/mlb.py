@@ -45,7 +45,7 @@ def save_mlb_games(games, filename: str = "MyDatabase"):
 
 def save_mlb_events(game_events, filename: str = "MyDatabase"):
     """
-    Save game events to a CSV file (.csv), and append today's date to each row.
+    Save game events to a CSV file (.csv)
 
     Parameters
     ----------
@@ -56,9 +56,6 @@ def save_mlb_events(game_events, filename: str = "MyDatabase"):
     filename : str
         Base filename (no extension needed, .csv is added automatically).
     """
-    # Add today's date to each row
-    today = date.today().strftime("%Y-%m-%d")
-    events_with_date = [row + (today,) for row in game_events]
 
     csv_filename = (
         filename
@@ -70,7 +67,7 @@ def save_mlb_events(game_events, filename: str = "MyDatabase"):
 
     # Convert to DataFrame for easy CSV export
     df = pd.DataFrame(
-        events_with_date,
+        game_events,
         columns=[
             "game_id",
             "inning",
@@ -85,7 +82,6 @@ def save_mlb_events(game_events, filename: str = "MyDatabase"):
             "outs",
             "people_on_base",
             "captivatingIndex",
-            "save_date",
         ],
     )
 
@@ -95,5 +91,5 @@ def save_mlb_events(game_events, filename: str = "MyDatabase"):
             df[col] = df[col].astype(str).str.replace(",", "...")
 
     df.to_csv(csv_filename, index=False, encoding="utf-8")
-    print(f"Saved {len(events_with_date)} events into CSV: {csv_filename}")
+    print(f"Saved {len(game_events)} events into CSV: {csv_filename}")
     return True
