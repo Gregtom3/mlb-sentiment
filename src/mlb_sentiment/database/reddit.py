@@ -4,12 +4,6 @@ from mlb_sentiment import utility
 from datetime import date
 
 
-def get_connection(db_filename: str = "MyDatabase.db"):
-    conn = sqlite3.connect(db_filename, timeout=30.0)
-    conn.execute("PRAGMA journal_mode=WAL;")
-    return conn
-
-
 def format_reddit_text(text):
     """
     Format Reddit text by replacing newlines and commas to ensure CSV compatibility.
