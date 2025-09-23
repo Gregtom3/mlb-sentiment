@@ -1,7 +1,9 @@
 from mlb_sentiment import info
 from mlb_sentiment import config
 from mlb_sentiment import utility
+
 from mlb_sentiment.models.process import get_sentiment, SentimentModelType
+from tqdm import tqdm
 
 
 def fetch_reddit_posts(team_acronym, date=None, start_date=None, end_date=None):
@@ -108,14 +110,26 @@ def fetch_reddit_comments(posts, limit=5, sentiment_model=SentimentModelType.NUL
     """
     reddit = config.load_reddit_client()
     comments = []
-    for post in posts:
+    from tqdm import tqdm
+
+    for post in tqdm(posts, desc="Reddit Posts", position=0):
         post_url = post["url"]
         game_id = post.get("game_id")
         submission = reddit.submission(url=post_url)
         submission.comment_sort = "old"
         submission.comments.replace_more(limit=0)
-
-        for comment in submission.comments.list()[:limit]:
+        if limit > 0:
+            comment_list = submission.comments.list()[:limit]
+        else:
+            comment_list = submission.comments.list()
+        comment_desc = (
+            "Post Comments"
+            if sentiment_model == "null"
+            else f"Post Comments (w/ Sentiment analysis)"
+        )
+        for comment in tqdm(
+            comment_list, desc="Post Comments", leave=False, position=1
+        ):
             comments.append(
                 {
                     "game_id": game_id,

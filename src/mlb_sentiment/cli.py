@@ -90,7 +90,10 @@ def upload(
         click.echo(f"{'Date:':20} {date}")
     if start_date and end_date:
         click.echo(f"{'Date Range:':20} {start_date} → {end_date}")
-    click.echo(f"{'Comments Limit:':20} {comments_limit}")
+    if comments_limit > 0:
+        click.echo(f"{'Comments Limit:':20} {comments_limit}")
+    else:
+        click.echo(f"{'Comments Limit:':20} {comments_limit} (ALL)")
     click.echo(f"{'Output File:':20} {filename}")
     click.echo(f"{'Azure Upload:':20} {'Yes' if azure else 'No'}")
     if azure:
@@ -103,22 +106,27 @@ def upload(
     # --------------------------
     if date:
         posts = fetch_reddit_posts(team_acronym, date=date)
-        comments = fetch_reddit_comments(posts, limit=comments_limit)
+        comments = fetch_reddit_comments(
+            posts,
+            limit=comments_limit,
+            sentiment_model=get_model_from_string(sentiment_model),
+        )
         games = fetch_mlb_games(team_acronym, date=date)
         game_events = fetch_mlb_events(team_acronym, date=date)
 
     elif start_date and end_date:
         posts = fetch_reddit_posts(
-            team_acronym,
-            start_date=start_date,
-            end_date=end_date,
-            sentiment_model=get_model_from_string(sentiment_model),
+            team_acronym, start_date=start_date, end_date=end_date
         )
         games = fetch_mlb_games(team_acronym, start_date=start_date, end_date=end_date)
         game_events = fetch_mlb_events(
             team_acronym, start_date=start_date, end_date=end_date
         )
-        comments = fetch_reddit_comments(posts, limit=comments_limit)
+        comments = fetch_reddit_comments(
+            posts,
+            limit=comments_limit,
+            sentiment_model=get_model_from_string(sentiment_model),
+        )
 
     else:
         click.echo(

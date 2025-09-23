@@ -64,7 +64,7 @@ def save_reddit_comments(comments, limit=5, filename: str = "MyDatabase"):
 
     # Write CSV
     pd.DataFrame(all_comments).to_csv(comments_csv, index=False, encoding="utf-8")
-    print(f"Exported comments to CSV: {comments_csv}")
+    print(f"Saved {len(all_comments)} comments into CSV: {comments_csv}")
 
 
 def save_reddit_posts(posts, limit=5, filename: str = "MyDatabase"):
@@ -97,7 +97,7 @@ def save_reddit_posts(posts, limit=5, filename: str = "MyDatabase"):
 
     # Write CSV
     pd.DataFrame(all_posts).to_csv(posts_csv, index=False, encoding="utf-8")
-    print(f"Exported posts to CSV: {posts_csv}")
+    print(f"Saved {len(all_posts)} posts into CSV: {posts_csv}")
 
 
 ## Removed all database functions and logic
