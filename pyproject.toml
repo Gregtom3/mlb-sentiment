@@ -30,7 +30,7 @@ dev = [
     "flake8-pyproject>=1.2.3",
     "mypy>=1.0.0",
     "streamlit>=1.49.1",
-    "pyodbc>=5.2.0"
+    "sqlalchemy>=2.0.43"
 ]
 
 [tool.flake8]

@@ -1,6 +1,8 @@
 import os
 from dotenv import load_dotenv
 import praw
+from sqlalchemy import create_engine
+from urllib.parse import quote_plus
 
 load_dotenv()
 
@@ -35,24 +37,29 @@ def load_azure_client():
     return {"container": container, "connection_string": connection_string}
 
 
-def load_synapse_connection():
+def load_synapse_engine():
     """
-    Loads Azure Synapse Connction from .env and/or GitHub secrets.
+    Loads Azure Synapse connection parameters from .env and/or GitHub secrets.
     Returns:
-        pyodbc.Connection: Connection object to Azure Synapse.
+        sqlalchemy.Engine: SQLAlchemy engine for Synapse connection.
     """
-    import pyodbc
-
     server = os.getenv("SYNAPSE_SERVER")
     database = os.getenv("SYNAPSE_DATABASE")
     username = os.getenv("SYNAPSE_USERNAME")
     password = os.getenv("SYNAPSE_PASSWORD")
+
     if not server or not database or not username or not password:
         raise RuntimeError("Azure Synapse configuration missing in .env or secrets.")
-    conn_str = (
+
+    odbc_str = (
         f"DRIVER={{ODBC Driver 18 for SQL Server}};"
-        f"SERVER={server};DATABASE={database};"
-        f"UID={username};PWD={password};"
+        f"SERVER={server};"
+        f"DATABASE={database};"
+        f"UID={username};"
+        f"PWD={password};"
         "Encrypt=yes;TrustServerCertificate=no;"
     )
-    return pyodbc.connect(conn_str)
+
+    # URL encode the full ODBC string
+    conn_str = f"mssql+pyodbc:///?odbc_connect={quote_plus(odbc_str)}"
+    return create_engine(conn_str)
