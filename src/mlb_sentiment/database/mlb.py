@@ -24,6 +24,7 @@ def save_mlb_games(games, filename: str = "MyDatabase"):
         games,
         columns=[
             "game_id",
+            "game_date",
             "home_team",
             "away_team",
             "home_score",
@@ -84,6 +85,9 @@ def save_mlb_events(game_events, filename: str = "MyDatabase"):
             "captivatingIndex",
         ],
     )
+    # Add an autoincrementing column for event_id
+    df.index.name = "event_id"
+    df.reset_index(inplace=True)
 
     # Replace commas in all string columns with "..."
     for col in df.columns:

@@ -211,6 +211,7 @@ def fetch_mlb_games(team_acronym, date=None, start_date=None, end_date=None):
                 results.append(
                     (
                         f"{TEAM_ID}{g['game_id']}",
+                        date_str,
                         get_team_abbreviation(g["home_name"]),
                         get_team_abbreviation(g["away_name"]),
                         g["home_score"],
@@ -226,6 +227,7 @@ def fetch_mlb_games(team_acronym, date=None, start_date=None, end_date=None):
             results = [
                 (
                     f"{TEAM_ID}{g['game_id']}",
+                    date_str,
                     get_team_abbreviation(g["home_name"]),
                     get_team_abbreviation(g["away_name"]),
                     g["home_score"],
