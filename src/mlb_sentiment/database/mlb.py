@@ -134,10 +134,10 @@ def save_mlb_events(game_events, filename: str = "MyDatabase", mode: str = "db")
                 outs INTEGER,
                 people_on_base INTEGER,
                 captivatingIndex INTEGER,
-                save_date TEXT,
                 game_id INTEGER,
+                save_date TEXT,
                 UNIQUE(inning, halfInning, event, est, home_team, visiting_team,
-                       home_score, away_score, outs, people_on_base, captivatingIndex, save_date, game_id)
+                       home_score, away_score, outs, people_on_base, captivatingIndex, game_id, save_date)
             )
             """
         )
@@ -148,7 +148,7 @@ def save_mlb_events(game_events, filename: str = "MyDatabase", mode: str = "db")
             INSERT OR IGNORE INTO games (
                 inning, halfInning, event, description, est, home_team,
                 visiting_team, home_score, away_score, outs,
-                people_on_base, captivatingIndex, save_date, game_id
+                people_on_base, captivatingIndex, game_id, save_date
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
@@ -180,8 +180,8 @@ def save_mlb_events(game_events, filename: str = "MyDatabase", mode: str = "db")
                 "outs",
                 "people_on_base",
                 "captivatingIndex",
-                "save_date",
                 "game_id",
+                "save_date",
             ],
         )
 
