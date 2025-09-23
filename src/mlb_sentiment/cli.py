@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 
 from mlb_sentiment.fetch.reddit import fetch_reddit_posts, fetch_reddit_comments
 from mlb_sentiment.database.reddit import save_reddit_posts, save_reddit_comments
-from mlb_sentiment.fetch.mlb import fetch_mlb_events
-from mlb_sentiment.database.mlb import save_mlb_events
+from mlb_sentiment.fetch.mlb import fetch_mlb_events, fetch_mlb_games
+from mlb_sentiment.database.mlb import save_mlb_events, save_mlb_games
 from mlb_sentiment.utility import upload_to_azure_blob
 
 
@@ -77,15 +77,19 @@ def upload(
     if date:
         posts = fetch_reddit_posts(team_acronym, date=date)
         comments = fetch_reddit_comments(posts, limit=comments_limit)
+        games = fetch_mlb_games(team_acronym, date=date)
         game_events = fetch_mlb_events(team_acronym, date=date)
+
     elif start_date and end_date:
         posts = fetch_team_game_threads(
             team_acronym, start_date=start_date, end_date=end_date
         )
+        games = fetch_mlb_games(team_acronym, start_date=start_date, end_date=end_date)
         game_events = fetch_mlb_events(
             team_acronym, start_date=start_date, end_date=end_date
         )
         comments = fetch_reddit_comments(posts, limit=comments_limit)
+
     else:
         click.echo(
             "You must provide either --date or both --start-date and --end-date."
@@ -96,7 +100,7 @@ def upload(
     save_reddit_posts(posts, limit=comments_limit, filename=filename, mode=mode)
     save_reddit_comments(comments, limit=comments_limit, filename=filename, mode=mode)
     save_mlb_events(game_events, filename=filename, mode=mode)
-
+    save_mlb_games(games, filename=filename, mode=mode)
     # --------------------------
     # Optional Azure upload
     # --------------------------
@@ -127,9 +131,15 @@ def upload(
         # MLB
         mlb_blob = create_blob_name("mlb", team_acronym, mode, save_date)
         upload_to_azure_blob(
-            filename,
+            filename + "_games.csv",
             mlb_blob,
-            subdirectory="passiveDatabase/mlb",
+            subdirectory="passiveDatabase/games",
+            remove_local=not keep_local,
+        )
+        upload_to_azure_blob(
+            filename + "_game_events.csv",
+            mlb_blob,
+            subdirectory="passiveDatabase/gameEvents",
             remove_local=not keep_local,
         )
         click.echo(f"\t MLB blob name: {mlb_blob}")

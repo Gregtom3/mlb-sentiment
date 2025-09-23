@@ -39,8 +39,10 @@ def save_mlb_games(games, filename: str = "MyDatabase", mode: str = "db"):
                 game_id INTEGER,
                 home_team TEXT,
                 away_team TEXT,
-                game_date TEXT,
-                venue TEXT,
+                home_score INTEGER,
+                away_score INTEGER,
+                wins INTEGER,
+                losses INTEGER,
                 UNIQUE(game_id)
             )
             """
@@ -51,16 +53,18 @@ def save_mlb_games(games, filename: str = "MyDatabase", mode: str = "db"):
             cursor.execute(
                 """
                 INSERT OR IGNORE INTO games (
-                    game_id, home_team, away_team, game_date, venue
+                    game_id, home_team, away_team, home_score, away_score, wins, losses
                 )
-                VALUES (?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?)
                 """,
                 (
                     game["game_id"],
                     game["home_team"],
                     game["away_team"],
-                    game["game_date"],
-                    game["venue"],
+                    game["home_score"],
+                    game["away_score"],
+                    game["wins"],
+                    game["losses"],
                 ),
             )
 
@@ -69,12 +73,25 @@ def save_mlb_games(games, filename: str = "MyDatabase", mode: str = "db"):
         print(f"Saved {len(games)} games into database: {db_filename}")
 
     elif mode == "csv":
-        csv_filename = filename if filename.endswith(".csv") else filename + ".csv"
+        csv_filename = (
+            filename if filename.endswith("_games.csv") else filename + "_games.csv"
+        )
         if ".db" in csv_filename:
             csv_filename = csv_filename.replace(".db", "")
 
         # Convert to DataFrame for easy CSV export
-        df = pd.DataFrame(games)
+        df = pd.DataFrame(
+            games,
+            columns=[
+                "game_id",
+                "home_team",
+                "away_team",
+                "home_score",
+                "away_score",
+                "wins",
+                "losses",
+            ],
+        )
 
         # Replace commas in all string columns with "..."
         for col in df.columns:
@@ -122,6 +139,7 @@ def save_mlb_events(game_events, filename: str = "MyDatabase", mode: str = "db")
             """
             CREATE TABLE IF NOT EXISTS games (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                game_id INTEGER,
                 inning INTEGER,
                 halfInning TEXT,
                 event TEXT,
@@ -134,10 +152,9 @@ def save_mlb_events(game_events, filename: str = "MyDatabase", mode: str = "db")
                 outs INTEGER,
                 people_on_base INTEGER,
                 captivatingIndex INTEGER,
-                game_id INTEGER,
                 save_date TEXT,
-                UNIQUE(inning, halfInning, event, est, home_team, visiting_team,
-                       home_score, away_score, outs, people_on_base, captivatingIndex, game_id, save_date)
+                UNIQUE(game_id, inning, halfInning, event, est, home_team, visiting_team,
+                       home_score, away_score, outs, people_on_base, captivatingIndex, save_date)
             )
             """
         )
@@ -146,9 +163,9 @@ def save_mlb_events(game_events, filename: str = "MyDatabase", mode: str = "db")
         cursor.executemany(
             """
             INSERT OR IGNORE INTO games (
-                inning, halfInning, event, description, est, home_team,
+                game_id, inning, halfInning, event, description, est, home_team,
                 visiting_team, home_score, away_score, outs,
-                people_on_base, captivatingIndex, game_id, save_date
+                people_on_base, captivatingIndex, save_date
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
@@ -160,7 +177,11 @@ def save_mlb_events(game_events, filename: str = "MyDatabase", mode: str = "db")
         print(f"Saved {len(events_with_date)} events into database: {db_filename}")
 
     elif mode == "csv":
-        csv_filename = filename if filename.endswith(".csv") else filename + ".csv"
+        csv_filename = (
+            filename
+            if filename.endswith("_game_events.csv")
+            else filename + "_game_events.csv"
+        )
         if ".db" in csv_filename:
             csv_filename = csv_filename.replace(".db", "")
 
@@ -168,6 +189,7 @@ def save_mlb_events(game_events, filename: str = "MyDatabase", mode: str = "db")
         df = pd.DataFrame(
             events_with_date,
             columns=[
+                "game_id",
                 "inning",
                 "halfInning",
                 "event",
@@ -180,7 +202,6 @@ def save_mlb_events(game_events, filename: str = "MyDatabase", mode: str = "db")
                 "outs",
                 "people_on_base",
                 "captivatingIndex",
-                "game_id",
                 "save_date",
             ],
         )
