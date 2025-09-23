@@ -16,7 +16,6 @@ def load_reddit_client():
         user_agent=REDDIT_USER_AGENT,
     )
 
-
 def load_azure_client():
     """
     Loads Azure Blob Storage configuration from .env and/or GitHub secrets.
@@ -33,3 +32,24 @@ def load_azure_client():
             "Azure Blob Storage configuration missing in .env or secrets."
         )
     return {"container": container, "connection_string": connection_string}
+
+def load_synapse_client():
+    """
+    Loads Azure Synapse configuration from .env and/or GitHub secrets.
+    Returns:
+        dict: { 'server': str, 'database': str, 'username': str, 'password': str }
+    """
+    server = os.getenv("SYNAPSE_SERVER")
+    database = os.getenv("SYNAPSE_DATABASE")
+    username = os.getenv("SYNAPSE_USERNAME")
+    password = os.getenv("SYNAPSE_PASSWORD")
+    if not server or not database or not username or not password:
+        raise RuntimeError(
+            "Azure Synapse configuration missing in .env or secrets."
+        )
+    return {
+        "server": server,
+        "database": database,
+        "username": username,
+        "password": password,
+    }
