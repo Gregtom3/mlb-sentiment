@@ -61,7 +61,7 @@ def upload_reddit(
 ):
     """Fetches and saves MLB game threads for a given team, by date or date range."""
     if yesterday:
-        date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+        date = (datetime.now() - timedelta(days=1)).strftime("%Y/%m/%d")
     save_date = datetime.now().strftime("%Y-%m-%d")
     # Infer mode from file extension
     mode = "csv" if filename.endswith(".csv") else "db"
