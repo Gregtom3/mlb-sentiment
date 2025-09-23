@@ -51,14 +51,14 @@ def get_people_on_base(play):
     return len(unique_runners)
 
 
-def create_event_row(play, home_team, visiting_team, game_id):
+def create_event_row(play, home_team, visiting_team, game_id, TEAM_ID):
     """Create a single event row from play data."""
     about = play.get("about", {})
     result = play.get("result", {})
     count = play.get("count", {})
     people_on_base = get_people_on_base(play)
     return (
-        game_id,
+        f"{TEAM_ID}{game_id}",
         about.get("inning"),
         about.get("halfInning"),
         result.get("event", ""),
@@ -109,11 +109,13 @@ def fetch_events(TEAM_ID, date):
         plays = parse_plays(data)
 
         for play in plays:
-            rows.append(create_event_row(play, home_team, visiting_team, gp))
+            rows.append(create_event_row(play, home_team, visiting_team, gp, TEAM_ID))
 
             # Ensure the final out of the game is registered as an event
             if play.get("about", {}).get("isGameEnd"):
-                rows.append(create_event_row(play, home_team, visiting_team, gp))
+                rows.append(
+                    create_event_row(play, home_team, visiting_team, gp, TEAM_ID)
+                )
 
     return rows
 
@@ -208,7 +210,7 @@ def fetch_mlb_games(team_acronym, date=None, start_date=None, end_date=None):
                 wins, losses = team_record_on_date(TEAM_ID, date_str)
                 results.append(
                     (
-                        g["game_id"],
+                        f"{TEAM_ID}{g['game_id']}",
                         get_team_abbreviation(g["home_name"]),
                         get_team_abbreviation(g["away_name"]),
                         g["home_score"],
@@ -223,11 +225,11 @@ def fetch_mlb_games(team_acronym, date=None, start_date=None, end_date=None):
             wins, losses = team_record_on_date(TEAM_ID, date_str)
             results = [
                 (
+                    f"{TEAM_ID}{g['game_id']}",
                     get_team_abbreviation(g["home_name"]),
                     get_team_abbreviation(g["away_name"]),
                     g["home_score"],
                     g["away_score"],
-                    g["game_id"],
                     wins,
                     losses,
                 )
