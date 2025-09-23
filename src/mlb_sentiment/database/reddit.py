@@ -24,10 +24,16 @@ def format_reddit_text(text):
     if not isinstance(text, str):
         text = str(text)
     text = (
-        text.replace("\n", " ").replace("\r", " ").replace(",", " ").replace("* ", " ")
+        text.replace("\n", " ")
+        .replace("\r", " ")
+        .replace(",", " ")
+        .replace("*", "")
+        .replace("#", "")
     )
     if len(text) > 255:
         text = text[:255] + "..."
+    # Remove non-ASCII characters
+    text = "".join([c if ord(c) < 128 else " " for c in text])
     return text
 
 
