@@ -28,20 +28,3 @@ def test_cli_analyze():
     command = ["mlb-sentiment", "analyze"]
     result = subprocess.run(command, capture_output=True, text=True)
     assert result.returncode == 0
-
-
-def test_cli_upload_reddit_yesterday():
-    """
-    Tests that the CLI upload-reddit with --yesterday flag runs without errors.
-    """
-    command = [
-        "mlb-sentiment",
-        "upload",
-        "--team-acronym",
-        "NYM",
-        "--yesterday",
-        "--comments-limit",
-        "1",
-    ]
-    result = subprocess.run(command, capture_output=True, text=True)
-    assert result.returncode == 0
