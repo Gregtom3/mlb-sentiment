@@ -144,7 +144,7 @@ def team_record_on_date(team_id, date_str):
 def fetch_game_ids(team_acronym, date=None, start_date=None, end_date=None):
     """
     Fetch all game IDs for the specified team on a given date or date range.
-    NOTE: We append the team
+    NOTE: We prepend the team_id to the game_id to ensure uniqueness in team_acronym lookups
     Returns:
         list: A list of game IDs.
     """
@@ -164,7 +164,7 @@ def fetch_game_ids(team_acronym, date=None, start_date=None, end_date=None):
         date_str = current_date.strftime("%m/%d/%Y")
         s = statsapi.schedule(team=TEAM_ID, start_date=date_str, end_date=date_str)
         for g in s:
-            game_ids.append(g["game_id"])
+            game_ids.append(f"{TEAM_ID}{g['game_id']}")
         current_date += timedelta(days=1)
 
     return game_ids

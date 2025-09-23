@@ -81,7 +81,7 @@ def upload(
         game_events = fetch_mlb_events(team_acronym, date=date)
 
     elif start_date and end_date:
-        posts = fetch_team_game_threads(
+        posts = fetch_reddit_posts(
             team_acronym, start_date=start_date, end_date=end_date
         )
         games = fetch_mlb_games(team_acronym, start_date=start_date, end_date=end_date)

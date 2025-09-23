@@ -175,7 +175,7 @@ def save_comment_to_db(comment, post_id, db_filename: str = "MyDatabase.db"):
 
 def save_post_to_db(post, limit=5, db_filename: str = "MyDatabase.db"):
     """
-    Save a Reddit post and its top-level comments to the SQLite database.
+    Save a Reddit post to the SQLite database.
     """
     conn = get_connection(db_filename)
     cursor = conn.cursor()
@@ -233,24 +233,6 @@ def save_post_to_db(post, limit=5, db_filename: str = "MyDatabase.db"):
         )
         post_id = cursor.lastrowid
 
-    # Insert comments
-    comments = fetch_post_comments(post["url"], limit=limit)
-    for c in comments:
-        cursor.execute(
-            """
-            INSERT OR IGNORE INTO comments (post_id, game_id, author, text, created_est, save_date)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            (
-                post_id,
-                c.get("game_id"),
-                c["author"],
-                c["text"],
-                utility.utc_to_est(c["created_utc"]),
-                today,
-            ),
-        )
-
     conn.commit()
     conn.close()
-    print(f"Saved post '{post.get('title')}' and comments to database ({db_filename}).")
+    print(f"Saved post '{post.get('title')}'")
