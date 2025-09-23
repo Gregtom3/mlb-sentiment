@@ -3,7 +3,7 @@ from mlb_sentiment import config
 from mlb_sentiment import utility
 
 
-def fetch_team_game_threads(team_acronym, date=None, start_date=None, end_date=None):
+def fetch_reddit_posts(team_acronym, date=None, start_date=None, end_date=None):
     """
     Fetch game thread posts made by the specified team's game thread user for a specific date (MM/DD/YYYY)
     or for a date range (start_date to end_date, both MM/DD/YYYY).
@@ -70,34 +70,36 @@ def fetch_team_game_threads(team_acronym, date=None, start_date=None, end_date=N
     return posts
 
 
-def fetch_post_comments(post_url, limit=5):
+def fetch_reddit_comments(posts, limit=5):
     """
     Fetch a limited number of top-level comments for a given Reddit post.
 
     Args:
-        post_url (str): The URL of the Reddit post.
+        posts (list): A list of post dictionaries as returned by fetch_reddit_posts.
         limit (int): The maximum number of top-level comments to fetch.
 
     Returns:
         list: A list of dictionaries containing comment details.
     """
     reddit = config.load_reddit_client()
-    submission = reddit.submission(url=post_url)
-    # Sort comments by old
-    submission.comment_sort = "old"
-    # Ensure all top-level comments are loaded
-    submission.comments.replace_more(limit=0)
-
-    # Fetch the top-level comments
     comments = []
-    for comment in submission.comments.list()[:limit]:
-        comments.append(
-            {
-                "author": str(comment.author),
-                "text": comment.body,
-                "created_utc": comment.created_utc,
-            }
-        )
+    for post in posts:
+        post_url = post["url"]
+        submission = reddit.submission(url=post_url)
+        # Sort comments by old
+        submission.comment_sort = "old"
+        # Ensure all top-level comments are loaded
+        submission.comments.replace_more(limit=0)
+
+        # Fetch the top-level comments
+        for comment in submission.comments.list()[:limit]:
+            comments.append(
+                {
+                    "author": str(comment.author),
+                    "text": comment.body,
+                    "created_utc": comment.created_utc,
+                }
+            )
     return comments
 
 

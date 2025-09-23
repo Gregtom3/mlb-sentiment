@@ -3,8 +3,6 @@ import os
 import pandas as pd
 from mlb_sentiment import config
 from mlb_sentiment import utility
-from mlb_sentiment.fetch.reddit import fetch_post_comments
-from mlb_sentiment.fetch.reddit import fetch_team_game_threads
 from datetime import date
 
 
@@ -35,12 +33,59 @@ def format_reddit_text(text):
     return text
 
 
-def save_posts(posts, limit=5, filename: str = "MyDatabase", mode: str = "db"):
+def save_reddit_comments(
+    comments, limit=5, filename: str = "MyDatabase", mode: str = "db"
+):
     """
-    Save multiple Reddit posts and their top-level comments to either a DB or CSV.
+    Save multiple Reddit comments to either a DB or CSV.
 
     Args:
-        posts (list): A list of dictionaries (from fetch_team_game_threads).
+        comments (list): A list of dictionaries (from fetch_reddit_comments).
+        limit (int): Number of top-level comments to save per post.
+        filename (str): Base filename (extension auto-added).
+        mode (str): 'db' (SQLite) or 'csv' (flat files).
+    """
+    if mode == "db":
+        db_filename = filename if filename.endswith(".db") else filename + ".db"
+        for comment in comments:
+            save_comment_to_db(comment, post_id=None, db_filename=db_filename)
+
+    elif mode == "csv":
+        comments_csv = (
+            filename
+            if filename.endswith("_comments.csv")
+            else filename + "_comments.csv"
+        )
+
+        all_comments = []
+        comment_id_counter = 1  # mimic autoincrement ids
+        today = date.today().strftime("%Y-%m-%d")
+        for comment in comments:
+            # Collect comment info with an ID
+            comment_row = {
+                "id": comment_id_counter,
+                "author": comment["author"],
+                "text": format_reddit_text(comment["text"]),
+                "created_est": utility.utc_to_est(comment["created_utc"]),
+                "save_date": today,
+            }
+            all_comments.append(comment_row)
+            comment_id_counter += 1
+
+        # Write CSV
+        pd.DataFrame(all_comments).to_csv(comments_csv, index=False, encoding="utf-8")
+        print(f"Exported comments to CSV: {comments_csv}")
+
+    else:
+        raise ValueError("Mode must be either 'db' or 'csv'")
+
+
+def save_reddit_posts(posts, limit=5, filename: str = "MyDatabase", mode: str = "db"):
+    """
+    Save multiple Reddit posts to either a DB or CSV.
+
+    Args:
+        posts (list): A list of dictionaries (from fetch_reddit_posts).
         limit (int): Number of top-level comments to save per post.
         filename (str): Base filename (extension auto-added).
         mode (str): 'db' (SQLite) or 'csv' (flat files).
@@ -54,14 +99,8 @@ def save_posts(posts, limit=5, filename: str = "MyDatabase", mode: str = "db"):
         posts_csv = (
             filename if filename.endswith("_posts.csv") else filename + "_posts.csv"
         )
-        comments_csv = (
-            filename
-            if filename.endswith("_comments.csv")
-            else filename + "_comments.csv"
-        )
 
         all_posts = []
-        all_comments = []
         post_id_counter = 1  # mimic autoincrement ids
         today = date.today().strftime("%Y-%m-%d")
         for post in posts:
@@ -75,31 +114,58 @@ def save_posts(posts, limit=5, filename: str = "MyDatabase", mode: str = "db"):
                 "save_date": today,
             }
             all_posts.append(post_row)
-
-            # Fetch and collect comments
-            comments = fetch_post_comments(post["url"], limit=limit)
-            for c in comments:
-                all_comments.append(
-                    {
-                        "id": None,  # will be auto-assigned if DB, leave None in CSV
-                        "post_id": post_id_counter,
-                        "author": c["author"],
-                        "text": format_reddit_text(c["text"]),
-                        "created_est": utility.utc_to_est(c["created_utc"]),
-                        "save_date": today,
-                    }
-                )
-
             post_id_counter += 1
 
         # Write both CSVs
         pd.DataFrame(all_posts).to_csv(posts_csv, index=False, encoding="utf-8")
-        pd.DataFrame(all_comments).to_csv(comments_csv, index=False, encoding="utf-8")
         print(f"Exported posts to CSV: {posts_csv}")
-        print(f"Exported comments to CSV: {comments_csv}")
 
     else:
         raise ValueError("Mode must be either 'db' or 'csv'")
+
+
+def save_comment_to_db(comment, post_id, db_filename: str = "MyDatabase.db"):
+    """
+    Save a single Reddit comment to the SQLite database.
+    """
+    conn = get_connection(db_filename)
+    cursor = conn.cursor()
+    today = date.today().strftime("%Y-%m-%d")
+    # Create comments table if not exist
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS comments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            post_id INTEGER,
+            author TEXT,
+            text TEXT,
+            created_est TEXT,
+            save_date TEXT,
+            FOREIGN KEY (post_id) REFERENCES posts (id),
+            UNIQUE(author, created_est, save_date)
+        )
+        """
+    )
+    conn.commit()
+
+    # Insert comment
+    cursor.execute(
+        """
+        INSERT OR IGNORE INTO comments (post_id, author, text, created_est, save_date)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (
+            post_id,
+            comment["author"],
+            comment["text"],
+            utility.utc_to_est(comment["created_utc"]),
+            today,
+        ),
+    )
+
+    conn.commit()
+    conn.close()
+    print(f"Saved comment by '{comment.get('author')}' to database ({db_filename}).")
 
 
 def save_post_to_db(post, limit=5, db_filename: str = "MyDatabase.db"):

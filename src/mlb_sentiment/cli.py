@@ -2,8 +2,8 @@ import click
 import os
 from datetime import datetime, timedelta
 
-from mlb_sentiment.fetch.reddit import fetch_team_game_threads
-from mlb_sentiment.database.reddit import save_posts
+from mlb_sentiment.fetch.reddit import fetch_reddit_posts, fetch_reddit_comments
+from mlb_sentiment.database.reddit import save_reddit_posts, save_reddit_comments
 from mlb_sentiment.fetch.mlb import fetch_mlb_events
 from mlb_sentiment.database.mlb import save_mlb_events
 from mlb_sentiment.utility import upload_to_azure_blob
@@ -75,7 +75,8 @@ def upload(
     # Fetch Reddit posts
     # --------------------------
     if date:
-        posts = fetch_team_game_threads(team_acronym, date=date)
+        posts = fetch_reddit_posts(team_acronym, date=date)
+        comments = fetch_reddit_comments(posts, limit=comments_limit)
         game_events = fetch_mlb_events(team_acronym, date=date)
     elif start_date and end_date:
         posts = fetch_team_game_threads(
@@ -84,6 +85,7 @@ def upload(
         game_events = fetch_mlb_events(
             team_acronym, start_date=start_date, end_date=end_date
         )
+        comments = fetch_reddit_comments(posts, limit=comments_limit)
     else:
         click.echo(
             "You must provide either --date or both --start-date and --end-date."
@@ -91,7 +93,8 @@ def upload(
         return
 
     # Save locally
-    save_posts(posts, limit=comments_limit, filename=filename, mode=mode)
+    save_reddit_posts(posts, limit=comments_limit, filename=filename, mode=mode)
+    save_reddit_comments(comments, limit=comments_limit, filename=filename, mode=mode)
     save_mlb_events(game_events, filename=filename, mode=mode)
 
     # --------------------------
