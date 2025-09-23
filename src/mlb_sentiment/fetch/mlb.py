@@ -121,6 +121,27 @@ def fetch_mlb_game(TEAM_ID, date):
     return rows
 
 
+def get_game_results(team_acronym, date):
+    """Fetch the final score for the specified team on a given date."""
+    TEAM_ID = info.get_team_info(team_acronym, "team_id")
+    s = statsapi.schedule(team=TEAM_ID, start_date=date, end_date=date)
+    if not s:
+        return None
+    s.sort(key=lambda g: g["game_date"])
+    finals = [
+        g
+        for g in s
+        if (g.get("status", "").lower() in ("final", "game over", "completed early"))
+    ]
+    game = finals[-1] if finals else s[-1]
+    return {
+        "home_team": game["home_name_abbrev"],
+        "visiting_team": game["away_name_abbrev"],
+        "home_score": game["home_score"],
+        "visiting_score": game["away_score"],
+    }
+
+
 def main():
     team_acronym = "NYM"
     date = "09/14/2025"

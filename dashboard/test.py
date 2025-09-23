@@ -9,6 +9,7 @@ DATABASE = synapse_config["database"]
 USERNAME = synapse_config["username"]
 PASSWORD = synapse_config["password"]
 
+
 def get_connection():
     conn_str = (
         f"DRIVER={{ODBC Driver 18 for SQL Server}};"
@@ -17,6 +18,7 @@ def get_connection():
         "Encrypt=yes;TrustServerCertificate=no;"
     )
     return pyodbc.connect(conn_str)
+
 
 st.title("MLB Data Dashboard (via Synapse View)")
 
