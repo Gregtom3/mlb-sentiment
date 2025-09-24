@@ -32,6 +32,7 @@ dev = [
     "streamlit>=1.49.1",
     "sqlalchemy>=2.0.43",
     "streamlit-plotly-events>=0.0.6"
+    "pyodbc>=5.2.0"
 ]
 
 [tool.flake8]
