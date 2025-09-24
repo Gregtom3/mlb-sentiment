@@ -5,21 +5,21 @@ from plotly.subplots import make_subplots
 from streamlit_plotly_events import plotly_events
 from compute import compute_sentiment_ts
 
-
 def render_sentiment_widget(comments_df: pd.DataFrame):
     """
     Renders the sentiment-over-time chart and interactive comments table.
     Expects comments_df to have ['created_est', 'author', 'sentiment_score', 'text'].
     Expects sentiment_ts to have ['created_est', 'sentiment_smooth'].
     """
-    css = """
-.st-key-my_custom_container {
-	background-color: #ADD8E6; /* Light blue background */
+
+
+    container_css = """
+.st-key-sentiment-container {
+	background-color: #FFFFFF; /* White background */
 }
 	"""
-    st.html(f"<style>{css}</style>")
-
-    with st.container(border=True, key="my_custom_container"):
+    st.html(f"<style>{container_css}</style>")
+    with st.container(border=True, key="sentiment-container"):
         # Defensive: ensure we have a DataFrame and the expected column
         if comments_df is None or comments_df.empty:
             st.info(
@@ -92,8 +92,8 @@ def render_sentiment_widget(comments_df: pd.DataFrame):
         fig.update_layout(
             width=1000,
             barmode="overlay",
-            plot_bgcolor="rgba(240,240,240,0.95)",
-            paper_bgcolor="rgba(0,0,0,0)",  # outer background (transparent)
+            #plot_bgcolor="rgba(240,240,240,0.95)",
+            #paper_bgcolor="rgba(0,0,0,0)",  # outer background (transparent)
         )
         fig.update_yaxes(title_text="Sentiment", secondary_y=False)
         fig.update_yaxes(title_text="Comment count", secondary_y=True)

@@ -9,6 +9,7 @@ from streamlit_plotly_events import plotly_events
 from streamlit_date_picker import date_picker, PickerType
 from datetime import datetime
 from widgets.sentiment_chart import render_sentiment_widget
+from widgets.data_summary import data_summary
 
 st.set_page_config(layout="wide")
 
@@ -20,7 +21,7 @@ st.title("MLB Pulse Dashboard")
 # -------------------
 game_date = st.sidebar.date_input(
     "Select a game date",
-    value=pd.to_datetime("2025-09-14"),
+    value=pd.to_datetime("2025-09-21"),
 )
 
 # Initialize engine
@@ -58,9 +59,16 @@ events_df = load_events(selected_game_id, engine)
 comments_df = load_comments(selected_game_id, engine)
 
 # -------------------
+# Render the data summary metrics
+# -------------------
+data_summary(comments_df, games_df, events_df)
+
+# -------------------
 # Render the sentiment widget
 # -------------------
-render_sentiment_widget(comments_df)
+col0, col00 = st.columns(2)
+with col0:
+    render_sentiment_widget(comments_df)
 
 # Two simple placeholder widgets (y=x^2 and y=x^3)
 col1, col2 = st.columns(2)
