@@ -72,8 +72,8 @@ def render_sentiment_widget(comments_df: pd.DataFrame):
         fig.update_layout(
             width=1000,
             barmode="overlay",
-			plot_bgcolor='rgba(240,240,240,0.95)',
-			paper_bgcolor="rgba(0,0,0,0)" # outer background (transparent)
+            plot_bgcolor="rgba(240,240,240,0.95)",
+            paper_bgcolor="rgba(0,0,0,0)",  # outer background (transparent)
         )
         fig.update_yaxes(title_text="Sentiment", secondary_y=False)
         fig.update_yaxes(title_text="Comment count", secondary_y=True)

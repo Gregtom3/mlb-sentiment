@@ -6,19 +6,16 @@ from mlb_sentiment.models.process import get_sentiment, SentimentModelType
 from tqdm import tqdm
 
 
-def fetch_reddit_posts(team_acronym, date=None, start_date=None, end_date=None):
+def fetch_reddit_posts(team_acronym, date=None):
     """
-    Fetch game thread posts made by the specified team's game thread user for a specific date (MM/DD/YYYY)
-    or for a date range (start_date to end_date, both MM/DD/YYYY).
+    Fetch game thread posts made by the specified team's game thread user for a specific date (MM/DD/YYYY).
 
     Args:
         team_acronym (str): Acronym of the MLB team (e.g., "NYM" for New York Mets).
         date (str, optional): Date in MM/DD/YYYY format to filter posts.
-        start_date (str, optional): Start date in MM/DD/YYYY format for range filtering.
-        end_date (str, optional): End date in MM/DD/YYYY format for range filtering.
 
     Returns:
-        list: A list of dictionaries containing game thread post details for the specified date or range.
+        list: A list of dictionaries containing game thread post details for the specified date.
     """
 
     MAX_LOOKUP = 1000
@@ -32,10 +29,9 @@ def fetch_reddit_posts(team_acronym, date=None, start_date=None, end_date=None):
     from datetime import datetime
 
     posts = []
-    # Parse date range if provided
-    if start_date and end_date:
-        start_dt = datetime.strptime(start_date, "%m/%d/%Y")
-        end_dt = datetime.strptime(end_date, "%m/%d/%Y")
+    # Parse date if provided
+    if date:
+        start_dt = end_dt = datetime.strptime(date, "%m/%d/%Y")
     else:
         start_dt = end_dt = None
 
@@ -53,8 +49,8 @@ def fetch_reddit_posts(team_acronym, date=None, start_date=None, end_date=None):
             match = False
             if date:
                 match = post_date_str == date
-            elif start_dt and end_dt:
-                match = start_dt <= post_dt <= end_dt
+            else:
+                match = False
             if match:
                 posts.append(
                     {
@@ -69,9 +65,7 @@ def fetch_reddit_posts(team_acronym, date=None, start_date=None, end_date=None):
                         # game_id will be added later
                     }
                 )
-            if start_dt and end_dt and post_dt < start_dt:
-                break
-            if date and post_date_str < date:
+            if start_dt and post_dt < start_dt:
                 break
 
     # Sort posts chronologically
@@ -82,10 +76,6 @@ def fetch_reddit_posts(team_acronym, date=None, start_date=None, end_date=None):
 
     if date:
         game_ids = fetch_game_ids(team_acronym, date=date)
-    elif start_date and end_date:
-        game_ids = fetch_game_ids(
-            team_acronym, start_date=start_date, end_date=end_date
-        )
     else:
         game_ids = []
 

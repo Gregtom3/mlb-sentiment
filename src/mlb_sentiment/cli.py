@@ -23,8 +23,6 @@ def cli():
     help="The team acronym (e.g., NYY for New York Yankees).",
 )
 @click.option("--date", default=None, help="The date to fetch (MM/DD/YYYY).")
-@click.option("--start-date", default=None, help="Start date for range (MM/DD/YYYY).")
-@click.option("--end-date", default=None, help="End date for range (MM/DD/YYYY).")
 @click.option(
     "--comments-limit",
     default=5,
@@ -62,8 +60,6 @@ def cli():
 def upload(
     team_acronym,
     date,
-    start_date,
-    end_date,
     comments_limit,
     filename,
     azure,
@@ -88,8 +84,6 @@ def upload(
     click.echo(f"{'Team:':20} {team_acronym}")
     if date:
         click.echo(f"{'Date:':20} {date}")
-    if start_date and end_date:
-        click.echo(f"{'Date Range:':20} {start_date} → {end_date}")
     if comments_limit > 0:
         click.echo(f"{'Comments Limit:':20} {comments_limit}")
     else:
@@ -113,25 +107,8 @@ def upload(
         )
         games = fetch_mlb_games(team_acronym, date=date)
         game_events = fetch_mlb_events(team_acronym, date=date)
-
-    elif start_date and end_date:
-        posts = fetch_reddit_posts(
-            team_acronym, start_date=start_date, end_date=end_date
-        )
-        games = fetch_mlb_games(team_acronym, start_date=start_date, end_date=end_date)
-        game_events = fetch_mlb_events(
-            team_acronym, start_date=start_date, end_date=end_date
-        )
-        comments = fetch_reddit_comments(
-            posts,
-            limit=comments_limit,
-            sentiment_model=get_model_from_string(sentiment_model),
-        )
-
     else:
-        click.echo(
-            "You must provide either --date or both --start-date and --end-date."
-        )
+        click.echo("You must provide --date (or use --yesterday).")
         return
 
     # Save locally

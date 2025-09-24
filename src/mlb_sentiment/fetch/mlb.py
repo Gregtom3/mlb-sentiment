@@ -9,24 +9,16 @@ def print_json(data):
     print(json.dumps(data, indent=4))
 
 
-def fetch_mlb_events(team_acronym, date=None, start_date=None, end_date=None):
-    # Determine the date or date range for fetching events
-    if date:
-        start_date = end_date = date
-    elif not (start_date and end_date):
+def fetch_mlb_events(team_acronym, date=None):
+    if not date:
         raise ValueError(
-            "You must provide either 'date' or both 'start_date' and 'end_date'."
+            "You must provide 'date' (MM/DD/YYYY) for fetching MLB events."
         )
     TEAM_ID = info.get_team_info(team_acronym, "team_id")
-    all_events = []
-    current_date = datetime.strptime(start_date, "%m/%d/%Y")
-    end_dt = datetime.strptime(end_date, "%m/%d/%Y")
-    while current_date <= end_dt:
-        date_str = current_date.strftime("%Y-%m-%d")
-        events = fetch_events(TEAM_ID, date_str)
-        all_events.extend(events)
-        current_date += timedelta(days=1)
-    return all_events
+    date_dt = datetime.strptime(date, "%m/%d/%Y")
+    date_str = date_dt.strftime("%Y-%m-%d")
+    events = fetch_events(TEAM_ID, date_str)
+    return events
 
 
 def fetch_game_data(game_id):
@@ -143,62 +135,42 @@ def team_record_on_date(team_id, date_str):
     return 0, 0
 
 
-def fetch_game_ids(team_acronym, date=None, start_date=None, end_date=None):
+def fetch_game_ids(team_acronym, date=None):
     """
-    Fetch all game IDs for the specified team on a given date or date range.
+    Fetch all game IDs for the specified team on a given date.
     NOTE: We prepend the team_id to the game_id to ensure uniqueness in team_acronym lookups
     Returns:
         list: A list of game IDs.
     """
-    if date:
-        start_date = end_date = date
-    elif not (start_date and end_date):
-        raise ValueError(
-            "You must provide either 'date' or both 'start_date' and 'end_date'."
-        )
-
+    if not date:
+        raise ValueError("You must provide 'date' (MM/DD/YYYY) for fetching game ids.")
     TEAM_ID = info.get_team_info(team_acronym, "team_id")
     game_ids = []
-    current_date = datetime.strptime(start_date, "%m/%d/%Y")
-    end_dt = datetime.strptime(end_date, "%m/%d/%Y")
-
-    while current_date <= end_dt:
-        date_str = current_date.strftime("%m/%d/%Y")
-        s = statsapi.schedule(team=TEAM_ID, start_date=date_str, end_date=date_str)
-        for g in s:
-            game_ids.append(f"{TEAM_ID}{g['game_id']}")
-        current_date += timedelta(days=1)
-
+    date_str = datetime.strptime(date, "%m/%d/%Y").strftime("%m/%d/%Y")
+    s = statsapi.schedule(team=TEAM_ID, start_date=date_str, end_date=date_str)
+    for g in s:
+        game_ids.append(f"{TEAM_ID}{g['game_id']}")
     return game_ids
 
 
-def fetch_mlb_games(team_acronym, date=None, start_date=None, end_date=None):
+def fetch_mlb_games(team_acronym, date=None):
     """
-    Fetch all game results for the specified team on a given date or date range.
+    Fetch all game results for the specified team on a given date
     Handles potential double headers in the statsapi response by returning a list of tuples.
 
     Returns:
         list of tuples in the form:
         (home_team, visiting_team, home_score, visiting_score, game_id, wins, losses)
     """
-    if date:
-        start_date = end_date = date
-    elif not (start_date and end_date):
-        raise ValueError(
-            "You must provide either 'date' or both 'start_date' and 'end_date'."
-        )
+    if not date:
+        raise ValueError("You must provide 'date' (MM/DD/YYYY) for fetching MLB games.")
 
     TEAM_ID = info.get_team_info(team_acronym, "team_id")
     all_results = []
-    current_date = datetime.strptime(start_date, "%m/%d/%Y")
-    end_dt = datetime.strptime(end_date, "%m/%d/%Y")
-
-    while current_date <= end_dt:
-        date_str = current_date.strftime("%m/%d/%Y")
-        s = statsapi.schedule(team=TEAM_ID, start_date=date_str, end_date=date_str)
-        if not s:
-            current_date += timedelta(days=1)
-            continue
+    date_str = datetime.strptime(date, "%m/%d/%Y").strftime("%m/%d/%Y")
+    s = statsapi.schedule(team=TEAM_ID, start_date=date_str, end_date=date_str)
+    if not s:
+        return []
 
         # Sort by game date (should also order double headers correctly)
         s.sort(key=lambda g: g["game_date"])
@@ -239,8 +211,45 @@ def fetch_mlb_games(team_acronym, date=None, start_date=None, end_date=None):
             ]
 
         all_results.extend(results)
-        current_date += timedelta(days=1)
+    # Sort by game date (should also order double headers correctly)
+    s.sort(key=lambda g: g["game_date"]) if s else None
 
+    results = []
+    for g in s:
+        # Only include finished or in-progress games we want to track
+        if g.get("status", "").lower() in ("final", "game over", "completed early"):
+            wins, losses = team_record_on_date(TEAM_ID, date_str)
+            results.append(
+                (
+                    f"{TEAM_ID}{g['game_id']}",
+                    date_str,
+                    get_team_abbreviation(g["home_name"]),
+                    get_team_abbreviation(g["away_name"]),
+                    g["home_score"],
+                    g["away_score"],
+                    wins,
+                    losses,
+                )
+            )
+
+    # If no finals, still include scheduled/incomplete games
+    if not results:
+        wins, losses = team_record_on_date(TEAM_ID, date_str)
+        results = [
+            (
+                f"{TEAM_ID}{g['game_id']}",
+                date_str,
+                get_team_abbreviation(g["home_name"]),
+                get_team_abbreviation(g["away_name"]),
+                g["home_score"],
+                g["away_score"],
+                wins,
+                losses,
+            )
+            for g in s
+        ]
+
+    all_results.extend(results)
     return all_results
 
 
