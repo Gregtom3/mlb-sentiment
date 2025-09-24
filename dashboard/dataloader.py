@@ -67,13 +67,15 @@ def load_games(game_date, _engine):
 @st.cache_data
 def load_events(game_id, _engine):
     query = f"""
-    SELECT event_id, home_score, away_score, est
+    SELECT event_id, event, description, home_score, away_score, est
     FROM dbo.gameEvents
     WHERE game_id = {game_id}
     ORDER BY event_id
     """
     return safe_read_sql(
-        query, _engine, columns=["event_id", "home_score", "away_score", "est"]
+        query,
+        _engine,
+        columns=["event_id", "event", "description", "home_score", "away_score", "est"],
     )
 
 

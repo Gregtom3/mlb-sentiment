@@ -10,6 +10,7 @@ from streamlit_date_picker import date_picker, PickerType
 from datetime import datetime
 from widgets.sentiment_chart import render_sentiment_widget
 from widgets.data_summary import data_summary
+from widgets.game_events import render_game_events_widget
 
 st.set_page_config(layout="wide")
 
@@ -69,7 +70,8 @@ data_summary(comments_df, games_df, events_df)
 col0, col00 = st.columns(2)
 with col0:
     render_sentiment_widget(comments_df)
-
+with col00:
+    render_game_events_widget(events_df)
 # Two simple placeholder widgets (y=x^2 and y=x^3)
 col1, col2 = st.columns(2)
 # make plots

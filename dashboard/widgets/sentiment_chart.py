@@ -5,6 +5,7 @@ from plotly.subplots import make_subplots
 from streamlit_plotly_events import plotly_events
 from compute import compute_sentiment_ts
 
+
 def render_sentiment_widget(comments_df: pd.DataFrame):
     """
     Renders the sentiment-over-time chart and interactive comments table.
@@ -12,10 +13,10 @@ def render_sentiment_widget(comments_df: pd.DataFrame):
     Expects sentiment_ts to have ['created_est', 'sentiment_smooth'].
     """
 
-
     container_css = """
 .st-key-sentiment-container {
 	background-color: #FFFFFF; /* White background */
+    padding: 10px;
 }
 	"""
     st.html(f"<style>{container_css}</style>")
@@ -33,7 +34,22 @@ def render_sentiment_widget(comments_df: pd.DataFrame):
                 "Check the data source or try reloading."
             )
             return
-
+        st.markdown(
+            f"""
+            <div style="
+                background-color:#F8F9FC;
+                padding:10px;
+                border-radius:6px;
+                border-color:#DADADA;
+                margin:0px 0;
+                font-size:1.2em;
+                font-weight:400;
+            ">
+                Fan Sentiment Over Time
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
         # --- Slider to control bin size ---
         window_minutes = st.slider(
             "Select time window (minutes)",
@@ -50,8 +66,6 @@ def render_sentiment_widget(comments_df: pd.DataFrame):
         except Exception as e:
             st.error(f"Error computing sentiment time series: {e}")
             return
-
-        st.subheader(f"Fan Sentiment ({window_minutes}-min bins)")
 
         # Count comments per bin dynamically
         # Count comments per bin dynamically (defensive: ensure datetime index)
@@ -90,16 +104,16 @@ def render_sentiment_widget(comments_df: pd.DataFrame):
         )
 
         fig.update_layout(
-            width=1000,
+            autosize=True,
             barmode="overlay",
-            #plot_bgcolor="rgba(240,240,240,0.95)",
-            #paper_bgcolor="rgba(0,0,0,0)",  # outer background (transparent)
         )
         fig.update_yaxes(title_text="Sentiment", secondary_y=False)
         fig.update_yaxes(title_text="Comment count", secondary_y=True)
 
         # Display and capture clicks
-        selected_click = plotly_events(fig, click_event=True)
+        with st.container(border=False):
+            selected_click = plotly_events(fig, click_event=True, key="sentiment-plot")
+        # selected_click = plotly_events(fig, click_event=True)
 
         # Show comments table if a bin was clicked
         if selected_click:

@@ -47,7 +47,11 @@ def data_summary(comments_df: Any, games_df: Any, events_df: Any) -> None:
 
     # If Streamlit is available render UI, otherwise return values for tests
     if st is None:
-        return {"comments": comments_count, "games": games_count, "events": events_count}
+        return {
+            "comments": comments_count,
+            "games": games_count,
+            "events": events_count,
+        }
 
     col1, col2, col3 = st.columns(3)
     col_css = """
