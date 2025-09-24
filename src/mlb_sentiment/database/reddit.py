@@ -2,6 +2,7 @@ import pandas as pd
 from mlb_sentiment import config
 from mlb_sentiment import utility
 from datetime import date
+import re
 
 
 def format_reddit_text(text):
@@ -28,6 +29,12 @@ def format_reddit_text(text):
         text = text[:255] + "..."
     # Remove non-ASCII characters
     text = "".join([c if ord(c) < 128 else " " for c in text])
+    # Remove segments that look like links (http:// or https:// and following non-space chars)
+    text = re.sub(r"http\S+", "", text)
+
+    # Collapse double spaces after removals
+    text = re.sub(r"\s+", " ", text).strip()
+
     return text
 
 
@@ -47,12 +54,17 @@ def save_reddit_comments(comments, limit=5, filename: str = "MyDatabase"):
     all_comments = []
     comment_id_counter = 1  # mimic autoincrement ids
     for comment in comments:
+        # Get formatted comment text
+        formatted_text = format_reddit_text(comment["text"])
+        # If contains no more than 3 ASCII characters, skip
+        if len(re.findall(r"[A-Za-z0-9]", formatted_text)) <= 3:
+            continue
         # Collect comment info with an ID
         comment_row = {
             "id": comment_id_counter,
             "game_id": comment.get("game_id"),
             "author": comment["author"],
-            "text": format_reddit_text(comment["text"]),
+            "text": formatted_text,
             "created_est": utility.utc_to_est(comment["created_utc"]),
             "sentiment": comment["sentiment"]["emotion"],
             "sentiment_score": comment["sentiment"]["score"],
