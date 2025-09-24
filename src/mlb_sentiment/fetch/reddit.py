@@ -120,8 +120,10 @@ def fetch_reddit_comments(posts, limit=500, sentiment_model=SentimentModelType.N
             comment_list = submission.comments.list()
             if limit > 0:
                 comment_list = comment_list[:limit]
-            
-            for comment in tqdm(comment_list, desc=f"Comments ({sort})", position=1, leave=False):
+
+            for comment in tqdm(
+                comment_list, desc=f"Comments ({sort})", position=1, leave=False
+            ):
                 if comment.id in seen_ids:
                     continue  # skip duplicates
                 seen_ids.add(comment.id)

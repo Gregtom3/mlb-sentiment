@@ -1,17 +1,35 @@
 import pandas as pd
 from mlb_sentiment.config import load_synapse_engine
 import streamlit as st
+import time
 
 
-def safe_read_sql(query, engine, columns=None):
-    try:
-        df = pd.read_sql(query, engine)
-        if columns:
-            df = df[columns]
-        return df
-    except Exception as e:
-        print(f"Error reading SQL: {e}")
-        return pd.DataFrame()
+def safe_read_sql(query, engine, columns=None, retries: int = 3, backoff: float = 0.5):
+    """Read SQL into a DataFrame with simple retry/backoff for transient errors.
+
+    On final failure returns an empty DataFrame and logs a Streamlit warning so
+    the UI can hint at transient connectivity issues.
+    """
+    attempt = 0
+    while attempt < retries:
+        try:
+            df = pd.read_sql(query, engine)
+            if columns:
+                df = df[columns]
+            return df
+        except Exception as e:
+            attempt += 1
+            msg = f"Error reading SQL (attempt {attempt}/{retries}): {e}"
+            # Print for local logs and surface a non-intrusive Streamlit warning
+            print(msg)
+            if attempt < retries:
+                time.sleep(backoff * attempt)
+            else:
+                st.warning(
+                    "There was a problem loading data from the database. "
+                    "This may be a transient connection issue — try reloading the page."
+                )
+                return pd.DataFrame()
 
 
 # -------------------

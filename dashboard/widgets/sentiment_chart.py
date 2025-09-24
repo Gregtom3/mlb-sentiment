@@ -20,8 +20,18 @@ def render_sentiment_widget(comments_df: pd.DataFrame):
     st.html(f"<style>{css}</style>")
 
     with st.container(border=True, key="my_custom_container"):
-        if comments_df.empty:
-            st.info("No comments available for sentiment chart.")
+        # Defensive: ensure we have a DataFrame and the expected column
+        if comments_df is None or comments_df.empty:
+            st.info(
+                "No comments available for sentiment chart. "
+                "If comments were recently uploaded, try reloading the app or selecting the date again."
+            )
+            return
+        if "created_est" not in comments_df.columns:
+            st.warning(
+                "Comments data is missing timestamp column 'created_est'. "
+                "Check the data source or try reloading."
+            )
             return
 
         # --- Slider to control bin size ---
@@ -34,17 +44,27 @@ def render_sentiment_widget(comments_df: pd.DataFrame):
             key="sentiment_window",
         )
 
-        sentiment_ts = compute_sentiment_ts(comments_df, window_minutes)
+        # compute_sentiment_ts is cached; pass through defensive typing
+        try:
+            sentiment_ts = compute_sentiment_ts(comments_df, window_minutes)
+        except Exception as e:
+            st.error(f"Error computing sentiment time series: {e}")
+            return
 
         st.subheader(f"Fan Sentiment ({window_minutes}-min bins)")
 
         # Count comments per bin dynamically
-        comment_counts = (
-            comments_df.set_index("created_est")
-            .resample(f"{window_minutes}Min")
-            .size()
-            .rename("comment_count")
-        )
+        # Count comments per bin dynamically (defensive: ensure datetime index)
+        try:
+            comment_counts = (
+                comments_df.set_index("created_est")
+                .resample(f"{window_minutes}Min")
+                .size()
+                .rename("comment_count")
+            )
+        except Exception as e:
+            st.error(f"Error aggregating comment counts: {e}")
+            return
 
         # Create figure
         fig = make_subplots(specs=[[{"secondary_y": True}]])
