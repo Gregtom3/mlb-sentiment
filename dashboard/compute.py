@@ -3,12 +3,14 @@ import streamlit as st
 
 
 @st.cache_data
-def compute_sentiment_ts(comments_df):
+def compute_sentiment_ts(
+    comments_df: pd.DataFrame, window_minutes: int = 2
+) -> pd.DataFrame:
     if comments_df.empty:
         return pd.DataFrame()
     sentiment_ts = (
         comments_df.set_index("created_est")
-        .resample("2Min")["sentiment_score"]
+        .resample(f"{window_minutes}Min")["sentiment_score"]
         .mean()
         .reset_index()
     )

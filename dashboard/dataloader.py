@@ -74,6 +74,8 @@ def load_comments(game_id, _engine):
     )
     if not df.empty:
         df["created_est"] = pd.to_datetime(df["created_est"])
+    if len(df) > 2:
+        df = df.iloc[:-2]  # drop last two rows (usually later stickied comments)
     return df
 
 

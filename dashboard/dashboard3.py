@@ -6,14 +6,21 @@ from compute import compute_sentiment_ts
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from streamlit_plotly_events import plotly_events
+from streamlit_date_picker import date_picker, PickerType
+from datetime import datetime
+from widgets.sentiment_chart import render_sentiment_widget
 
-st.title("MLB Game Score Dashboard")
+st.set_page_config(layout="wide")
+
+# Centered title
+st.title("MLB Pulse Dashboard")
 
 # -------------------
 # Step 1: Pick a date
 # -------------------
 game_date = st.sidebar.date_input(
-    "Select a game date", value=pd.to_datetime("2025-09-14")
+    "Select a game date",
+    value=pd.to_datetime("2025-09-14"),
 )
 
 # Initialize engine
@@ -28,65 +35,45 @@ if games_df.empty:
 
 # -------------------
 # Step 2: Pick a game
+# Include game number (1 or 2) depending on doubleheader
 # -------------------
-game_choice = st.sidebar.selectbox(
+# Build list of tuples: (label, game_id)
+options = [
+    (f"{r['away_team']} @ {r['home_team']} Game {r.name+1}", r["game_id"])
+    for _, r in games_df.iterrows()
+]
+
+# Selectbox shows only the label (first element), but returns the full tuple
+label, selected_game_id = st.sidebar.selectbox(
     "Choose a game:",
-    games_df.apply(
-        lambda r: f"{r['away_team']} @ {r['home_team']} (ID {r['game_id']})", axis=1
-    ),
+    options,
+    format_func=lambda x: x[0],  # show only label
 )
 
-selected_game_id = int(game_choice.split("ID")[-1].strip(" )"))
 
 # -------------------
 # Query events & comments (cached)
 # -------------------
 events_df = load_events(selected_game_id, engine)
 comments_df = load_comments(selected_game_id, engine)
-sentiment_ts = compute_sentiment_ts(comments_df)
 
 # -------------------
-# Sentiment chart
+# Render the sentiment widget
 # -------------------
-if not comments_df.empty:
-    st.subheader("Fan Sentiment (2Min bins)")
-    fig = make_subplots()
-    fig.add_trace(
-        go.Scattergl(
-            x=list(sentiment_ts["created_est"]),
-            y=list(sentiment_ts["sentiment_smooth"]),
-            mode="lines+markers",
-            name="Sentiment (smoothed)",
-        )
-    )
-    fig.update_layout(width=1100)
+render_sentiment_widget(comments_df)
 
-    selected_click = plotly_events(fig, click_event=True)
-
-    # -------------------
-    # Show top 3 comments for clicked window
-    # -------------------
-    if selected_click:
-        clicked_time = pd.to_datetime(selected_click[0]["x"])
-        bin_start = clicked_time.floor("2Min")
-        bin_end = bin_start + pd.Timedelta(minutes=2)
-
-        window_comments = comments_df[
-            (comments_df["created_est"] >= bin_start)
-            & (comments_df["created_est"] < bin_end)
-        ]
-
-        if not window_comments.empty:
-            top_comments = window_comments.sort_values(
-                "sentiment_score", ascending=False
-            ).head(3)
-
-            st.subheader(
-                f"Top 3 Comments {bin_start.strftime('%H:%M')}–{bin_end.strftime('%H:%M')}"
-            )
-            for _, row in top_comments.iterrows():
-                st.markdown(
-                    f"**{row['author']}** ({row['sentiment_score']:.2f})\n\n{row['text']}"
-                )
-        else:
-            st.info("No comments found in this time window.")
+# Two simple placeholder widgets (y=x^2 and y=x^3)
+col1, col2 = st.columns(2)
+# make plots
+with col1:
+    x = np.linspace(0, 10, 100)
+    y1 = x**2
+    fig1 = go.Figure(data=go.Scatter(x=x, y=y1, mode="lines", name="y=x^2"))
+    fig1.update_layout(title="Plot of y=x^2", xaxis_title="x", yaxis_title="y")
+    st.plotly_chart(fig1, use_container_width=True)
+with col2:
+    x = np.linspace(0, 10, 100)
+    y2 = x**3
+    fig2 = go.Figure(data=go.Scatter(x=x, y=y2, mode="lines", name="y=x^3"))
+    fig2.update_layout(title="Plot of y=x^3", xaxis_title="x", yaxis_title="y")
+    st.plotly_chart(fig2, use_container_width=True)
