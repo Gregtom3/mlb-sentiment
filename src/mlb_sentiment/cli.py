@@ -76,7 +76,7 @@ def upload(
     """
     # Handle yesterday flag
     if yesterday:
-        date = (datetime.now() - timedelta(days=1)).strftime("")
+        date = (datetime.now() - timedelta(days=1)).strftime("%m/%d/%Y")
     save_date = datetime.now().strftime("%m/%d/%Y")
 
     # --------------------------
