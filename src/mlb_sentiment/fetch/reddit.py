@@ -87,47 +87,56 @@ def fetch_reddit_posts(team_acronym, date=None):
     return posts
 
 
-def fetch_reddit_comments(posts, limit=5, sentiment_model=SentimentModelType.NULL):
+def fetch_reddit_comments(posts, limit=500, sentiment_model=SentimentModelType.NULL):
     """
-    Fetch a limited number of top-level comments for a given Reddit post.
+    Fetch comments for Reddit game threads, combining multiple sort orders
+    (old, new, top, controversial) to maximize coverage.
+    Ensures no duplicate comments are saved.
 
     Args:
         posts (list): A list of post dictionaries as returned by fetch_reddit_posts.
-        limit (int): The maximum number of top-level comments to fetch.
+        limit (int): Max number of comments to pull per sort order (0 = all available).
+        sentiment_model (SentimentModelType): Sentiment model to apply.
 
     Returns:
-        list: A list of dictionaries containing comment details.
+        list: A list of dictionaries containing comment details (deduplicated).
     """
     reddit = config.load_reddit_client()
     comments = []
-    from tqdm import tqdm
+    seen_ids = set()  # track comment.id to avoid duplicates
+
+    sort_orders = ["new", "old", "top", "controversial", "best"]
 
     for post in tqdm(posts, desc="Reddit Posts", position=0):
         post_url = post["url"]
         game_id = post.get("game_id")
-        submission = reddit.submission(url=post_url)
-        submission.comment_sort = "old"
-        submission.comments.replace_more(limit=0)
-        if limit > 0:
-            comment_list = submission.comments.list()[:limit]
-        else:
+
+        for sort in sort_orders:
+            submission = reddit.submission(url=post_url)
+            submission.comment_sort = sort
+            submission.comments.replace_more(limit=0)
+
+            # Get flattened list
             comment_list = submission.comments.list()
-        comment_desc = (
-            "Post Comments"
-            if sentiment_model == "null"
-            else f"Post Comments (w/ Sentiment analysis)"
-        )
-        for comment in tqdm(
-            comment_list, desc="Post Comments", leave=False, position=1
-        ):
-            comments.append(
-                {
-                    "game_id": game_id,
-                    "author": str(comment.author),
-                    "text": comment.body,
-                    "created_utc": comment.created_utc,
-                    "sentiment": get_sentiment(comment.body, sentiment_model),
-                }
-            )
+            if limit > 0:
+                comment_list = comment_list[:limit]
+            
+            for comment in tqdm(comment_list, desc=f"Comments ({sort})", position=1, leave=False):
+                if comment.id in seen_ids:
+                    continue  # skip duplicates
+                seen_ids.add(comment.id)
+
+                comments.append(
+                    {
+                        "game_id": game_id,
+                        "author": str(comment.author),
+                        "text": comment.body,
+                        "created_utc": comment.created_utc,
+                        "sentiment": get_sentiment(comment.body, sentiment_model),
+                    }
+                )
+
+    # Sort final results chronologically
+    comments.sort(key=lambda c: c["created_utc"])
 
     return comments

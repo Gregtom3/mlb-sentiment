@@ -73,7 +73,6 @@ def upload(
     # Handle yesterday flag
     if yesterday:
         date = (datetime.now() - timedelta(days=1)).strftime("%m/%d/%Y")
-    save_date = datetime.now().strftime("%m/%d/%Y")
 
     # --------------------------
     # Pretty options summary
@@ -93,7 +92,6 @@ def upload(
     if azure:
         click.echo(f"{'Keep Local Copy:':20} {'Yes' if keep_local else 'No'}")
     click.echo(f"{'Sentiment Model:':20} {sentiment_model}")
-    click.echo(f"{'Save Date:':20} {save_date}")
     click.echo("=" * 60 + "\n")
     # --------------------------
     # Fetch Reddit posts
@@ -121,7 +119,7 @@ def upload(
     # --------------------------
     if azure:
         # Reddit
-        reddit_blob = create_blob_name("reddit", team_acronym, save_date)
+        reddit_blob = create_blob_name("reddit", team_acronym, date)
         upload_to_azure_blob(
             filename + "_comments.csv",
             reddit_blob,
@@ -141,7 +139,7 @@ def upload(
         )
 
         # MLB
-        mlb_blob = create_blob_name("mlb", team_acronym, save_date)
+        mlb_blob = create_blob_name("mlb", team_acronym, date)
         upload_to_azure_blob(
             filename + "_games.csv",
             mlb_blob,
@@ -160,8 +158,8 @@ def upload(
 # --------------------------
 # Helpers
 # --------------------------
-def create_blob_name(prefix, team_acronym, save_date):
-    blob_name = f"{prefix}_{team_acronym}_saved={save_date}.csv".replace("/", "-")
+def create_blob_name(prefix, team_acronym, game_date):
+    blob_name = f"{prefix}_{team_acronym}_date={game_date}.csv".replace("/", "-")
     if blob_name.endswith("_.csv"):
         blob_name = blob_name.replace("_.csv", ".csv")
     return blob_name
