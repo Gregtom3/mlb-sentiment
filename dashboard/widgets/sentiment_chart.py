@@ -96,7 +96,7 @@ def render_sentiment_widget(
                     team_is_home, home_scores - away_scores, away_scores - home_scores
                 ).astype(int)
                 diff_series = pd.Series(differential, index=times)
-                
+
                 # First and last event times
                 first_event_time = times.min()
                 last_event_time = times.max()
@@ -173,11 +173,14 @@ def render_sentiment_widget(
             zerolinewidth=1,
             range=[-max_abs_diff, max_abs_diff],  # symmetric around 0
         )
-        fig.update_xaxes(title_text="EST Time", title_font=dict(size=18))
+        fig.update_xaxes(
+            title_text="4-Minute Comment Intervals (EST)",
+            title_font=dict(size=18, family="Montserrat, sans-serif"),
+        )
         fig.update_yaxes(
             title_text="Sentiment",
             secondary_y=True,
-            title_font=dict(size=18),
+            title_font=dict(size=18, family="Montserrat, sans-serif"),
             color="black",
             zeroline=True,
             zerolinecolor="black",

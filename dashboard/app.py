@@ -23,8 +23,17 @@ from mlb_sentiment.info import (
 from mlb_sentiment.info import get_team_acronym_from_team_name
 from widgets.data_summary import data_summary
 from widgets.sentiment_chart import render_sentiment_widget
+from widgets.avg_sentiment_chart import render_avg_sentiment_by_game_widget
 
-
+st.markdown(
+    """
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+    * { font-family: 'Poppins', sans-serif; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 # Initialize engine
 # -------------------
 engine = get_engine()
@@ -82,10 +91,33 @@ options = [
 
 options = sorted(options, key=lambda x: -x[1])
 
-# Selectbox shows only the label (first element), but returns the full tuple
-label, selected_game_id = st.sidebar.selectbox(
-    "Choose a game:", options, format_func=lambda x: x[0]  # show only label
+if "selected_game_id" not in st.session_state:
+    st.session_state["selected_game_id"] = options[0][1]  # default to first game
+
+# Find the index of the currently selected game_id in options
+current_index = next(
+    (
+        i
+        for i, (_, gid) in enumerate(options)
+        if gid == st.session_state["selected_game_id"]
+    ),
+    0,
 )
+
+# Sidebar selectbox, bound to session_state
+selected_option = st.sidebar.selectbox(
+    "Choose a game:",
+    options,
+    index=current_index,
+    format_func=lambda x: x[0],
+    key="game_selector",  # <--- give it its own key
+)
+
+# Update session_state when dropdown changes
+label, selected_game_id = selected_option
+st.session_state["selected_game_id"] = selected_game_id
+
+
 team_id = int(str(selected_game_id)[:3])
 team_is_home = (
     games_df.loc[games_df["game_id"] == selected_game_id, "home_team"].values[0]
@@ -96,18 +128,31 @@ team_is_home = (
 # -------------------
 events_df = load_events(team_id, engine)
 comments_df = load_comments(team_id, engine)
+# Ensure events_df and comments_df have game_id column values that are in games_df
+events_df = events_df[events_df["game_id"].isin(games_df["game_id"].values)]
+comments_df = comments_df[comments_df["game_id"].isin(games_df["game_id"].values)]
 
 # -------------------
 # Render the data summary metrics
 # -------------------
-data_summary(comments_df, games_df, events_df)
+data_summary(comments_df, games_df, events_df, team_acronym)
 
 # -------------------
 # Render the sentiment widget
 # -------------------
-events_df = events_df[events_df["game_id"] == selected_game_id]
-comments_df = comments_df[comments_df["game_id"] == selected_game_id]
-print(events_df)
-col0, col00 = st.columns(2)
-with col0:
-    render_sentiment_widget(comments_df, events_df, team_is_home, team_acronym)
+game_specific_events_df = events_df[events_df["game_id"] == selected_game_id]
+game_specific_comments_df = comments_df[comments_df["game_id"] == selected_game_id]
+row1_col1, row1_col2 = st.columns(2)
+with row1_col1:
+    clicked_game_id = render_avg_sentiment_by_game_widget(
+        comments_df, games_df, selected_game_id
+    )
+    if clicked_game_id is not None:
+        st.session_state["selected_game_id"] = int(clicked_game_id)
+        st.rerun()
+
+
+with row1_col2:
+    render_sentiment_widget(
+        game_specific_comments_df, game_specific_events_df, team_is_home, team_acronym
+    )

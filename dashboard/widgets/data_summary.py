@@ -29,54 +29,60 @@ def _to_count(df: Any) -> int:
         return 0
 
 
-def data_summary(comments_df: Any, games_df: Any, events_df: Any) -> None:
-    """Render three metrics (comments, games, game events) in a Streamlit row.
+def data_summary(
+    comments_df: Any, games_df: Any, events_df: Any, team_acronym: str = ""
+) -> None:
+    """Render metrics (comments, games, game events, W/L record) in a Streamlit row.
 
     Parameters
     - comments_df: DataFrame-like containing comment rows (or None)
     - games_df: DataFrame-like containing game rows (or None)
     - events_df: DataFrame-like containing game event rows (or None)
-
-    The function is safe to call in regular Python tests; if Streamlit is not
-    available it will simply return a dict of computed values instead of
-    rendering UI. This allows for easier unit testing.
+    - team_acronym: team acronym to compute W/L record
     """
     comments_count = _to_count(comments_df)
     games_count = _to_count(games_df)
     events_count = _to_count(events_df)
 
-    # If Streamlit is available render UI, otherwise return values for tests
-    if st is None:
-        return {
-            "comments": comments_count,
-            "games": games_count,
-            "events": events_count,
-        }
+    # --- compute wins/losses if possible ---
+    wins = losses = 0
+    if games_df is not None and hasattr(games_df, "iterrows"):
+        try:
+            for _, g in games_df.iterrows():
+                if team_acronym and "home_team" in g and "away_team" in g:
+                    if g["home_team"] == team_acronym:
+                        if g["home_score"] > g["away_score"]:
+                            wins += 1
+                        elif g["home_score"] < g["away_score"]:
+                            losses += 1
+                    elif g["away_team"] == team_acronym:
+                        if g["away_score"] > g["home_score"]:
+                            wins += 1
+                        elif g["away_score"] < g["home_score"]:
+                            losses += 1
+        except Exception:
+            pass
 
-    col1, col2, col3 = st.columns(3)
+    total_played = wins + losses
+    win_pct = round((wins / total_played) * 100, 1) if total_played > 0 else 0.0
+
+    # --- Streamlit UI ---
+    col1, col2, col3, col4 = st.columns(4)
     col_css = """
-.st-key-col1-container {
-	background-color: #FFFFFF; /* White background */
-}
-.st-key-col2-container {
-    background-color: #FFFFFF; /* White background */
-}
-.st-key-col3-container {
-    background-color: #FFFFFF; /* White background */
-}
-	"""
+    .st-key-col1-container, .st-key-col2-container, .st-key-col3-container, .st-key-col4-container {
+        background-color: #FFFFFF;
+    }
+    """
     st.html(f"<style>{col_css}</style>")
 
     with col1.container(border=True, key="col1-container"):
-        st.metric("Total comments", f"{comments_count:,}")
+        st.metric("Total Subreddit Comments", f"{comments_count:,}")
 
     with col2.container(border=True, key="col2-container"):
-        st.metric("Total games", f"{games_count:,}")
+        st.metric("Total Games", f"{games_count:,}")
 
     with col3.container(border=True, key="col3-container"):
-        st.metric("Total game events", f"{events_count:,}")
+        st.metric("Total Game Events", f"{events_count:,}")
 
-
-if __name__ == "__main__":  # quick manual smoke run when executed directly
-    # Avoid importing pandas at module import time to keep this lightweight.
-    print("data_summary module loaded. Call data_summary(...) from a Streamlit app.")
+    with col4.container(border=True, key="col4-container"):
+        st.metric(f"Win-Loss", f"{wins}-{losses} ({win_pct}%)")
