@@ -30,10 +30,7 @@ def cli():
     help="Max number of Reddit comments to save.",
 )
 @click.option(
-    "--filename",
-    default="MyDatabase.csv",
-    show_default=True,
-    help="Output filename.",
+    "--filename", default="MyDatabase.csv", show_default=True, help="Output filename."
 )
 @click.option(
     "--azure",

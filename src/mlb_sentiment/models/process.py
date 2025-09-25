@@ -82,11 +82,7 @@ def _get_hugging_face_sentiment(
     )
     if model_type == SentimentModelType.TWITTER_ROBERTA_BASE_SENTIMENT:
         # Map labels to more general emotions
-        label_map = {
-            "LABEL_0": "negative",
-            "LABEL_1": "neutral",
-            "LABEL_2": "positive",
-        }
+        label_map = {"LABEL_0": "negative", "LABEL_1": "neutral", "LABEL_2": "positive"}
         label = label_map.get(results[0]["label"], "neutral")
         return label, results[0]["score"]
     else:

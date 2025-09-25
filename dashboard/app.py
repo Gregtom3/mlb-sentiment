@@ -22,7 +22,6 @@ from mlb_sentiment.info import (
 )
 from mlb_sentiment.info import get_team_acronym_from_team_name
 from widgets.data_summary import data_summary
-from widgets.game_events import render_game_events_widget
 from widgets.sentiment_chart import render_sentiment_widget
 
 
@@ -38,23 +37,9 @@ st.set_page_config(layout="wide")
 # -------------------
 st.title("MLB Pulse Dashboard")
 
-# Pick a timezone
-# -------------------
-selected_timezone = st.sidebar.radio(
-    "Select Timezone",
-    ["EST", "CST", "MST", "PST"],
-    index=0,  # Default to EST
-    horizontal=True,
-)
-
-
 # Pick a team
 # -------------------
-team_name = st.sidebar.selectbox(
-    "Select Team",
-    options=get_all_team_names(),
-    index=18,
-)
+team_name = st.sidebar.selectbox("Select Team", options=get_all_team_names(), index=18)
 team_acronym = get_team_acronym_from_team_name(team_name)
 
 # Pick a date range
@@ -69,14 +54,6 @@ game_dates = st.sidebar.date_input(
     ),
 )
 
-# Map user-friendly timezone names to pytz timezone strings
-timezone_mapping = {
-    "EST": "America/New_York",
-    "CST": "America/Chicago",
-    "MST": "America/Denver",
-    "PST": "America/Los_Angeles",
-}
-
 # Update cached queries to use imported functions
 games_df = load_games(game_dates, team_acronym, engine)
 
@@ -87,30 +64,32 @@ if games_df.empty:
 
 # -------------------
 # Step 2: Pick a game
-# Include game number (1 or 2) depending on doubleheader
 # -------------------
-def convert_to_timezone(time_obj, target_timezone):
-    utc_time = datetime.combine(datetime.today(), time_obj).replace(tzinfo=pytz.utc)
-    target_time = utc_time.astimezone(timezone(timezone_mapping[target_timezone]))
-    return target_time.strftime("%-I:%M %p")
+def convert_time(dt_est):
+    """Convert EST to HH:MM format string."""
+    if pd.isna(dt_est):
+        return "TBD"
+    return dt_est.strftime("%I:%M %p")
 
 
 options = [
     (
-        f"{r['away_team']} @ {r['home_team']} {convert_to_timezone(r.game_start_time_est, selected_timezone)} (Game {r.name+1})",
+        f"{r['away_team']} @ {r['home_team']} {convert_time(r.game_start_time_est)} {r.game_date}",
         r["game_id"],
     )
     for _, r in games_df.iterrows()
 ]
 
+options = sorted(options, key=lambda x: -x[1])
+
 # Selectbox shows only the label (first element), but returns the full tuple
 label, selected_game_id = st.sidebar.selectbox(
-    "Choose a game:",
-    options,
-    format_func=lambda x: x[0],  # show only label
+    "Choose a game:", options, format_func=lambda x: x[0]  # show only label
 )
-
-
+team_is_home = (
+    games_df.loc[games_df["game_id"] == selected_game_id, "home_team"].values[0]
+    == team_acronym
+)
 # -------------------
 # Query events & comments (cached)
 # -------------------
@@ -127,7 +106,4 @@ data_summary(comments_df, games_df, events_df)
 # -------------------
 col0, col00 = st.columns(2)
 with col0:
-    pass
-    render_sentiment_widget(comments_df)
-with col00:
-    render_game_events_widget(events_df)
+    render_sentiment_widget(comments_df, events_df, team_is_home, team_acronym)
