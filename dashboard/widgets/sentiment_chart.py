@@ -93,7 +93,7 @@ def render_sentiment_widget(
                     events_df["away_score"], errors="coerce"
                 ).fillna(0)
                 differential = np.where(
-                    ~team_is_home, home_scores - away_scores, away_scores - home_scores
+                    team_is_home, home_scores - away_scores, away_scores - home_scores
                 ).astype(int)
                 diff_series = pd.Series(differential, index=times)
                 
