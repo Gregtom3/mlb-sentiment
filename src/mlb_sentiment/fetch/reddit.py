@@ -107,7 +107,7 @@ def fetch_reddit_comments(posts, limit=500, sentiment_model=SentimentModelType.N
 
     sort_orders = ["new", "old", "top", "controversial", "best"]
 
-    for post in tqdm(posts, desc="Reddit Posts", position=0):
+    for post in posts:
         post_url = post["url"]
         game_id = post.get("game_id")
 
@@ -122,7 +122,7 @@ def fetch_reddit_comments(posts, limit=500, sentiment_model=SentimentModelType.N
                 comment_list = comment_list[:limit]
 
             for comment in tqdm(
-                comment_list, desc=f"Comments ({sort})", position=1, leave=False
+                comment_list, desc=f"Parsing Reddit Comments ({sort})", position=0
             ):
                 if comment.id in seen_ids:
                     continue  # skip duplicates
