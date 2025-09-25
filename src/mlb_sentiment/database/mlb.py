@@ -25,6 +25,7 @@ def save_mlb_games(games, filename: str = "MyDatabase"):
         columns=[
             "game_id",
             "game_date",
+            "game_start_time_est",
             "home_team",
             "away_team",
             "home_score",

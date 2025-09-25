@@ -155,74 +155,42 @@ def fetch_game_ids(team_acronym, date=None):
 
 def fetch_mlb_games(team_acronym, date=None):
     """
-    Fetch all game results for the specified team on a given date
+    Fetch all game results for the specified team on a given date.
     Handles potential double headers in the statsapi response by returning a list of tuples.
 
     Returns:
         list of tuples in the form:
-        (home_team, visiting_team, home_score, visiting_score, game_id, wins, losses)
+        (game_id, date, home_team, away_team, home_score, away_score, wins, losses)
     """
     if not date:
         raise ValueError("You must provide 'date' (MM/DD/YYYY) for fetching MLB games.")
+    if len(date.split("/")) != 3:
+        raise ValueError("Date must be in MM/DD/YYYY format.")
 
     TEAM_ID = info.get_team_info(team_acronym, "team_id")
-    all_results = []
     date_str = datetime.strptime(date, "%m/%d/%Y").strftime("%m/%d/%Y")
+
     s = statsapi.schedule(team=TEAM_ID, start_date=date_str, end_date=date_str)
     if not s:
         return []
 
-        # Sort by game date (should also order double headers correctly)
-        s.sort(key=lambda g: g["game_date"])
+    # Sort games (handles double headers)
+    s.sort(key=lambda g: g["game_date"])
 
-        results = []
-        for g in s:
-            # Only include finished or in-progress games we want to track
-            if g.get("status", "").lower() in ("final", "game over", "completed early"):
-                wins, losses = team_record_on_date(TEAM_ID, date_str)
-                results.append(
-                    (
-                        f"{TEAM_ID}{g['game_id']}",
-                        date_str,
-                        get_team_abbreviation(g["home_name"]),
-                        get_team_abbreviation(g["away_name"]),
-                        g["home_score"],
-                        g["away_score"],
-                        wins,
-                        losses,
-                    )
-                )
-
-        # If no finals, still include scheduled/incomplete games
-        if not results:
-            wins, losses = team_record_on_date(TEAM_ID, date_str)
-            results = [
-                (
-                    f"{TEAM_ID}{g['game_id']}",
-                    date_str,
-                    get_team_abbreviation(g["home_name"]),
-                    get_team_abbreviation(g["away_name"]),
-                    g["home_score"],
-                    g["away_score"],
-                    wins,
-                    losses,
-                )
-                for g in s
-            ]
-
-        all_results.extend(results)
-    # Sort by game date (should also order double headers correctly)
-    s.sort(key=lambda g: g["game_date"]) if s else None
+    wins, losses = team_record_on_date(TEAM_ID, date_str)
 
     results = []
     for g in s:
+        time_str = utility.iso_to_est(g.get("game_datetime")).split(" ")[
+            1
+        ]  # Get time only
         # Only include finished or in-progress games we want to track
         if g.get("status", "").lower() in ("final", "game over", "completed early"):
-            wins, losses = team_record_on_date(TEAM_ID, date_str)
             results.append(
                 (
                     f"{TEAM_ID}{g['game_id']}",
                     date_str,
+                    time_str,
                     get_team_abbreviation(g["home_name"]),
                     get_team_abbreviation(g["away_name"]),
                     g["home_score"],
@@ -234,11 +202,14 @@ def fetch_mlb_games(team_acronym, date=None):
 
     # If no finals, still include scheduled/incomplete games
     if not results:
-        wins, losses = team_record_on_date(TEAM_ID, date_str)
+        time_str = utility.iso_to_est(g.get("game_datetime")).split(" ")[
+            1
+        ]  # Get time only
         results = [
             (
                 f"{TEAM_ID}{g['game_id']}",
                 date_str,
+                time_str,
                 get_team_abbreviation(g["home_name"]),
                 get_team_abbreviation(g["away_name"]),
                 g["home_score"],
@@ -249,19 +220,10 @@ def fetch_mlb_games(team_acronym, date=None):
             for g in s
         ]
 
-    all_results.extend(results)
-    return all_results
-
-
-def main():
-    team_acronym = "NYM"
-    date = "09/14/2025"
-    events = fetch_mlb_events(team_acronym, date=date)
-    # for event in events:
-    #     print(event)
-    print(fetch_mlb_games(team_acronym, date))
-    print(team_record_on_date(info.get_team_info(team_acronym, "team_id"), date))
+    return results
 
 
 if __name__ == "__main__":
-    main()
+    team_acronym = "NYM"
+    date = "09/24/2025"
+    fetch_mlb_games(team_acronym, date)
