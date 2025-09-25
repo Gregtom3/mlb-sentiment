@@ -107,6 +107,7 @@ data_summary(comments_df, games_df, events_df)
 # -------------------
 events_df = events_df[events_df["game_id"] == selected_game_id]
 comments_df = comments_df[comments_df["game_id"] == selected_game_id]
+print(events_df)
 col0, col00 = st.columns(2)
 with col0:
     render_sentiment_widget(comments_df, events_df, team_is_home, team_acronym)
