@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-from streamlit_plotly_events import plotly_events
+from streamlit_plotly_events2 import plotly_events
 import os
 
 
@@ -134,13 +134,13 @@ def render_avg_sentiment_by_game_widget(
                 range=[-abs_max_sentiment, abs_max_sentiment],
             ),
         )
-
         selected_points = plotly_events(
             fig,
             click_event=True,
             select_event=False,
             hover_event=False,
             key="Avg Sentiment",
+            config={"displayModeBar": False},  # works in the v2 fork
         )
 
         if selected_points:

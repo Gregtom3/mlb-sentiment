@@ -31,7 +31,7 @@ dev = [
     "mypy>=1.0.0",
     "streamlit>=1.49.1",
     "sqlalchemy>=2.0.43",
-    "streamlit-plotly-events>=0.0.6",
+    "streamlit-plotly-events2>=0.0.7",
     "pyodbc>=5.2.0",
     "streamlit-date-picker>=0.0.5"
 ]

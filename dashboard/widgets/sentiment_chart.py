@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from streamlit_plotly_events import plotly_events
+from streamlit_plotly_events2 import plotly_events
 from compute import compute_sentiment_ts
 import numpy as np
 
@@ -195,7 +195,12 @@ def render_sentiment_widget(
             fig.update_xaxes(range=[x_start, x_end])
         # --- Interactive click events
         with st.container(border=False):
-            selected_click = plotly_events(fig, click_event=True, key="sentiment-plot")
+            selected_click = plotly_events(
+                fig,
+                click_event=True,
+                key="sentiment-plot",
+                config={"displayModeBar": False},
+            )
 
         # --- Show data tables for clicked bin
         if selected_click:
