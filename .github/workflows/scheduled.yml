@@ -31,4 +31,4 @@ jobs:
         AZURE_BLOB_CONNECTION_STRING: ${{ secrets.AZURE_BLOB_CONNECTION_STRING }}
         AZURE_BLOB_CONTAINER: ${{ secrets.AZURE_BLOB_CONTAINER }}
       run: |
-        mlb-sentiment upload --team-acronym NYM --yesterday --azure --comments-limit 0 --sentiment-model vader
+        mlb-sentiment upload --team-acronym NYM --yesterday --azure --comments-limit 0 --sentiment-model twitter-roberta-base-sentiment
