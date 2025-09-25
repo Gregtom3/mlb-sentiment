@@ -44,11 +44,11 @@ def get_engine():
 # Cached queries
 # -------------------
 @st.cache_data
-def load_games(game_date, _engine):
+def load_games(game_dates, _engine):
     query = f"""
     SELECT game_id, home_team, away_team, game_date, home_score, away_score
     FROM dbo.games
-    WHERE CAST(game_date AS DATE) = '{game_date}'
+    WHERE CAST(game_date AS DATE) BETWEEN '{game_dates[0]}' AND '{game_dates[-1]}'
     """
     return safe_read_sql(
         query,

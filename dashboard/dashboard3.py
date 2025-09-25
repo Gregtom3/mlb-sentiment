@@ -20,16 +20,16 @@ st.title("MLB Pulse Dashboard")
 # -------------------
 # Step 1: Pick a date
 # -------------------
-game_date = st.sidebar.date_input(
-    "Select a game date",
-    value=pd.to_datetime("2025-09-21"),
+game_dates = st.sidebar.date_input(
+    "Select a range of dates",
+    value=(pd.to_datetime("2025-09-20"), pd.to_datetime("2025-09-21")),
 )
-
+print(game_dates)
 # Initialize engine
 engine = get_engine()
 
 # Update cached queries to use imported functions
-games_df = load_games(game_date, engine)
+games_df = load_games(game_dates, engine)
 
 if games_df.empty:
     st.warning("No games found for this date.")
