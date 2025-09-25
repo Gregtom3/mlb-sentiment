@@ -86,6 +86,7 @@ options = sorted(options, key=lambda x: -x[1])
 label, selected_game_id = st.sidebar.selectbox(
     "Choose a game:", options, format_func=lambda x: x[0]  # show only label
 )
+team_id = int(str(selected_game_id)[:3])
 team_is_home = (
     games_df.loc[games_df["game_id"] == selected_game_id, "home_team"].values[0]
     == team_acronym
@@ -93,8 +94,8 @@ team_is_home = (
 # -------------------
 # Query events & comments (cached)
 # -------------------
-events_df = load_events(selected_game_id, engine)
-comments_df = load_comments(selected_game_id, engine)
+events_df = load_events(team_id, engine)
+comments_df = load_comments(team_id, engine)
 
 # -------------------
 # Render the data summary metrics
@@ -104,6 +105,8 @@ data_summary(comments_df, games_df, events_df)
 # -------------------
 # Render the sentiment widget
 # -------------------
+events_df = events_df[events_df["game_id"] == selected_game_id]
+comments_df = comments_df[comments_df["game_id"] == selected_game_id]
 col0, col00 = st.columns(2)
 with col0:
     render_sentiment_widget(comments_df, events_df, team_is_home, team_acronym)

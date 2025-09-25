@@ -69,26 +69,34 @@ def load_games(game_dates, team_acronym, _engine):
 
 
 @st.cache_data
-def load_events(game_id, _engine):
+def load_events(team_id, _engine):
     query = f"""
-    SELECT event_id, event, description, home_score, away_score, est
+    SELECT game_id, event_id, event, description, home_score, away_score, est
     FROM dbo.gameEvents
-    WHERE game_id = {game_id}
+    WHERE SUBSTRING(CAST(game_id AS VARCHAR), 1, 3) = '{team_id}'
     ORDER BY event_id
     """
     return safe_read_sql(
         query,
         _engine,
-        columns=["event_id", "event", "description", "home_score", "away_score", "est"],
+        columns=[
+            "game_id",
+            "event_id",
+            "event",
+            "description",
+            "home_score",
+            "away_score",
+            "est",
+        ],
     )
 
 
 @st.cache_data
-def load_comments(game_id, _engine):
+def load_comments(team_id, _engine):
     query = f"""
     SELECT game_id,author,text,created_est,sentiment,sentiment_score
     FROM dbo.comments
-    WHERE game_id = {game_id}
+    WHERE SUBSTRING(CAST(game_id AS VARCHAR), 1, 3) = '{team_id}'
     ORDER BY created_est
     """
     df = safe_read_sql(
