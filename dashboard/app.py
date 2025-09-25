@@ -19,6 +19,8 @@ from widgets.data_summary import data_summary
 from widgets.sentiment_chart import render_sentiment_widget
 from widgets.avg_sentiment_chart import render_avg_sentiment_by_game_widget
 from widgets.wins_losses import render_wins_losses_histogram
+from widgets.sentiment_score_dists import render_sentiment_distribution_histogram
+from widgets.comment_summary import render_commenter_summary_widget
 
 # -------------------
 # Streamlit setup
@@ -140,3 +142,9 @@ with row1_col2:
 row2_col1, row2_col2 = st.columns(2)
 with row2_col1:
     render_wins_losses_histogram(games_df, selected_game_id)
+
+with row2_col2:
+    render_sentiment_distribution_histogram(comments_df)
+
+# Commenter summary widget
+render_commenter_summary_widget(comments_df)

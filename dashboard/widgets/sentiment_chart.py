@@ -36,7 +36,7 @@ def render_sentiment_widget(
 }
     """
     st.html(f"<style>{container_css}</style>")
-    with st.container(border=True, key="sentiment-container"):
+    with st.container(border=True, key="sentiment-container", height=620):
         # Defensive checks
         if comments_df is None or comments_df.empty:
             st.info("No comments available for sentiment chart.")
@@ -51,7 +51,33 @@ def render_sentiment_widget(
                 home = game_row["home_team"]
                 away = game_row["away_team"]
                 date = pd.to_datetime(game_row["game_date"]).strftime("%Y-%m-%d")
-                header_text = f"{away} @ {home} — {date}"
+
+                home_score = game_row.get("home_score", None)
+                away_score = game_row.get("away_score", None)
+
+                # --- Compute W/L ---
+                if pd.notna(home_score) and pd.notna(away_score):
+                    if home_score > away_score:
+                        winner, loser = home, away
+                        score_str = f"{home_score}-{away_score}"
+                    elif away_score > home_score:
+                        winner, loser = away, home
+                        score_str = f"{away_score}-{home_score}"
+                    else:
+                        winner, loser = None, None
+                        score_str = f"Tied {home_score}-{away_score}"
+
+                    if winner is not None:
+                        header_text = (
+                            f"Individual Game: {away} @ {home} — {date} "
+                            f"(<b>{winner} won {score_str}</b>)"
+                        )
+                    else:
+                        header_text = (
+                            f"Individual Game: {away} @ {home} — {date} ({score_str})"
+                        )
+                else:
+                    header_text = f"Individual Game: {away} @ {home} — {date}"
             except Exception:
                 header_text = "Fan Sentiment & Game Events Over Time"
         else:
@@ -74,6 +100,11 @@ def render_sentiment_widget(
             unsafe_allow_html=True,
         )
 
+        # Italic note
+        st.markdown(
+            "<i>Click on sentiment peaks/valleys to see related game events and comments.</i>",
+            unsafe_allow_html=True,
+        )
         window_minutes = 4
 
         # --- Compute rolling sentiment

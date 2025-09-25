@@ -30,7 +30,7 @@ def render_avg_sentiment_by_game_widget(
     """
     st.html(f"<style>{container_css}</style>")
 
-    with st.container(border=True, key="avg-sentiment-container"):
+    with st.container(border=True, key="avg-sentiment-container", height=620):
         # Defensive checks
         if comments_df is None or comments_df.empty:
             st.info("No comments available to compute average sentiment.")
