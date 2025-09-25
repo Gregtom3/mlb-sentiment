@@ -82,7 +82,7 @@ def load_events(game_id, _engine):
 @st.cache_data
 def load_comments(game_id, _engine):
     query = f"""
-    SELECT game_id,author,text,created_est,sentiment_score
+    SELECT game_id,author,text,created_est,sentiment,sentiment_score
     FROM dbo.comments
     WHERE game_id = {game_id}
     ORDER BY created_est
@@ -90,12 +90,25 @@ def load_comments(game_id, _engine):
     df = safe_read_sql(
         query,
         _engine,
-        columns=["game_id", "author", "text", "created_est", "sentiment_score"],
+        columns=[
+            "game_id",
+            "author",
+            "text",
+            "created_est",
+            "sentiment",
+            "sentiment_score",
+        ],
     )
     if not df.empty:
         df["created_est"] = pd.to_datetime(df["created_est"])
     if len(df) > 2:
         df = df.iloc[:-2]  # drop last two rows (usually later stickied comments)
+    # If sentiment is neutral set score to 0.0
+    df.loc[df["sentiment"] == "neutral", "sentiment_score"] = 0.0
+    # If sentiment is negative force score to negative value
+    df.loc[df["sentiment"] == "negative", "sentiment_score"] = -df.loc[
+        df["sentiment"] == "negative", "sentiment_score"
+    ].abs()
     return df
 
 

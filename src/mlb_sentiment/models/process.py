@@ -1,26 +1,37 @@
 from enum import Enum
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from typing import Tuple, Dict
+from transformers import pipeline
 
 
+# ----------------------------
+# Model Enum
+# ----------------------------
 class SentimentModelType(Enum):
     NULL = "null"
     VADER = "vader"
     DISTILBERT_BASE_UNCASED_FINETUNED_SST_2_ENGLISH = (
         "distilbert-base-uncased-finetuned-sst-2-english"
     )
-    BERT_BASE_UNCASED_EMOTION = "nateraw/bert-base-uncased-emotion"
-    DISTILBERT_BASE_UNCASED_EMOTION = "bhadresh-savani/distilbert-base-uncased-emotion"
+    TWITTER_ROBERTA_BASE_SENTIMENT = "cardiffnlp/twitter-roberta-base-sentiment"
 
 
-# Group the Hugging Face Enums for easier reference
+# Group Hugging Face models
 HUGGING_FACE_MODELS = [
     SentimentModelType.DISTILBERT_BASE_UNCASED_FINETUNED_SST_2_ENGLISH,
-    SentimentModelType.BERT_BASE_UNCASED_EMOTION,
-    SentimentModelType.DISTILBERT_BASE_UNCASED_EMOTION,
+    SentimentModelType.TWITTER_ROBERTA_BASE_SENTIMENT,
 ]
 
+# ----------------------------
+# Cached analyzers/pipelines
+# ----------------------------
+_vader_analyzer = SentimentIntensityAnalyzer()
+_hf_pipelines: Dict[SentimentModelType, any] = {}
 
+
+# ----------------------------
+# Helpers
+# ----------------------------
 def get_model_from_string(model_str: str) -> SentimentModelType:
     """Convert a string to the corresponding SentimentModelType enum."""
     model_str = model_str.lower()
@@ -28,6 +39,8 @@ def get_model_from_string(model_str: str) -> SentimentModelType:
         return SentimentModelType.VADER
     elif model_str == "distilbert-base-uncased-finetuned-sst-2-english":
         return SentimentModelType.DISTILBERT_BASE_UNCASED_FINETUNED_SST_2_ENGLISH
+    elif model_str == "twitter-roberta-base-sentiment":
+        return SentimentModelType.TWITTER_ROBERTA_BASE_SENTIMENT
     elif model_str == "null":
         return SentimentModelType.NULL
     else:
@@ -36,11 +49,10 @@ def get_model_from_string(model_str: str) -> SentimentModelType:
 
 def _get_vader_sentiment(comment: str) -> Tuple[str, float]:
     """
-    Analyzes the sentiment of a comment using VADER.
-    Returns the dominant emotion (positive, negative, neutral) and the compound score.
+    Analyzes sentiment using VADER.
+    Returns (emotion, compound_score).
     """
-    analyzer = SentimentIntensityAnalyzer()
-    sentiment_scores = analyzer.polarity_scores(comment)
+    sentiment_scores = _vader_analyzer.polarity_scores(comment)
     compound_score = sentiment_scores["compound"]
 
     if compound_score >= 0.05:
@@ -56,17 +68,37 @@ def _get_vader_sentiment(comment: str) -> Tuple[str, float]:
 def _get_hugging_face_sentiment(
     comment: str, model_type: SentimentModelType
 ) -> Tuple[str, float]:
-    from transformers import pipeline
+    """
+    Analyzes sentiment using a Hugging Face model.
+    Returns (label, score).
+    """
+    if model_type not in _hf_pipelines:
+        _hf_pipelines[model_type] = pipeline(
+            "sentiment-analysis", model=model_type.value
+        )
+    sentiment_pipeline = _hf_pipelines[model_type]
+    results = sentiment_pipeline(
+        [comment], max_length=512, truncation=True, padding=True
+    )
+    if model_type == SentimentModelType.TWITTER_ROBERTA_BASE_SENTIMENT:
+        # Map labels to more general emotions
+        label_map = {
+            "LABEL_0": "negative",
+            "LABEL_1": "neutral",
+            "LABEL_2": "positive",
+        }
+        label = label_map.get(results[0]["label"], "neutral")
+        return label, results[0]["score"]
+    else:
+        return results[0]["label"], results[0]["score"]
 
-    sentiment_pipeline = pipeline("sentiment-analysis", model=model_type.value)
-    results = sentiment_pipeline([comment])
-    return (results[0]["label"], results[0]["score"])
 
-
+# ----------------------------
+# Public API
+# ----------------------------
 def get_sentiment(comment: str, model_type: SentimentModelType) -> Dict[str, float]:
     """
-    Gets the sentiment (emotion and score) of a comment based on the specified model type.
-    Returns the dominant emotion, and the sentiment score.
+    Gets the sentiment (emotion and score) for a comment based on model type.
     """
     if model_type == SentimentModelType.VADER:
         emotion, score = _get_vader_sentiment(comment)

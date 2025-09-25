@@ -53,7 +53,12 @@ def cli():
     default="null",
     show_default=True,
     type=click.Choice(
-        ["vader", "distilbert-base-uncased-finetuned-sst-2-english", "null"]
+        [
+            "vader",
+            "distilbert-base-uncased-finetuned-sst-2-english",
+            "twitter-roberta-base-sentiment",
+            "null",
+        ]
     ),
     help="Sentiment analysis model to use for Reddit comments.",
 )
