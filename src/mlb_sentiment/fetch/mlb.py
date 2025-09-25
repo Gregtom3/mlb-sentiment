@@ -200,24 +200,4 @@ def fetch_mlb_games(team_acronym, date=None):
                 )
             )
 
-    # If no finals, still include scheduled/incomplete games
-    if not results:
-        time_str = utility.iso_to_est(g.get("game_datetime")).split(" ")[
-            1
-        ]  # Get time only
-        results = [
-            (
-                f"{TEAM_ID}{g['game_id']}",
-                date_str,
-                time_str,
-                get_team_abbreviation(g["home_name"]),
-                get_team_abbreviation(g["away_name"]),
-                g["home_score"],
-                g["away_score"],
-                wins,
-                losses,
-            )
-            for g in s
-        ]
-
     return results

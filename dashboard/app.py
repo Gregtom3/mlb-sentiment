@@ -65,7 +65,7 @@ game_dates = st.sidebar.date_input(
     # Value will use datetime to get yesterday and today
     value=(
         datetime.today().date() - timedelta(days=1),  # yesterday
-        datetime.today().date(),  # today
+        datetime.today().date() - timedelta(days=1),  # yesterday
     ),
 )
 
@@ -127,6 +127,7 @@ data_summary(comments_df, games_df, events_df)
 # -------------------
 col0, col00 = st.columns(2)
 with col0:
+    pass
     render_sentiment_widget(comments_df)
 with col00:
     render_game_events_widget(events_df)

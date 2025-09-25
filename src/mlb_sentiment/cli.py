@@ -102,14 +102,17 @@ def upload(
     # Fetch Reddit posts
     # --------------------------
     if date:
+        games = fetch_mlb_games(team_acronym, date=date)
+        if not games:
+            click.echo(f"No MLB games found for {team_acronym} on {date}. Exiting.")
+            return
+        game_events = fetch_mlb_events(team_acronym, date=date)
         posts = fetch_reddit_posts(team_acronym, date=date)
         comments = fetch_reddit_comments(
             posts,
             limit=comments_limit,
             sentiment_model=get_model_from_string(sentiment_model),
         )
-        games = fetch_mlb_games(team_acronym, date=date)
-        game_events = fetch_mlb_events(team_acronym, date=date)
     else:
         click.echo("You must provide --date (or use --yesterday).")
         return
