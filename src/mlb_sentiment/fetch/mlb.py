@@ -221,9 +221,3 @@ def fetch_mlb_games(team_acronym, date=None):
         ]
 
     return results
-
-
-if __name__ == "__main__":
-    team_acronym = "NYM"
-    date = "09/24/2025"
-    fetch_mlb_games(team_acronym, date)
