@@ -1,5 +1,5 @@
 # Standard library
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Third-party packages
 import numpy as np
@@ -9,6 +9,8 @@ from plotly.subplots import make_subplots
 import streamlit as st
 from streamlit_date_picker import date_picker, PickerType
 from streamlit_plotly_events import plotly_events
+from pytz import timezone
+import pytz
 
 # Local modules
 from compute import compute_sentiment_ts
@@ -36,6 +38,16 @@ st.set_page_config(layout="wide")
 # -------------------
 st.title("MLB Pulse Dashboard")
 
+# Pick a timezone
+# -------------------
+selected_timezone = st.sidebar.radio(
+    "Select Timezone",
+    ["EST", "CST", "MST", "PST"],
+    index=0,  # Default to EST
+    horizontal=True,
+)
+
+
 # Pick a team
 # -------------------
 team_name = st.sidebar.selectbox(
@@ -46,12 +58,24 @@ team_name = st.sidebar.selectbox(
 team_acronym = get_team_acronym_from_team_name(team_name)
 
 # Pick a date range
+# Default to yesterday and today
 # -------------------
 game_dates = st.sidebar.date_input(
     "Select a range of dates",
-    value=(pd.to_datetime("2025-09-20"), pd.to_datetime("2025-09-21")),
+    # Value will use datetime to get yesterday and today
+    value=(
+        datetime.today().date() - timedelta(days=1),  # yesterday
+        datetime.today().date(),  # today
+    ),
 )
 
+# Map user-friendly timezone names to pytz timezone strings
+timezone_mapping = {
+    "EST": "America/New_York",
+    "CST": "America/Chicago",
+    "MST": "America/Denver",
+    "PST": "America/Los_Angeles",
+}
 
 # Update cached queries to use imported functions
 games_df = load_games(game_dates, team_acronym, engine)
@@ -60,13 +84,22 @@ if games_df.empty:
     st.warning("No games found for this date.")
     st.stop()
 
+
 # -------------------
 # Step 2: Pick a game
 # Include game number (1 or 2) depending on doubleheader
 # -------------------
-# Build list of tuples: (label, game_id)
+def convert_to_timezone(time_obj, target_timezone):
+    utc_time = datetime.combine(datetime.today(), time_obj).replace(tzinfo=pytz.utc)
+    target_time = utc_time.astimezone(timezone(timezone_mapping[target_timezone]))
+    return target_time.strftime("%-I:%M %p")
+
+
 options = [
-    (f"{r['away_team']} @ {r['home_team']} Game {r.name+1}", r["game_id"])
+    (
+        f"{r['away_team']} @ {r['home_team']} {convert_to_timezone(r.game_start_time_est, selected_timezone)} (Game {r.name+1})",
+        r["game_id"],
+    )
     for _, r in games_df.iterrows()
 ]
 
