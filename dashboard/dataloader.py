@@ -73,12 +73,12 @@ def load_games(game_dates, team_acronym, _engine):
 @st.cache_data
 def load_events(team_id, _engine):
     query = f"""
-    SELECT game_id, event_id, event, description, home_score, away_score, est
+    SELECT game_id, event_id, event, description, home_team, visiting_team, home_score, away_score, est
     FROM dbo.gameEvents
     WHERE SUBSTRING(CAST(game_id AS VARCHAR), 1, 3) = '{team_id}'
     ORDER BY event_id
     """
-    return safe_read_sql(
+    df = safe_read_sql(
         query,
         _engine,
         columns=[
@@ -86,11 +86,16 @@ def load_events(team_id, _engine):
             "event_id",
             "event",
             "description",
+            "home_team",
+            "visiting_team",
             "home_score",
             "away_score",
             "est",
         ],
     )
+    # rename visiting_team to away_team for consistency
+    df = df.rename(columns={"visiting_team": "away_team"})
+    return df
 
 
 @st.cache_data

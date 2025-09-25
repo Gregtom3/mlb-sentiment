@@ -123,12 +123,10 @@ def render_avg_sentiment_by_game_widget(
             plot_bgcolor="white",
             font=dict(family="Montserrat, sans-serif", size=14, color="black"),
             xaxis=dict(
-                title="Game Start Time (EST)",
                 showgrid=True,
                 zeroline=False,
             ),
             yaxis=dict(
-                title="Average Sentiment Score",
                 zeroline=True,
                 zerolinecolor="black",
                 range=[-abs_max_sentiment, abs_max_sentiment],

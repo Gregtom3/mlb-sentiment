@@ -42,6 +42,8 @@ def render_commenter_summary_widget(comments_df: pd.DataFrame) -> None:
         box-shadow: 0px 1px 3px rgba(0,0,0,0.05);
         margin-bottom: 12px;
         font-family: 'Poppins', sans-serif;
+        height: 250px;
+        overflow-y: auto;
     }
     .metric-title {
         font-weight: 600;

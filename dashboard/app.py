@@ -21,6 +21,7 @@ from widgets.avg_sentiment_chart import render_avg_sentiment_by_game_widget
 from widgets.wins_losses import render_wins_losses_histogram
 from widgets.sentiment_score_dists import render_sentiment_distribution_histogram
 from widgets.comment_summary import render_commenter_summary_widget
+from widgets.sentiment_vs_run_diff import render_sentiment_vs_run_diff
 
 # -------------------
 # Streamlit setup
@@ -148,3 +149,8 @@ with row2_col2:
 
 # Commenter summary widget
 render_commenter_summary_widget(comments_df)
+
+# Sentiment vs Run Differential
+row3_col1, row3_col2 = st.columns(2)
+with row3_col1:
+    render_sentiment_vs_run_diff(comments_df, events_df, team_acronym)
