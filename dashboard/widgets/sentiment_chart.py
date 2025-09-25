@@ -12,6 +12,8 @@ def render_sentiment_widget(
     events_df: pd.DataFrame,
     team_is_home: int,
     team_acronym: str = "",
+    games_df: pd.DataFrame = None,
+    current_game_id: int = None,
 ) -> None:
     """
     Renders sentiment-over-time + score differential overlay,
@@ -22,6 +24,8 @@ def render_sentiment_widget(
       events_df: ['est','home_score','away_score','event','description']
       team_is_home: boolean indicating if the team is home team
       team_acronym: used for reference
+      games_df: ['game_id','home_team','away_team','game_date'] for header info
+      current_game_id: for header info
     """
 
     # --- Styling
@@ -41,8 +45,20 @@ def render_sentiment_widget(
             st.warning("Comments missing timestamp column 'created_est'.")
             return
 
+        if games_df is not None and current_game_id is not None:
+            try:
+                game_row = games_df.loc[games_df["game_id"] == current_game_id].iloc[0]
+                home = game_row["home_team"]
+                away = game_row["away_team"]
+                date = pd.to_datetime(game_row["game_date"]).strftime("%Y-%m-%d")
+                header_text = f"{away} @ {home} — {date}"
+            except Exception:
+                header_text = "Fan Sentiment & Game Events Over Time"
+        else:
+            header_text = "Fan Sentiment & Game Events Over Time"
+
         st.markdown(
-            """
+            f"""
             <div style="
                 background-color:#F8F9FC;
                 padding:10px;
@@ -52,7 +68,7 @@ def render_sentiment_widget(
                 font-size:1.2em;
                 font-weight:400;
             ">
-                Fan Sentiment & Game Events Over Time
+                {header_text}
             </div>
             """,
             unsafe_allow_html=True,
@@ -158,14 +174,19 @@ def render_sentiment_widget(
             secondary_y=True,
         )
 
-        fig.update_layout(autosize=True, paper_bgcolor="white", plot_bgcolor="white")
+        fig.update_layout(
+            autosize=True,
+            paper_bgcolor="white",
+            plot_bgcolor="white",
+            margin=dict(l=75, r=20, t=20, b=60),
+        )
         max_abs_diff = (
             np.nanmax(np.abs(diff_series.values)) if diff_series is not None else 1
         )
         fig.update_yaxes(
             title_text=f"{team_acronym} Lead (+/-)",
             secondary_y=False,
-            title_font=dict(size=18),
+            title_font=dict(size=18, family="Montserrat, sans-serif"),
             showgrid=False,
             color="gray",
             zeroline=True,

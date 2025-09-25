@@ -18,6 +18,7 @@ from mlb_sentiment.info import (
 from widgets.data_summary import data_summary
 from widgets.sentiment_chart import render_sentiment_widget
 from widgets.avg_sentiment_chart import render_avg_sentiment_by_game_widget
+from widgets.wins_losses import render_wins_losses_histogram
 
 # -------------------
 # Streamlit setup
@@ -131,4 +132,11 @@ with row1_col2:
         game_specific_events_df,
         team_is_home,
         team_acronym,
+        games_df,
+        selected_game_id,
     )
+
+# Wins/Losses histogram
+row2_col1, row2_col2 = st.columns(2)
+with row2_col1:
+    render_wins_losses_histogram(games_df, selected_game_id)

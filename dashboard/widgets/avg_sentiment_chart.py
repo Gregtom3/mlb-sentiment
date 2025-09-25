@@ -56,7 +56,7 @@ def render_avg_sentiment_by_game_widget(
                 font-size:1.2em;
                 font-weight:400;
             ">
-                Average Sentiment by Game Start Time (EST)
+                Game Average Sentiment Over Time
             </div>
             """,
             unsafe_allow_html=True,
@@ -133,6 +133,7 @@ def render_avg_sentiment_by_game_widget(
                 zerolinecolor="black",
                 range=[-abs_max_sentiment, abs_max_sentiment],
             ),
+            margin=dict(l=75, r=20, t=20, b=40),
         )
         selected_points = plotly_events(
             fig,
