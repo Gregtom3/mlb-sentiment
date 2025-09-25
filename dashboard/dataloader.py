@@ -1,5 +1,6 @@
 import pandas as pd
 from mlb_sentiment.config import load_synapse_engine
+from mlb_sentiment.info import get_team_info
 import streamlit as st
 import time
 
@@ -44,11 +45,13 @@ def get_engine():
 # Cached queries
 # -------------------
 @st.cache_data
-def load_games(game_dates, _engine):
+def load_games(game_dates, team_acronym, _engine):
+    game_id_first_three = get_team_info(team_acronym, "id")
     query = f"""
     SELECT game_id, home_team, away_team, game_date, home_score, away_score
     FROM dbo.games
     WHERE CAST(game_date AS DATE) BETWEEN '{game_dates[0]}' AND '{game_dates[-1]}'
+    AND SUBSTRING(CAST(game_id AS VARCHAR), 1, 3) = '{game_id_first_three}'
     """
     return safe_read_sql(
         query,

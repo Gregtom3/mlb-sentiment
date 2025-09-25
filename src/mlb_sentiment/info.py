@@ -1,4 +1,5 @@
 import statsapi
+from functools import lru_cache
 
 SUBREDDIT_INFO = {
     "NYM": {
@@ -41,3 +42,42 @@ def get_team_acronym_from_game_id(game_id):
     if team_info and "teams" in team_info and len(team_info["teams"]) > 0:
         return team_info["teams"][0].get("abbreviation")
     return None
+
+
+# Get team acronym from team name
+def get_team_acronym_from_team_name(team_name):
+    teams = statsapi.get("teams", {})
+    for team in teams.get("teams", []):
+        if team.get("name", "").lower() == team_name.lower():
+            return team.get("abbreviation", None)
+    return None
+
+
+# Return list of all team acronyms
+@lru_cache(maxsize=None)
+def get_all_team_acronyms():
+    teams = statsapi.get("teams", {})
+    acronyms = []
+    leagues = []
+    for team in teams.get("teams", []):
+        if team["league"].get("name", "") not in ["National League", "American League"]:
+            continue
+        abbr = team.get("abbreviation", "")
+        if abbr:
+            acronyms.append(abbr)
+    return sorted(acronyms)
+
+
+# Return list of all team names
+@lru_cache(maxsize=None)
+def get_all_team_names():
+    teams = statsapi.get("teams", {})
+    names = []
+    leagues = []
+    for team in teams.get("teams", []):
+        if team["league"].get("name", "") not in ["National League", "American League"]:
+            continue
+        name = team.get("name", "")
+        if name:
+            names.append(name)
+    return sorted(names)

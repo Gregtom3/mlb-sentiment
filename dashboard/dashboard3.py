@@ -1,35 +1,60 @@
-import streamlit as st
-import pandas as pd
+# Standard library
+from datetime import datetime
+
+# Third-party packages
 import numpy as np
-from dataloader import get_engine, load_games, load_events, load_comments
-from compute import compute_sentiment_ts
+import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from streamlit_plotly_events import plotly_events
+import streamlit as st
 from streamlit_date_picker import date_picker, PickerType
-from datetime import datetime
-from widgets.sentiment_chart import render_sentiment_widget
+from streamlit_plotly_events import plotly_events
+
+# Local modules
+from compute import compute_sentiment_ts
+from dataloader import get_engine, load_comments, load_events, load_games
+from mlb_sentiment.info import (
+    get_all_team_acronyms,
+    get_team_acronym_from_game_id,
+    get_all_team_names,
+)
+from mlb_sentiment.info import get_team_acronym_from_team_name
 from widgets.data_summary import data_summary
 from widgets.game_events import render_game_events_widget
+from widgets.sentiment_chart import render_sentiment_widget
 
+
+# Initialize engine
+# -------------------
+engine = get_engine()
+
+# Streamlit page config
+# -------------------
 st.set_page_config(layout="wide")
 
 # Centered title
+# -------------------
 st.title("MLB Pulse Dashboard")
 
+# Pick a team
 # -------------------
-# Step 1: Pick a date
+team_name = st.sidebar.selectbox(
+    "Select Team",
+    options=get_all_team_names(),
+    index=18,
+)
+team_acronym = get_team_acronym_from_team_name(team_name)
+
+# Pick a date range
 # -------------------
 game_dates = st.sidebar.date_input(
     "Select a range of dates",
     value=(pd.to_datetime("2025-09-20"), pd.to_datetime("2025-09-21")),
 )
-print(game_dates)
-# Initialize engine
-engine = get_engine()
+
 
 # Update cached queries to use imported functions
-games_df = load_games(game_dates, engine)
+games_df = load_games(game_dates, team_acronym, engine)
 
 if games_df.empty:
     st.warning("No games found for this date.")
