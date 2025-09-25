@@ -211,3 +211,4 @@ playground/
 MyDatabase.db
 *.csv
 *.db
+quick_script.sh
