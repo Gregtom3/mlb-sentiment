@@ -4,6 +4,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from streamlit_plotly_events import plotly_events
 from compute import compute_sentiment_ts
+import numpy as np
 
 
 def render_sentiment_widget(comments_df: pd.DataFrame):
@@ -50,15 +51,8 @@ def render_sentiment_widget(comments_df: pd.DataFrame):
             """,
             unsafe_allow_html=True,
         )
-        # --- Slider to control bin size ---
-        window_minutes = st.slider(
-            "Select time window (minutes)",
-            min_value=1,
-            max_value=10,
-            value=2,
-            step=1,
-            key="sentiment_window",
-        )
+
+        window_minutes = 4
 
         # compute_sentiment_ts is cached; pass through defensive typing
         try:
@@ -82,31 +76,54 @@ def render_sentiment_widget(comments_df: pd.DataFrame):
 
         # Create figure
         fig = make_subplots(specs=[[{"secondary_y": True}]])
+        mask = sentiment_ts["sentiment_smooth"] >= 0
+        sentiment_pos = np.where(mask, sentiment_ts["sentiment_smooth"], 0)
+        sentiment_neg = np.where(~mask, sentiment_ts["sentiment_smooth"], 0)
         fig.add_trace(
-            go.Scattergl(
+            go.Scatter(
                 x=list(sentiment_ts["created_est"]),
-                y=list(sentiment_ts["sentiment_smooth"]),
-                mode="lines+markers",
-                name="Sentiment (smoothed)",
+                y=list(sentiment_pos),
+                name="Sentiment",
+                fill="tozeroy",
+                fillcolor="rgba(0, 255, 0, 0.5)",
+                mode="none",
+                hoverinfo="skip",
+                showlegend=False,
             ),
             secondary_y=False,
         )
         fig.add_trace(
-            go.Bar(
-                x=list(comment_counts.index),
-                y=list(comment_counts.values),
-                width=window_minutes * 60 * 1000,  # bar width in ms
-                name="Comment count",
-                marker_color="rgba(200,0,0,0.4)",
-                opacity=1,
+            go.Scatter(
+                x=list(sentiment_ts["created_est"]),
+                y=list(sentiment_neg),
+                name="Sentiment",
+                fill="tozeroy",
+                fillcolor="rgba(255, 0, 0, 0.5)",
+                mode="none",
+                hoverinfo="skip",
+                showlegend=False,
             ),
-            secondary_y=True,
+            secondary_y=False,
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=list(sentiment_ts["created_est"]),
+                y=list(sentiment_ts["sentiment_smooth"]),
+                name="Sentiment Line",
+                line=dict(color="black", width=2),
+                mode="lines",
+                showlegend=False,
+            ),
+            secondary_y=False,
         )
 
         fig.update_layout(
             autosize=True,
             barmode="overlay",
+            paper_bgcolor="white",
+            plot_bgcolor="white",
         )
+
         fig.update_yaxes(title_text="Sentiment", secondary_y=False)
         fig.update_yaxes(title_text="Comment count", secondary_y=True)
 

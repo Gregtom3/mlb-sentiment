@@ -37,101 +37,113 @@ def render_game_events_widget(events_df: Any) -> Dict[str, int] | None:
 
     If Streamlit is not available the function returns a small summary dict for tests.
     """
-    # Defensive checks
-    if events_df is None:
-        if st is None:
-            return {"points": 0}
-        st.info("No game events available to plot.")
-        return
+    container_css2 = """
+.st-key-game_events-container {
+	background-color: #FFFFFF; /* White background */
+    padding: 10px;
+}
+	"""
+    st.html(f"<style>{container_css2}</style>")
+    with st.container(border=True, key="game_events-container"):
+        # Defensive checks
+        if events_df is None:
+            if st is None:
+                return {"points": 0}
+            st.info("No game events available to plot.")
+            return
 
-    # Try to coerce to DataFrame if possible
-    try:
-        df = pd.DataFrame(events_df)
-    except Exception:
-        df = events_df
+        # Try to coerce to DataFrame if possible
+        try:
+            df = pd.DataFrame(events_df)
+        except Exception:
+            df = events_df
 
-    required_cols = {"est", "home_score", "away_score"}
-    if not required_cols.issubset(set(df.columns)):
-        msg = f"Events data missing required columns: {required_cols - set(df.columns)}"
-        if st is None:
-            raise KeyError(msg)
-        st.warning(msg)
-        return
+        required_cols = {"est", "home_score", "away_score"}
+        if not required_cols.issubset(set(df.columns)):
+            msg = f"Events data missing required columns: {required_cols - set(df.columns)}"
+            if st is None:
+                raise KeyError(msg)
+            st.warning(msg)
+            return
 
-    if df.empty:
-        if st is None:
-            return {"points": 0}
-        st.info("No game events to display.")
-        return
+        if df.empty:
+            if st is None:
+                return {"points": 0}
+            st.info("No game events to display.")
+            return
 
-    # Ensure timestamps are datetime
-    try:
-        times = _ensure_datetime(df, "est")
-    except Exception as e:
-        if st is None:
-            raise
-        st.error(f"Could not parse event timestamps: {e}")
-        return
+        # Ensure timestamps are datetime
+        try:
+            times = _ensure_datetime(df, "est")
+        except Exception as e:
+            if st is None:
+                raise
+            st.error(f"Could not parse event timestamps: {e}")
+            return
 
-    # Compute differential and hover text
-    try:
-        differential = (
-            pd.to_numeric(df["home_score"], errors="coerce").fillna(0)
-            - pd.to_numeric(df["away_score"], errors="coerce").fillna(0)
-        ).astype(int)
-    except Exception:
-        differential = pd.Series([0] * len(df))
+        # Compute differential and hover text
+        try:
+            differential = (
+                pd.to_numeric(df["home_score"], errors="coerce").fillna(0)
+                - pd.to_numeric(df["away_score"], errors="coerce").fillna(0)
+            ).astype(int)
+        except Exception:
+            differential = pd.Series([0] * len(df))
 
-    event_col = (
-        df["event"].astype(str) if "event" in df.columns else pd.Series([""] * len(df))
-    )
-    desc_col = (
-        df["description"].astype(str)
-        if "description" in df.columns
-        else pd.Series([""] * len(df))
-    )
-
-    hover_text = (
-        (event_col.fillna("") + ": " + desc_col.fillna("")).astype(str).tolist()
-    )
-
-    # Build figure
-    fig = go.Figure()
-    fig.add_trace(
-        go.Scatter(
-            x=list(times),
-            y=list(differential),
-            mode="lines+markers",
-            marker=dict(size=6),
-            line=dict(width=2),
-            text=hover_text,
-            hovertemplate="%{x|%Y-%m-%d %H:%M:%S} <br>Differential: %{y}<br>%{text}<extra></extra>",
-            name="Score differential (home - away)",
+        event_col = (
+            df["event"].astype(str)
+            if "event" in df.columns
+            else pd.Series([""] * len(df))
         )
-    )
+        desc_col = (
+            df["description"].astype(str)
+            if "description" in df.columns
+            else pd.Series([""] * len(df))
+        )
 
-    fig.update_layout(
-        title="Game Score Differential Over Time",
-        xaxis_title="EST time",
-        yaxis_title="Home - Away",
-        autosize=True,
-    )
+        hover_text = (
+            (event_col.fillna("") + ": " + desc_col.fillna("")).astype(str).tolist()
+        )
 
-    if st is None:
-        # For tests, return a small summary
-        return {
-            "points": len(df),
-            "start": str(times.iloc[0]),
-            "end": str(times.iloc[-1]),
-        }
+        # Build figure
+        fig = go.Figure()
+        fig.add_trace(
+            go.Scatter(
+                x=list(times),
+                y=list(differential),
+                mode="lines+markers",
+                marker=dict(size=6),
+                line=dict(width=2),
+                text=hover_text,
+                hovertemplate="%{x|%Y-%m-%d %H:%M:%S} <br>Differential: %{y}<br>%{text}<extra></extra>",
+                name="Score differential (home - away)",
+            )
+        )
 
-    st.markdown(
-        f"<div style='padding:6px;background:#F8F9FC;border-radius:6px'>Game events ({len(df)} points)</div>",
-        unsafe_allow_html=True,
-    )
-    st.plotly_chart(fig, use_container_width=True)
+        fig.update_layout(
+            title="Game Score Differential Over Time",
+            xaxis_title="EST time",
+            yaxis_title="Home - Away",
+            autosize=True,
+            paper_bgcolor="white",
+            plot_bgcolor="white",
+        )
 
-    return None
+        if st is None:
+            # For tests, return a small summary
+            return {
+                "points": len(df),
+                "start": str(times.iloc[0]),
+                "end": str(times.iloc[-1]),
+            }
+
+        st.markdown(
+            f"<div style='padding:6px;background:#F8F9FC;border-radius:6px'>Game events ({len(df)} points)</div>",
+            unsafe_allow_html=True,
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+        return None
 
 
 if __name__ == "__main__":
