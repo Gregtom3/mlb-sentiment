@@ -32,3 +32,12 @@ def get_team_info(team_acronym, key):
         return team_info.get(key)
     else:
         raise ValueError(f"Invalid key: {key} for team acronym: {team_acronym}")
+
+
+# Get team acronym from game id
+def get_team_acronym_from_game_id(game_id):
+    first_three = game_id[:3]
+    team_info = statsapi.get("team", {"teamId": first_three})
+    if team_info and "teams" in team_info and len(team_info["teams"]) > 0:
+        return team_info["teams"][0].get("abbreviation")
+    return None
