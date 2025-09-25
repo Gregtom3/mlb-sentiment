@@ -130,18 +130,3 @@ with col0:
     render_sentiment_widget(comments_df)
 with col00:
     render_game_events_widget(events_df)
-# Two simple placeholder widgets (y=x^2 and y=x^3)
-col1, col2 = st.columns(2)
-# make plots
-with col1:
-    x = np.linspace(0, 10, 100)
-    y1 = x**2
-    fig1 = go.Figure(data=go.Scatter(x=x, y=y1, mode="lines", name="y=x^2"))
-    fig1.update_layout(title="Plot of y=x^2", xaxis_title="x", yaxis_title="y")
-    st.plotly_chart(fig1, use_container_width=True)
-with col2:
-    x = np.linspace(0, 10, 100)
-    y2 = x**3
-    fig2 = go.Figure(data=go.Scatter(x=x, y=y2, mode="lines", name="y=x^3"))
-    fig2.update_layout(title="Plot of y=x^3", xaxis_title="x", yaxis_title="y")
-    st.plotly_chart(fig2, use_container_width=True)
