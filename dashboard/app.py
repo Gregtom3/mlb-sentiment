@@ -10,7 +10,13 @@ from streamlit_plotly_events2 import plotly_events
 
 # Local modules
 from compute import compute_sentiment_ts
-from dataloader import get_engine, load_comments, load_events, load_games, get_total_comments
+from dataloader import (
+    get_engine,
+    load_comments,
+    load_events,
+    load_games,
+    get_total_comments,
+)
 from mlb_sentiment.info import (
     get_all_team_names,
     get_team_acronym_from_team_name,

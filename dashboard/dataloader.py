@@ -40,6 +40,7 @@ def safe_read_sql(query, engine, columns=None, retries: int = 3, backoff: float 
 def get_engine():
     return load_synapse_engine()
 
+
 # -------------------
 # Cached all comments count
 # -------------------
@@ -51,6 +52,7 @@ def get_total_comments(_engine):
     if df.empty:
         return 0
     return int(df.iloc[0]["total_comments"])
+
 
 # -------------------
 # Cached queries
