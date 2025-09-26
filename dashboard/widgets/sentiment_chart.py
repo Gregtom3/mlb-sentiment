@@ -153,17 +153,6 @@ def render_sentiment_widget(
         mask = sentiment_ts["sentiment_smooth"] >= 0
         sentiment_pos = np.where(mask, sentiment_ts["sentiment_smooth"], 0)
         sentiment_neg = np.where(~mask, sentiment_ts["sentiment_smooth"], 0)
-        fig.add_trace(
-            go.Scatter(
-                x=list(diff_series.index),
-                y=list(diff_series.values),
-                line=dict(color="gray", width=2, dash="dot"),
-                mode="lines",
-                name="Run Differential",
-                hoverinfo="skip",
-            ),
-            secondary_y=False,
-        )
         # Positive fill
         fig.add_trace(
             go.Scatter(
@@ -175,7 +164,7 @@ def render_sentiment_widget(
                 hoverinfo="skip",
                 showlegend=False,
             ),
-            secondary_y=True,
+            secondary_y=False,
         )
         # Negative fill
         fig.add_trace(
@@ -188,7 +177,7 @@ def render_sentiment_widget(
                 hoverinfo="skip",
                 showlegend=False,
             ),
-            secondary_y=True,
+            secondary_y=False,
         )
         # Black line (sentiment smooth)
         fig.add_trace(
@@ -200,9 +189,19 @@ def render_sentiment_widget(
                 mode="lines",
                 showlegend=True,
             ),
+            secondary_y=False,
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=list(diff_series.index),
+                y=list(diff_series.values),
+                line=dict(color="gray", width=2, dash="dot"),
+                mode="lines",
+                name="Run Differential",
+                hoverinfo="skip",
+            ),
             secondary_y=True,
         )
-
         fig.update_layout(
             autosize=True,
             paper_bgcolor="white",
@@ -214,7 +213,8 @@ def render_sentiment_widget(
         )
         fig.update_yaxes(
             title_text=f"{team_acronym} Lead (+/-)",
-            secondary_y=False,
+            secondary_y=True,
+            side="right",
             title_font=dict(size=18, family="Montserrat, sans-serif"),
             showgrid=False,
             color="gray",
@@ -229,15 +229,14 @@ def render_sentiment_widget(
         )
         fig.update_yaxes(
             title_text="Sentiment",
-            secondary_y=True,
+            secondary_y=False,
+            side="left",
             title_font=dict(size=18, family="Montserrat, sans-serif"),
             color="black",
             zeroline=True,
             zerolinecolor="black",
             zerolinewidth=1,
             range=[-1, 1],  # symmetric around 0
-            anchor="x",
-            overlaying="y",
         )
         # --- Interactive click events
         with st.container(border=False):
@@ -261,7 +260,12 @@ def render_sentiment_widget(
             ]
 
             if not window_events.empty:
-                events_table = window_events.loc[:, ["description"]].copy()
+                events_table = window_events.loc[
+                    :, ["halfInning", "description"]
+                ].copy()
+                events_table = events_table.rename(
+                    columns={"halfInning": "Inning", "description": "Event Description"}
+                )
                 st.subheader(
                     f"Game Events {bin_start.strftime('%H:%M')}–{bin_end.strftime('%H:%M')}"
                 )

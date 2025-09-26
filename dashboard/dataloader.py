@@ -73,7 +73,7 @@ def load_games(game_dates, team_acronym, _engine):
 @st.cache_data
 def load_events(team_id, _engine):
     query = f"""
-    SELECT game_id, event_id, event, description, home_team, visiting_team, home_score, away_score, est
+    SELECT game_id, event_id, event, description, inning, halfInning, home_team, visiting_team, home_score, away_score, est
     FROM dbo.gameEvents
     WHERE SUBSTRING(CAST(game_id AS VARCHAR), 1, 3) = '{team_id}'
     ORDER BY event_id
@@ -86,6 +86,8 @@ def load_events(team_id, _engine):
             "event_id",
             "event",
             "description",
+            "inning",
+            "halfInning",
             "home_team",
             "visiting_team",
             "home_score",
@@ -95,6 +97,9 @@ def load_events(team_id, _engine):
     )
     # rename visiting_team to away_team for consistency
     df = df.rename(columns={"visiting_team": "away_team"})
+    # Rename half innings to "Top" and "Bottom"
+    df["halfInning"] = df["halfInning"].replace({"top": "Top", "bottom": "Bottom"})
+    df["halfInning"] = df["halfInning"] + " " + df["inning"].astype(str)
     return df
 
 

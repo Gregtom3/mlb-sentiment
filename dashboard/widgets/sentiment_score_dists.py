@@ -27,7 +27,7 @@ def render_sentiment_distribution_histogram(comments_df: pd.DataFrame) -> None:
     """
     st.html(f"<style>{container_css}</style>")
 
-    with st.container(border=True, key="sentiment-distribution"):
+    with st.container(border=True, key="sentiment-distribution", height=620):
         if comments_df is None or comments_df.empty:
             st.info("No comments available for sentiment distribution.")
             return
@@ -102,6 +102,7 @@ def render_sentiment_distribution_histogram(comments_df: pd.DataFrame) -> None:
         fig.update_layout(
             barmode="overlay",
             autosize=True,
+            height=550,
             paper_bgcolor="white",
             plot_bgcolor="white",
             font=dict(family="Montserrat, sans-serif", size=14, color="black"),
