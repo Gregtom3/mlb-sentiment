@@ -35,7 +35,7 @@ def render_sentiment_vs_run_diff(
     """
     st.html(f"<style>{container_css}</style>")
 
-    with st.container(border=True, key="sentiment-run-diff"):
+    with st.container(border=True, key="sentiment-run-diff", height=530):
         if comments_df is None or comments_df.empty:
             st.info("No comments available for sentiment vs run diff.")
             return

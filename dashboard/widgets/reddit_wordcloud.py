@@ -54,7 +54,7 @@ def render_wordcloud_widget(comments_df: pd.DataFrame, max_words: int = 50) -> N
     }
     """
     st.html(f"<style>{container_css}</style>")
-    with st.container(border=True, key="wordcloud-container", height=500):
+    with st.container(border=True, key="wordcloud-container", height=530):
         if comments_df is None or comments_df.empty:
             st.info("No comments available for word cloud.")
             return
@@ -87,12 +87,26 @@ def render_wordcloud_widget(comments_df: pd.DataFrame, max_words: int = 50) -> N
 
         # Default stopwords + some extras
         stopwords = set(STOPWORDS)
-        extra_stopwords = {"hes", "got", "don", "will", "see"}
+        extra_stopwords = {
+            "hes",
+            "got",
+            "don",
+            "will",
+            "see",
+            "right",
+            "let",
+            "make",
+            "game",
+            "team",
+            "season",
+            "play",
+            "year",
+        }
         stopwords |= extra_stopwords
         # Generate word cloud
         wc = WordCloud(
             width=800,
-            height=400,
+            height=520,
             background_color="white",
             stopwords=stopwords,
             max_words=max_words,
