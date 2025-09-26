@@ -135,13 +135,13 @@ def upload(
         upload_to_azure_blob(
             filename + "_comments.parquet",
             reddit_blob,
-            subdirectory=f"passiveDatabase/comments/{team_acronym}/year={year}",
+            subdirectory=f"activeDatabase/comments/{team_acronym}/year={year}",
             remove_local=not keep_local,
         )
         upload_to_azure_blob(
             filename + "_posts.parquet",
             reddit_blob,
-            subdirectory=f"passiveDatabase/posts/{team_acronym}/year={year}",
+            subdirectory=f"activeDatabase/posts/{team_acronym}/year={year}",
             remove_local=not keep_local,
         )
         click.echo(
@@ -155,13 +155,13 @@ def upload(
         upload_to_azure_blob(
             filename + "_games.parquet",
             mlb_blob,
-            subdirectory=f"passiveDatabase/games/{team_acronym}/year={year}",
+            subdirectory=f"activeDatabase/games/{team_acronym}/year={year}",
             remove_local=not keep_local,
         )
         upload_to_azure_blob(
             filename + "_game_events.parquet",
             mlb_blob,
-            subdirectory=f"passiveDatabase/gameEvents/{team_acronym}/year={year}",
+            subdirectory=f"activeDatabase/gameEvents/{team_acronym}/year={year}",
             remove_local=not keep_local,
         )
         click.echo(f"\t MLB blob name: {mlb_blob}")

@@ -87,7 +87,6 @@ if st.session_state["selected_game_id"] not in games_df["game_id"].values:
 
 selected_game_id = st.session_state["selected_game_id"]
 
-
 # -------------------
 # Team/game context
 # -------------------
@@ -100,13 +99,12 @@ team_is_home = (
 # -------------------
 # Query events & comments
 # -------------------
+
 events_df = load_events(team_id, engine)
 comments_df = load_comments(team_id, engine)
-
 # Keep only games in this window
 events_df = events_df[events_df["game_id"].isin(games_df["game_id"])]
 comments_df = comments_df[comments_df["game_id"].isin(games_df["game_id"])]
-
 # -------------------
 # Render data summary metrics
 # -------------------
