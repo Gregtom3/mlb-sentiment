@@ -70,7 +70,22 @@ def render_sentiment_vs_run_diff(
             """,
             unsafe_allow_html=True,
         )
+        # --- Game filters
+        col1, col2 = st.columns(2)
+        with col1:
+            include_home = st.checkbox("Home Games", value=True, key="sent-home")
+        with col2:
+            include_away = st.checkbox("Away Games", value=True, key="sent-away")
 
+        if not include_home and not include_away:
+            st.info("Select at least one of Home or Away games.")
+            return
+
+        # Filter events_df by home/away
+        if include_home and not include_away:
+            events_df = events_df[events_df["home_team"] == team_acronym]
+        elif include_away and not include_home:
+            events_df = events_df[events_df["away_team"] == team_acronym]
         comments_df = comments_df.copy()
         comments_df["created_est"] = pd.to_datetime(comments_df["created_est"])
         events_df = events_df.copy()

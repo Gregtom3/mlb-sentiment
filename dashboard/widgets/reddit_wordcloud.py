@@ -34,6 +34,20 @@ def _normalize_text(text: str) -> str:
     return text
 
 
+@st.cache_data
+def get_wordcloud_cleaned_texts(comments_df: pd.DataFrame) -> str:
+    """Helper to get cleaned combined text from comments_df for word cloud generation."""
+    if comments_df is None or comments_df.empty:
+        return ""
+    if "text" not in comments_df.columns:
+        return ""
+
+    # Normalize all comments
+    cleaned_texts = [_normalize_text(t) for t in comments_df["text"].dropna()]
+    cleaned_texts = " ".join(cleaned_texts)
+    return cleaned_texts
+
+
 def render_wordcloud_widget(comments_df: pd.DataFrame, max_words: int = 50) -> None:
     """
     Render a word cloud from the 'text' column of comments_df.
@@ -82,8 +96,7 @@ def render_wordcloud_widget(comments_df: pd.DataFrame, max_words: int = 50) -> N
         )
 
         # Normalize all comments
-        cleaned_texts = [_normalize_text(t) for t in comments_df["text"].dropna()]
-        cleaned_texts = " ".join(cleaned_texts)
+        cleaned_texts = get_wordcloud_cleaned_texts(comments_df)
 
         # Default stopwords + some extras
         stopwords = set(STOPWORDS)
@@ -113,6 +126,7 @@ def render_wordcloud_widget(comments_df: pd.DataFrame, max_words: int = 50) -> N
             collocations=False,
             normalize_plurals=False,
             colormap="tab10",
+            random_state=40,
         ).generate(cleaned_texts)
 
         # Plot
