@@ -18,7 +18,6 @@ from mlb_sentiment.info import (
 from widgets.data_summary import data_summary
 from widgets.sentiment_chart import render_sentiment_widget
 from widgets.avg_sentiment_chart import render_avg_sentiment_by_game_widget
-from widgets.wins_losses import render_wins_losses_histogram
 from widgets.sentiment_score_dists import render_sentiment_distribution_histogram
 from widgets.comment_summary import render_commenter_summary_widget
 from widgets.sentiment_vs_run_diff import render_sentiment_vs_run_diff
@@ -121,7 +120,7 @@ row1_col1, row1_col2 = st.columns(2)
 # Avg sentiment chart (used to pick the game)
 with row1_col1:
     clicked_game_id = render_avg_sentiment_by_game_widget(
-        comments_df, games_df, selected_game_id
+        comments_df, games_df, selected_game_id, team_acronym
     )
     if clicked_game_id is not None:
         st.session_state["selected_game_id"] = int(clicked_game_id)
@@ -143,7 +142,7 @@ with row1_col2:
 # Wins/Losses histogram
 row2_col1, row2_col2 = st.columns(2)
 with row2_col1:
-    render_wins_losses_histogram(games_df, selected_game_id)
+    render_sentiment_vs_run_diff(comments_df, games_df, events_df, team_acronym)
 
 with row2_col2:
     render_sentiment_distribution_histogram(comments_df)
@@ -154,6 +153,6 @@ render_commenter_summary_widget(comments_df)
 # Sentiment vs Run Differential
 row3_col1, row3_col2 = st.columns(2)
 with row3_col1:
-    render_sentiment_vs_run_diff(comments_df, games_df, events_df, team_acronym)
-with row3_col2:
     render_wordcloud_widget(comments_df)
+with row3_col2:
+    pass
