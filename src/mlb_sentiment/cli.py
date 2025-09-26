@@ -127,17 +127,18 @@ def upload(
     # --------------------------
     if azure:
         # Reddit
+        year = datetime.strptime(date, "%m/%d/%Y").year
         reddit_blob = create_blob_name("reddit", team_acronym, date)
         upload_to_azure_blob(
             filename + "_comments.csv",
             reddit_blob,
-            subdirectory="passiveDatabase/comments",
+            subdirectory=f"passiveDatabase/comments/{team_acronym}/year={year}",
             remove_local=not keep_local,
         )
         upload_to_azure_blob(
             filename + "_posts.csv",
             reddit_blob,
-            subdirectory="passiveDatabase/posts",
+            subdirectory=f"passiveDatabase/posts/{team_acronym}/year={year}",
             remove_local=not keep_local,
         )
         click.echo(
@@ -151,13 +152,13 @@ def upload(
         upload_to_azure_blob(
             filename + "_games.csv",
             mlb_blob,
-            subdirectory="passiveDatabase/games",
+            subdirectory=f"passiveDatabase/games/{team_acronym}/year={year}",
             remove_local=not keep_local,
         )
         upload_to_azure_blob(
             filename + "_game_events.csv",
             mlb_blob,
-            subdirectory="passiveDatabase/gameEvents",
+            subdirectory=f"passiveDatabase/gameEvents/{team_acronym}/year={year}",
             remove_local=not keep_local,
         )
         click.echo(f"\t MLB blob name: {mlb_blob}")
