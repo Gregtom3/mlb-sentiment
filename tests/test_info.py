@@ -10,6 +10,7 @@ def test_subreddit_info():
         game_thread_user = get_team_info(team_acronym, "game_thread_user")
         assert subreddit.startswith("https://www.reddit.com/r/")
         assert isinstance(game_thread_user, str) and len(game_thread_user) > 0
+
     # Verify user and subreddit exist on Reddit
     reddit = load_reddit_client()
     for team_acronym, info in SUBREDDIT_INFO.items():
