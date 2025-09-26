@@ -54,7 +54,6 @@ def load_games(game_dates, team_acronym, _engine):
     WHERE CAST(game_date AS DATE) BETWEEN '{game_dates[0]}' AND '{game_dates[-1]}'
     AND SUBSTRING(CAST(game_id AS VARCHAR), 1, 3) = '{game_id_first_three}'
     """
-    print("DEBUG SQL:", query)
     games = safe_read_sql(
         query,
         _engine,
