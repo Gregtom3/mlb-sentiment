@@ -5,19 +5,19 @@ from datetime import date
 import re
 
 
-def format_reddit_text(text):
+def format_reddit_text(text: str) -> str:
     """
-    Format Reddit text by replacing newlines and commas to ensure CSV compatibility.
-
-    Args:
-        text (str): The original Reddit text.
-    Returns:
-        str: The formatted text.
+    Clean Reddit text for storage:
+      - Replace newlines, commas, *, #, and links
+      - Trim to 255 chars
+      - Remove non-ASCII
+      - Collapse whitespace
     """
     if text is None:
         return ""
     if not isinstance(text, str):
         text = str(text)
+
     text = (
         text.replace("\n", " ")
         .replace("\r", " ")
@@ -27,85 +27,73 @@ def format_reddit_text(text):
     )
     if len(text) > 255:
         text = text[:255] + "..."
+
     # Remove non-ASCII characters
     text = "".join([c if ord(c) < 128 else " " for c in text])
-    # Remove segments that look like links (http:// or https:// and following non-space chars)
+    # Strip links
     text = re.sub(r"http\S+", "", text)
-
-    # Collapse double spaces after removals
+    # Collapse extra spaces
     text = re.sub(r"\s+", " ", text).strip()
 
     return text
 
 
-def save_reddit_comments(comments, limit=5, filename: str = "MyDatabase"):
+def save_reddit_comments(comments, limit: int = 5, filename: str = "MyDatabase"):
     """
-    Save multiple Reddit comments to a CSV file.
-
-    Args:
-        comments (list): A list of dictionaries (from fetch_reddit_comments).
-        limit (int): Number of top-level comments to save per post.
-        filename (str): Base filename (extension auto-added).
+    Save Reddit comments to a Parquet file.
     """
-    comments_csv = (
-        filename if filename.endswith("_comments.csv") else filename + "_comments.csv"
+    comments_file = (
+        filename
+        if filename.endswith("_comments.parquet")
+        else filename + "_comments.parquet"
     )
 
     all_comments = []
-    comment_id_counter = 1  # mimic autoincrement ids
+    comment_id_counter = 1
     for comment in comments:
-        # Get formatted comment text
         formatted_text = format_reddit_text(comment["text"])
-        # If contains no more than 3 ASCII characters, skip
+        # Skip very short/noisy comments
         if len(re.findall(r"[A-Za-z0-9]", formatted_text)) <= 3:
             continue
-        # Collect comment info with an ID
-        comment_row = {
-            "id": comment_id_counter,
-            "game_id": comment.get("game_id"),
-            "author": comment["author"],
-            "text": formatted_text,
-            "created_est": utility.utc_to_est(comment["created_utc"]),
-            "sentiment": comment["sentiment"]["emotion"],
-            "sentiment_score": comment["sentiment"]["score"],
-        }
-        all_comments.append(comment_row)
+        all_comments.append(
+            {
+                "id": comment_id_counter,
+                "game_id": comment.get("game_id"),
+                "author": comment["author"],
+                "text": formatted_text,
+                "created_est": utility.utc_to_est(comment["created_utc"]),
+                "sentiment": comment["sentiment"]["emotion"],
+                "sentiment_score": comment["sentiment"]["score"],
+            }
+        )
         comment_id_counter += 1
 
-    # Write CSV
-    pd.DataFrame(all_comments).to_csv(comments_csv, index=False, encoding="utf-8")
-    print(f"Saved {len(all_comments)} comments into CSV: {comments_csv}")
+    pd.DataFrame(all_comments).to_parquet(comments_file, index=False, engine="pyarrow")
+    print(f"Saved {len(all_comments)} comments into Parquet: {comments_file}")
 
 
-def save_reddit_posts(posts, limit=5, filename: str = "MyDatabase"):
+def save_reddit_posts(posts, limit: int = 5, filename: str = "MyDatabase"):
     """
-    Save multiple Reddit posts to a CSV file.
-
-    Args:
-        posts (list): A list of dictionaries (from fetch_reddit_posts).
-        limit (int): Number of top-level comments to save per post.
-        filename (str): Base filename (extension auto-added).
+    Save Reddit posts to a Parquet file.
     """
-    posts_csv = filename if filename.endswith("_posts.csv") else filename + "_posts.csv"
+    posts_file = (
+        filename if filename.endswith("_posts.parquet") else filename + "_posts.parquet"
+    )
 
     all_posts = []
-    post_id_counter = 1  # mimic autoincrement ids
+    post_id_counter = 1
     for post in posts:
-        # Collect post info with an ID
-        post_row = {
-            "id": post_id_counter,
-            "game_id": post["game_id"],
-            "team_acrononym": post["team_acronym"].upper(),
-            "post_title": post["title"],
-            "post_url": post["url"],
-            "created_est": post["created_est"],
-        }
-        all_posts.append(post_row)
+        all_posts.append(
+            {
+                "id": post_id_counter,
+                "game_id": post["game_id"],
+                "team_acronym": post["team_acronym"].upper(),
+                "post_title": post["title"],
+                "post_url": post["url"],
+                "created_est": post["created_est"],
+            }
+        )
         post_id_counter += 1
 
-    # Write CSV
-    pd.DataFrame(all_posts).to_csv(posts_csv, index=False, encoding="utf-8")
-    print(f"Saved {len(all_posts)} posts into CSV: {posts_csv}")
-
-
-## Removed all database functions and logic
+    pd.DataFrame(all_posts).to_parquet(posts_file, index=False, engine="pyarrow")
+    print(f"Saved {len(all_posts)} posts into Parquet: {posts_file}")
