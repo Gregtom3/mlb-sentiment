@@ -1,0 +1,33 @@
+# Ignore Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore virtual environments
+.venv/
+env/
+venv/
+
+# Ignore version control
+.git
+.gitignore
+
+# Ignore notebooks / large data
+*.ipynb
+*.h5
+*.db
+*.csv
+*.parquet
+
+# Ignore logs and temp files
+*.log
+*.tmp
+.DS_Store
+
+# Ignore local dev configs
+.env
+
+# Ignore files
+*.csv
+*.db
