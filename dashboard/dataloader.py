@@ -46,6 +46,7 @@ def get_engine():
 # -------------------
 @st.cache_data
 def load_games(game_dates, team_acronym, _engine):
+
     game_id_first_three = get_team_info(team_acronym, "id")
     query = f"""
     SELECT game_id, game_start_time_est, home_team, away_team, game_date, home_score, away_score, wins, losses
@@ -53,7 +54,7 @@ def load_games(game_dates, team_acronym, _engine):
     WHERE CAST(game_date AS DATE) BETWEEN '{game_dates[0]}' AND '{game_dates[-1]}'
     AND SUBSTRING(CAST(game_id AS VARCHAR), 1, 3) = '{game_id_first_three}'
     """
-    return safe_read_sql(
+    games = safe_read_sql(
         query,
         _engine,
         columns=[
@@ -68,6 +69,7 @@ def load_games(game_dates, team_acronym, _engine):
             "losses",
         ],
     )
+    return games
 
 
 @st.cache_data
@@ -100,6 +102,7 @@ def load_events(team_id, _engine):
     # Rename half innings to "Top" and "Bottom"
     df["halfInning"] = df["halfInning"].replace({"top": "Top", "bottom": "Bottom"})
     df["halfInning"] = df["halfInning"] + " " + df["inning"].astype(str)
+    df["game_id"] = df["game_id"].astype(int)
     return df
 
 
@@ -135,6 +138,7 @@ def load_comments(team_id, _engine):
     df.loc[df["sentiment"] == "negative", "sentiment_score"] = -df.loc[
         df["sentiment"] == "negative", "sentiment_score"
     ].abs()
+    df["game_id"] = df["game_id"].astype(int)
     return df
 
 

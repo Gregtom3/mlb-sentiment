@@ -42,9 +42,13 @@ def fetch_reddit_posts(team_acronym, date=None):
             (
                 "GAME THREAD" in submission.title.upper()
                 or "GAME CHAT" in submission.title.upper()
+                or "GDT:" in submission.title.upper()
+                or "GAMEDAY THREAD" in submission.title.upper()
             )
             and "PREGAME" not in "".join(submission.title.upper().split())
+            and "PRE-GAME" not in "".join(submission.title.upper().split())
             and "POSTGAME" not in "".join(submission.title.upper().split())
+            and "POST-GAME" not in "".join(submission.title.upper().split())
         ):
             created_est_str = utility.utc_to_est(submission.created_utc)  # returns str
             created_est_dt = datetime.strptime(created_est_str, "%Y-%m-%d %H:%M:%S")

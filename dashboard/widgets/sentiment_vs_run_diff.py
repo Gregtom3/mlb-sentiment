@@ -149,7 +149,6 @@ def render_sentiment_vs_run_diff(
         # --- Group by game_id
         for game_id, gdf in events_df.groupby("game_id"):
             gdf = gdf.sort_values("est").reset_index(drop=True)
-
             # Identify run_diff change points
             gdf["block_id"] = (gdf["run_diff"].shift() != gdf["run_diff"]).cumsum()
 
@@ -181,10 +180,10 @@ def render_sentiment_vs_run_diff(
                         "n_comments": len(block_comments),
                     }
                 )
-        results = pd.DataFrame(results).dropna(subset=["avg_sentiment"])
-        if results.empty:
+        if results == []:
             st.info("No sentiment/run differential data available for plotting.")
             return
+        results = pd.DataFrame(results).dropna(subset=["avg_sentiment"])
 
         x = results["run_diff"].values
         y = results["avg_sentiment"].values

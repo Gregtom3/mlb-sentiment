@@ -14,6 +14,46 @@ SUBREDDIT_INFO = {
         "subreddit": "https://www.reddit.com/r/Mariners/",
         "game_thread_user": "Mariners_bot",
     },
+    "NYY": {
+        "subreddit": "https://www.reddit.com/r/NYYankees/",
+        "game_thread_user": "Yankeesbot",
+    },
+    "ARI": {
+        "subreddit": "https://www.reddit.com/r/azdiamondbacks/",
+        "game_thread_user": "SnakeBot",
+    },
+    "TB": {
+        "subreddit": "https://www.reddit.com/r/tampabayrays/",
+        "game_thread_user": "RaysBot",
+    },
+    "LAD": {
+        "subreddit": "https://www.reddit.com/r/Dodgers/",
+        "game_thread_user": "DodgerBot",
+    },
+    "BOS": {
+        "subreddit": "https://www.reddit.com/r/RedSox/",
+        "game_thread_user": "RedSoxGameday",
+    },
+    "CHC": {
+        "subreddit": "https://www.reddit.com/r/CHICubs/",
+        "game_thread_user": "ChiCubsbot",
+    },
+    "SF": {
+        "subreddit": "https://www.reddit.com/r/SFGiants/",
+        "game_thread_user": "sfgbot",
+    },
+    "CLE": {
+        "subreddit": "https://www.reddit.com/r/ClevelandGuardians/",
+        "game_thread_user": "BotFeller",
+    },
+    "KC": {
+        "subreddit": "https://www.reddit.com/r/KCRoyals/",
+        "game_thread_user": "KCRoyalsBot",
+    },
+    "MIL": {
+        "subreddit": "https://www.reddit.com/r/Brewers/",
+        "game_thread_user": "BrewersBot",
+    },
     # TODO: Add additional teams here
 }
 

@@ -126,4 +126,4 @@ def render_wordcloud_widget(comments_df: pd.DataFrame, max_words: int = 50) -> N
         ).generate(cleaned_texts)
 
         # Display as image and let Streamlit size it to the container to avoid initial undersizing
-        st.image(wc.to_array(), use_container_width=True)
+        st.image(wc.to_array(), width="stretch")

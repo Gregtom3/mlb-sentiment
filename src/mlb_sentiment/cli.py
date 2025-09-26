@@ -30,7 +30,10 @@ def cli():
     help="Max number of Reddit comments to save.",
 )
 @click.option(
-    "--filename", default="MyDatabase.csv", show_default=True, help="Output filename."
+    "--filename",
+    default="MyDatabase.parquet",
+    show_default=True,
+    help="Output filename.",
 )
 @click.option(
     "--azure",
@@ -130,35 +133,35 @@ def upload(
         year = datetime.strptime(date, "%m/%d/%Y").year
         reddit_blob = create_blob_name("reddit", team_acronym, date)
         upload_to_azure_blob(
-            filename + "_comments.csv",
+            filename + "_comments.parquet",
             reddit_blob,
-            subdirectory=f"passiveDatabase/comments/{team_acronym}/year={year}",
+            subdirectory=f"activeDatabase/comments/{team_acronym}/year={year}",
             remove_local=not keep_local,
         )
         upload_to_azure_blob(
-            filename + "_posts.csv",
+            filename + "_posts.parquet",
             reddit_blob,
-            subdirectory=f"passiveDatabase/posts/{team_acronym}/year={year}",
+            subdirectory=f"activeDatabase/posts/{team_acronym}/year={year}",
             remove_local=not keep_local,
         )
         click.echo(
             f"\t Reddit blob names: "
-            f"{reddit_blob.replace('.csv', '_comments.csv')}, "
-            f"{reddit_blob.replace('.csv', '_posts.csv')}"
+            f"{reddit_blob.replace('.parquet', '_comments.parquet')}, "
+            f"{reddit_blob.replace('.parquet', '_posts.parquet')}"
         )
 
         # MLB
         mlb_blob = create_blob_name("mlb", team_acronym, date)
         upload_to_azure_blob(
-            filename + "_games.csv",
+            filename + "_games.parquet",
             mlb_blob,
-            subdirectory=f"passiveDatabase/games/{team_acronym}/year={year}",
+            subdirectory=f"activeDatabase/games/{team_acronym}/year={year}",
             remove_local=not keep_local,
         )
         upload_to_azure_blob(
-            filename + "_game_events.csv",
+            filename + "_game_events.parquet",
             mlb_blob,
-            subdirectory=f"passiveDatabase/gameEvents/{team_acronym}/year={year}",
+            subdirectory=f"activeDatabase/gameEvents/{team_acronym}/year={year}",
             remove_local=not keep_local,
         )
         click.echo(f"\t MLB blob name: {mlb_blob}")
@@ -168,9 +171,9 @@ def upload(
 # Helpers
 # --------------------------
 def create_blob_name(prefix, team_acronym, game_date):
-    blob_name = f"{prefix}_{team_acronym}_date={game_date}.csv".replace("/", "-")
-    if blob_name.endswith("_.csv"):
-        blob_name = blob_name.replace("_.csv", ".csv")
+    blob_name = f"{prefix}_{team_acronym}_date={game_date}.parquet".replace("/", "-")
+    if blob_name.endswith("_.parquet"):
+        blob_name = blob_name.replace("_.parquet", ".parquet")
     return blob_name
 
 
