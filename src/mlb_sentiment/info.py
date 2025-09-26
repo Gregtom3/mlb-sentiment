@@ -34,6 +34,26 @@ SUBREDDIT_INFO = {
         "subreddit": "https://www.reddit.com/r/RedSox/",
         "game_thread_user": "RedSoxGameday",
     },
+    "CHC": {
+        "subreddit": "https://www.reddit.com/r/CHICubs/",
+        "game_thread_user": "ChiCubsbot",
+    },
+    "SF": {
+        "subreddit": "https://www.reddit.com/r/SFGiants/",
+        "game_thread_user": "sfgbot",
+    },
+    "CLE": {
+        "subreddit": "https://www.reddit.com/r/ClevelandGuardians/",
+        "game_thread_user": "BotFeller",
+    },
+    "KC": {
+        "subreddit": "https://www.reddit.com/r/KCRoyals/",
+        "game_thread_user": "KCRoyalsBot",
+    },
+    "MIL": {
+        "subreddit": "https://www.reddit.com/r/Brewers/",
+        "game_thread_user": "BrewersBot",
+    },
     # TODO: Add additional teams here
 }
 
