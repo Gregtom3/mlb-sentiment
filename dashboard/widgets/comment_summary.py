@@ -22,8 +22,8 @@ def render_commenter_summary_widget(comments_df: pd.DataFrame) -> None:
         )
         return
 
-    # --- Compute Top 3 ---
-    top_commenters = comments_df["author"].value_counts().head(3)
+    # --- Compute Top ---
+    top_commenters = comments_df["author"].value_counts().head(6)
 
     pos_df = comments_df[comments_df["sentiment"] == "positive"]
     top_positive = pos_df["author"].value_counts().head(3)

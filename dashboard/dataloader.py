@@ -100,9 +100,11 @@ def load_events(team_id, _engine):
 
 @st.cache_data
 def load_comments(team_id, _engine):
+    # Use commentsTruncated which trims comments within game window
+    # -5 minutes before game start to +8 minutes after game end
     query = f"""
     SELECT game_id,author,text,created_est,sentiment,sentiment_score
-    FROM dbo.comments
+    FROM dbo.commentsTruncated
     WHERE SUBSTRING(CAST(game_id AS VARCHAR), 1, 3) = '{team_id}'
     ORDER BY created_est
     """

@@ -88,9 +88,11 @@ def render_sentiment_widget(
             <div style="
                 background-color:#F8F9FC;
                 padding:10px;
-                border-radius:6px;
+                border-radius:6px 6px 0px 0px;
                 border-color:#DADADA;
-                margin:0px 0;
+                border-width:1px;
+                border-style:solid;
+                margin:-10px;
                 font-size:1.2em;
                 font-weight:400;
             ">
@@ -128,7 +130,6 @@ def render_sentiment_widget(
 
         # --- Compute score differential from events_df
         diff_series = None
-        first_event_time, last_event_time = None, None
         if events_df is not None and not events_df.empty:
             try:
                 events_df = pd.DataFrame(events_df)
@@ -144,9 +145,6 @@ def render_sentiment_widget(
                 ).astype(int)
                 diff_series = pd.Series(differential, index=times)
 
-                # First and last event times
-                first_event_time = times.min()
-                last_event_time = times.max()
             except Exception:
                 diff_series = None
 
@@ -241,10 +239,6 @@ def render_sentiment_widget(
             anchor="x",
             overlaying="y",
         )
-        if first_event_time is not None and last_event_time is not None:
-            x_start = first_event_time - pd.Timedelta(minutes=4)
-            x_end = last_event_time + pd.Timedelta(minutes=4)
-            fig.update_xaxes(range=[x_start, x_end])
         # --- Interactive click events
         with st.container(border=False):
             selected_click = plotly_events(

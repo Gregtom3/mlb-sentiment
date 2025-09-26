@@ -50,18 +50,26 @@ def render_avg_sentiment_by_game_widget(
             <div style="
                 background-color:#F8F9FC;
                 padding:10px;
-                border-radius:6px;
+                border-radius:6px 6px 0px 0px;
                 border-color:#DADADA;
-                margin:0px 0;
+                border-width:1px;
+                border-style:solid;
+                margin:-10px;
                 font-size:1.2em;
                 font-weight:400;
             ">
-                Game Average Sentiment Over Time
+                Subreddit Sentiment Over Time
             </div>
             """,
             unsafe_allow_html=True,
         )
-
+        st.markdown(
+            """
+            <i>Click a point to select a game. The red star indicates the currently selected game.
+            </i>
+            """,
+            unsafe_allow_html=True,
+        )
         # --- Compute averages
         avg_sentiment = (
             comments_df.groupby("game_id")["sentiment_score"]
@@ -122,10 +130,7 @@ def render_avg_sentiment_by_game_widget(
             paper_bgcolor="white",
             plot_bgcolor="white",
             font=dict(family="Montserrat, sans-serif", size=14, color="black"),
-            xaxis=dict(
-                showgrid=True,
-                zeroline=False,
-            ),
+            xaxis=dict(showgrid=True, zeroline=False, color="gray"),
             yaxis=dict(
                 zeroline=True,
                 zerolinecolor="black",

@@ -40,9 +40,11 @@ def render_sentiment_distribution_histogram(comments_df: pd.DataFrame) -> None:
             <div style="
                 background-color:#F8F9FC;
                 padding:10px;
-                border-radius:6px;
+                border-radius:6px 6px 0px 0px;
                 border-color:#DADADA;
-                margin:0px 0;
+                border-width:1px;
+                border-style:solid;
+                margin:-10px;
                 font-size:1.2em;
                 font-weight:400;
             ">

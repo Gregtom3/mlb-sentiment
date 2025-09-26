@@ -57,9 +57,11 @@ def render_sentiment_vs_run_diff(
             <div style="
                 background-color:#F8F9FC;
                 padding:10px;
-                border-radius:6px;
+                border-radius:6px 6px 0px 0px;
                 border-color:#DADADA;
-                margin:0px 0;
+                border-width:1px;
+                border-style:solid;
+                margin:-10px;
                 font-size:1.2em;
                 font-weight:400;
             ">
@@ -69,23 +71,12 @@ def render_sentiment_vs_run_diff(
             unsafe_allow_html=True,
         )
 
-        # --- Average sentiment in rolling windows
         comments_df = comments_df.copy()
         comments_df["created_est"] = pd.to_datetime(comments_df["created_est"])
-        comments_df = comments_df.set_index("created_est")
-
-        sentiment_windowed = (
-            comments_df["sentiment_score"]
-            .resample(f"{window_minutes}Min")
-            .mean()
-            .dropna()
-            .reset_index()
-            .rename(columns={"sentiment_score": "avg_sentiment"})
-        )
-
-        # --- Compute run differential at each event
         events_df = events_df.copy()
         events_df["est"] = pd.to_datetime(events_df["est"])
+
+        # Compute run differential for each event
         diffs = []
         for _, row in events_df.iterrows():
             if row["home_team"] == team_acronym:
@@ -98,21 +89,51 @@ def render_sentiment_vs_run_diff(
         events_df["run_diff"] = diffs
         events_df = events_df.dropna(subset=["run_diff"])
 
-        # --- For each sentiment window, find closest run differential in time
-        run_diffs = []
-        for ts in sentiment_windowed["created_est"]:
-            # compute absolute time difference
-            closest_idx = (events_df["est"] - ts).abs().idxmin()
-            run_diffs.append(events_df.loc[closest_idx, "run_diff"])
-        sentiment_windowed["run_diff"] = run_diffs
+        results = []
 
-        if sentiment_windowed.empty:
-            st.info("No valid sentiment vs run differential data after matching.")
+        # --- Group by game_id
+        for game_id, gdf in events_df.groupby("game_id"):
+            gdf = gdf.sort_values("est").reset_index(drop=True)
+
+            # Identify run_diff change points
+            gdf["block_id"] = (gdf["run_diff"].shift() != gdf["run_diff"]).cumsum()
+
+            for block_id, bdf in gdf.groupby("block_id"):
+                run_diff = bdf["run_diff"].iloc[0]
+                start_time = bdf["est"].min()
+                end_time = bdf["est"].max()
+                game_date = bdf["est"].iloc[0].date().strftime("%Y-%m-%d")
+                # Select comments that fall inside this block window
+                mask = (comments_df["created_est"] >= start_time) & (
+                    comments_df["created_est"] <= end_time
+                )
+                block_comments = comments_df.loc[mask, "sentiment_score"]
+                if block_comments.size < 8:
+                    continue
+                results.append(
+                    {
+                        "game_id": game_id,
+                        "game_date": game_date,
+                        "block_id": block_id,
+                        "run_diff": run_diff,
+                        "start_time": start_time,
+                        "end_time": end_time,
+                        "avg_sentiment": (
+                            block_comments.mean()
+                            if not block_comments.empty
+                            else np.nan
+                        ),
+                        "n_comments": len(block_comments),
+                    }
+                )
+        results = pd.DataFrame(results).dropna(subset=["avg_sentiment"])
+        if results.empty:
+            st.info("No sentiment/run differential data available for plotting.")
             return
 
-        x = sentiment_windowed["run_diff"].values
-        y = sentiment_windowed["avg_sentiment"].values
-
+        x = results["run_diff"].values
+        y = results["avg_sentiment"].values
+        customdata = np.stack([results["game_date"], results["n_comments"]], axis=-1)
         # --- Linear regression
         m, b = np.polyfit(x, y, 1)
         y_pred = m * x + b
@@ -130,8 +151,9 @@ def render_sentiment_vs_run_diff(
                 y=y,
                 mode="markers",
                 name="Windows",
+                customdata=customdata,
                 marker=dict(size=9, color="rgba(63,131,242,0.7)"),
-                hovertemplate="Run Diff: %{x}<br>Avg Sentiment: %{y:.2f}<extra></extra>",
+                hovertemplate="Run Diff: %{x}<br>Avg Sentiment: %{y:.2f}<br>Game Date: %{customdata[0]}<br>Comments: %{customdata[1]}<extra></extra>",
             )
         )
 
