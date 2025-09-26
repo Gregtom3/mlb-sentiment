@@ -162,12 +162,18 @@ def render_avg_sentiment_by_game_widget(
                     ],
                     color=[
                         (
-                            "rgba(52,194,48,1)"
-                            if "Win" in merged.iloc[i]["result_str"]
-                            else "rgba(255,0,0,1)"
+                            "gold"
+                            if merged.iloc[i]["game_id"] == current_game_id
+                            else (
+                                "rgba(52,194,48,1.0)"
+                                if "Win" in merged.iloc[i]["result_str"]
+                                else "rgba(255,0,0,1.0)"
+                            )
                         )
                         for i in range(len(merged))
                     ],
+                    line=dict(width=2, color="rgba(0,0,0,0.5)"),
+                    opacity=[1.0 for i in range(len(merged))],
                 ),
                 line=dict(width=2, color="rgba(0,0,0,0.5)"),
                 name="Avg Sentiment",

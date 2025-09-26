@@ -105,6 +105,9 @@ def upload(
             return
         game_events = fetch_mlb_events(team_acronym, date=date)
         posts = fetch_reddit_posts(team_acronym, date=date)
+        if not posts:
+            click.echo(f"No Reddit posts found for {team_acronym} on {date}. Exiting.")
+            return
         comments = fetch_reddit_comments(
             posts,
             limit=comments_limit,

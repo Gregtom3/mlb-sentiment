@@ -4,6 +4,7 @@ from mlb_sentiment import utility
 
 from mlb_sentiment.models.process import get_sentiment, SentimentModelType
 from tqdm import tqdm
+from datetime import datetime
 
 
 def fetch_reddit_posts(team_acronym, date=None):
@@ -26,21 +27,24 @@ def fetch_reddit_posts(team_acronym, date=None):
     # Get the user object
     user = reddit.redditor(info.get_team_info(team_acronym, "game_thread_user"))
 
-    from datetime import datetime
-
     posts = []
     # Parse date if provided
     if date:
         start_dt = end_dt = datetime.strptime(date, "%m/%d/%Y")
     else:
         start_dt = end_dt = None
+    # Collapse string without its whitespace
+    test = "I love dogs"
 
     # Collect posts
     for submission in user.submissions.new(limit=MAX_LOOKUP):
         if (
-            "GAME THREAD" in submission.title.upper()
-            and "PREGAME" not in submission.title.upper()
-            and "POST" not in submission.title.upper()
+            (
+                "GAME THREAD" in submission.title.upper()
+                or "GAME CHAT" in submission.title.upper()
+            )
+            and "PREGAME" not in "".join(submission.title.upper().split())
+            and "POSTGAME" not in "".join(submission.title.upper().split())
         ):
             created_est_str = utility.utc_to_est(submission.created_utc)  # returns str
             created_est_dt = datetime.strptime(created_est_str, "%Y-%m-%d %H:%M:%S")

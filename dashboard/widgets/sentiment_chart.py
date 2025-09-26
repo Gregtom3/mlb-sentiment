@@ -238,6 +238,7 @@ def render_sentiment_widget(
             zerolinewidth=1,
             range=[-1, 1],  # symmetric around 0
         )
+
         # --- Interactive click events
         with st.container(border=False):
             selected_click = plotly_events(

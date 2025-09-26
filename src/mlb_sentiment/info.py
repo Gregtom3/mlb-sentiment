@@ -10,6 +10,10 @@ SUBREDDIT_INFO = {
         "subreddit": "https://www.reddit.com/r/Braves/",
         "game_thread_user": "Blooper_Bot",
     },
+    "SEA": {
+        "subreddit": "https://www.reddit.com/r/Mariners/",
+        "game_thread_user": "Mariners_bot",
+    },
     # TODO: Add additional teams here
 }
 
