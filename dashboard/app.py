@@ -154,6 +154,6 @@ render_commenter_summary_widget(comments_df)
 # Sentiment vs Run Differential
 row3_col1, row3_col2 = st.columns(2)
 with row3_col1:
-    render_sentiment_vs_run_diff(comments_df, events_df, team_acronym)
+    render_sentiment_vs_run_diff(comments_df, games_df, events_df, team_acronym)
 with row3_col2:
     render_wordcloud_widget(comments_df)

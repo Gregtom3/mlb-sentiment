@@ -4,8 +4,22 @@ import plotly.graph_objects as go
 import numpy as np
 
 
+@st.cache_data
+def get_game_outcome(game_events: pd.DataFrame, team: str) -> str | None:
+    """Return 'win', 'loss', or None for the given team based on final score."""
+    if game_events.empty:
+        return None
+    last_event = game_events.sort_values("est").iloc[-1]
+    if last_event["home_team"] == team:
+        return "win" if last_event["home_score"] > last_event["away_score"] else "loss"
+    elif last_event["away_team"] == team:
+        return "win" if last_event["away_score"] > last_event["home_score"] else "loss"
+    return None
+
+
 def render_sentiment_vs_run_diff(
     comments_df: pd.DataFrame,
+    games_df: pd.DataFrame,
     events_df: pd.DataFrame,
     team_acronym: str,
     window_minutes: int = 4,
@@ -18,6 +32,8 @@ def render_sentiment_vs_run_diff(
     ----------
     comments_df : pd.DataFrame
         Must contain ['created_est','sentiment_score'].
+    games_df : pd.DataFrame
+        Must contain ['game_id','home_team','away_team','home_score','away_score']
     events_df : pd.DataFrame
         Must contain ['est','home_team','away_team','home_score','away_score'].
     team_acronym : str
@@ -35,7 +51,7 @@ def render_sentiment_vs_run_diff(
     """
     st.html(f"<style>{container_css}</style>")
 
-    with st.container(border=True, key="sentiment-run-diff", height=530):
+    with st.container(border=True, key="sentiment-run-diff", height=620):
         if comments_df is None or comments_df.empty:
             st.info("No comments available for sentiment vs run diff.")
             return
@@ -71,21 +87,45 @@ def render_sentiment_vs_run_diff(
             unsafe_allow_html=True,
         )
         # --- Game filters
-        col1, col2 = st.columns(2)
-        with col1:
+        row1_col1, row1_col2 = st.columns(2)
+        with row1_col1:
             include_home = st.checkbox("Home Games", value=True, key="sent-home")
-        with col2:
+        with row1_col2:
             include_away = st.checkbox("Away Games", value=True, key="sent-away")
 
         if not include_home and not include_away:
             st.info("Select at least one of Home or Away games.")
             return
-
+        row2_col1, row2_col2 = st.columns(2)
+        with row2_col1:
+            include_wins = st.checkbox("Won Games", value=True, key="sent-wins")
+        with row2_col2:
+            include_losses = st.checkbox("Lost Games", value=True, key="sent-losses")
+        if not include_wins and not include_losses:
+            st.info("Select at least one of Won or Lost games.")
         # Filter events_df by home/away
         if include_home and not include_away:
             events_df = events_df[events_df["home_team"] == team_acronym]
         elif include_away and not include_home:
             events_df = events_df[events_df["away_team"] == team_acronym]
+        # Filter events_df by wins/losses
+        # --- Filter events_df by wins/losses ---
+        if include_wins and not include_losses:
+            valid_games = [
+                gid
+                for gid, gdf in events_df.groupby("game_id")
+                if get_game_outcome(gdf, team_acronym) == "win"
+            ]
+            events_df = events_df[events_df["game_id"].isin(valid_games)]
+
+        elif include_losses and not include_wins:
+            valid_games = [
+                gid
+                for gid, gdf in events_df.groupby("game_id")
+                if get_game_outcome(gdf, team_acronym) == "loss"
+            ]
+            events_df = events_df[events_df["game_id"].isin(valid_games)]
+
         comments_df = comments_df.copy()
         comments_df["created_est"] = pd.to_datetime(comments_df["created_est"])
         events_df = events_df.copy()
@@ -180,7 +220,7 @@ def render_sentiment_vs_run_diff(
                 x=line_x,
                 y=line_y,
                 mode="lines",
-                name=f"Fit: y={m:.2f}x+{b:.2f}, R²={r2:.2f}",
+                name=f"Fit: y={m:.2f}x{'+' if b > 0 else ''}{b:.2f}, R²={r2:.2f}",
                 line=dict(color="black", dash="dash"),
             )
         )
