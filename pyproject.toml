@@ -10,21 +10,13 @@ readme = "README.md"
 requires-python = ">=3.8.10"
 license = { file = "LICENSE" }
 dependencies = [
-    "praw>=7.8.1",
     "python-dotenv>=1.0.1",
     "requests>=2.32.4",
-    "MLB-StatsAPI>=1.6.0",
     "pytz>=2025.2",
-    "transformers>=4.46.3",
     "click>=8.0.0",
     "tqdm>=4.66.0",
-    "vaderSentiment>=3.3.2",
     "azure-storage-blob>=12.26.0",
-    "pandas>=2.3.2"
-]
-
-[project.optional-dependencies]
-dev = [
+    "pandas>=2.3.2",
     "pytest>=8.0.0",
     "black>=24.0.0",
     "flake8-pyproject>=1.2.3",
@@ -35,7 +27,15 @@ dev = [
     "pyodbc>=5.2.0",
     "streamlit-date-picker>=0.0.5",
     "wordcloud>=1.9.4",
-    "plotly>=6.3.0"
+    "plotly>=6.3.0",
+    "praw>=7.8.1",
+    "MLB-StatsAPI>=1.6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "vaderSentiment>=3.3.2",
+    "transformers>=4.46.3",
 ]
 
 [tool.flake8]
