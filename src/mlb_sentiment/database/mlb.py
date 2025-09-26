@@ -16,8 +16,6 @@ def save_mlb_games(games, filename: str = "MyDatabase"):
     csv_filename = (
         filename if filename.endswith("_games.csv") else filename + "_games.csv"
     )
-    if ".db" in csv_filename:
-        csv_filename = csv_filename.replace(".db", "")
 
     # Convert to DataFrame for easy CSV export
     df = pd.DataFrame(
@@ -64,8 +62,6 @@ def save_mlb_events(game_events, filename: str = "MyDatabase"):
         if filename.endswith("_game_events.csv")
         else filename + "_game_events.csv"
     )
-    if ".db" in csv_filename:
-        csv_filename = csv_filename.replace(".db", "")
 
     # Convert to DataFrame for easy CSV export
     df = pd.DataFrame(

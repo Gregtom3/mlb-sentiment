@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 from wordcloud import WordCloud, STOPWORDS
-import matplotlib.pyplot as plt
 import re
 
 
@@ -60,15 +59,8 @@ def render_wordcloud_widget(comments_df: pd.DataFrame, max_words: int = 50) -> N
         Maximum number of words to show in the word cloud.
     """
 
-    # --- Styling
-    container_css = """
-    .st-key-wordcloud-container {
-        background-color: #FFFFFF;
-        padding: 10px;
-    }
-    """
-    st.html(f"<style>{container_css}</style>")
-    with st.container(border=True, key="wordcloud-container", height=620):
+    # Container (let Streamlit control height; avoid fixed height that can cause initial undersizing)
+    with st.container(border=True, key="wordcloud-container"):
         if comments_df is None or comments_df.empty:
             st.info("No comments available for word cloud.")
             return
@@ -120,7 +112,7 @@ def render_wordcloud_widget(comments_df: pd.DataFrame, max_words: int = 50) -> N
             "year",
         }
         stopwords |= extra_stopwords
-        # Generate word cloud
+        # Generate word cloud (fixed pixel size; will scale to container width when displayed)
         wc = WordCloud(
             width=800,
             height=610,
@@ -133,9 +125,5 @@ def render_wordcloud_widget(comments_df: pd.DataFrame, max_words: int = 50) -> N
             random_state=40,
         ).generate(cleaned_texts)
 
-        # Plot
-        fig, ax = plt.subplots(figsize=(10, 5))
-        ax.imshow(wc, interpolation="bilinear")
-        ax.axis("off")
-
-        st.pyplot(fig)
+        # Display as image and let Streamlit size it to the container to avoid initial undersizing
+        st.image(wc.to_array(), use_container_width=True)
