@@ -10,7 +10,7 @@ from streamlit_plotly_events2 import plotly_events
 
 # Local modules
 from compute import compute_sentiment_ts
-from dataloader import get_engine, load_comments, load_events, load_games
+from dataloader import get_engine, load_comments, load_events, load_games, get_total_comments
 from mlb_sentiment.info import (
     get_all_team_names,
     get_team_acronym_from_team_name,
@@ -65,6 +65,12 @@ game_dates = st.sidebar.date_input(
     min_value=datetime(2024, 1, 1).date(),
     max_value=datetime.today().date(),
 )
+
+# Sidebar: overall database stats
+with st.sidebar:
+    total_comments = get_total_comments(engine)
+    st.metric("Total Comments in DB", f"{total_comments:,}")
+
 
 # -------------------
 # Load games in range
