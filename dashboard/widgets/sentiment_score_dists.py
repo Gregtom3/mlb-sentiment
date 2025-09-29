@@ -56,42 +56,48 @@ def render_sentiment_distribution_histogram(comments_df: pd.DataFrame) -> None:
 
         fig = go.Figure()
 
-        # Shared binning for consistency
-        all_scores = comments_df["sentiment_score"].dropna()
+        # Shared binning for all sentiments
+        all_scores = comments_df["sentiment_score"].dropna().values
         bins = np.histogram_bin_edges(all_scores, bins=100)
+        bin_centers = (bins[:-1] + bins[1:]) / 2
 
         def add_histogram(sentiment, color):
             subset = comments_df[comments_df["sentiment"] == sentiment]
             if subset.empty:
                 return
 
-            # Digitize to bins
-            inds = np.digitize(subset["sentiment_score"].values, bins) - 1
+            scores = subset["sentiment_score"].values
+            texts = subset["text"].astype(str).values
 
-            # Store first comment (and score) per bin
-            bin_text = {}
-            for pos, (_, row) in enumerate(subset.iterrows()):
-                b = inds[pos]
-                if b not in bin_text:  # keep only first seen in that bin
-                    score = row["sentiment_score"]
-                    text = wrap_comment(row["text"], 100)
-                    bin_text[b] = f"({score:.2f}) {text}"
+            # Vectorized bin assignment
+            inds = np.digitize(scores, bins) - 1
+            inds = np.clip(inds, 0, len(bins) - 2)  # keep in range
 
-            # Build bar heights
-            counts, _ = np.histogram(subset["sentiment_score"], bins=bins)
+            # --- Vectorized counts ---
+            counts = np.bincount(inds, minlength=len(bins) - 1)
 
-            # Align hover texts with bins
-            texts = [bin_text.get(i, "") for i in range(len(bins) - 1)]
+            # --- First comment per bin ---
+            # Use pandas groupby to pick first text per bin
+            df_bins = pd.DataFrame({"bin": inds, "score": scores, "text": texts})
+            first_texts = (
+                df_bins.groupby("bin")
+                .first(numeric_only=False)  # keep first row per bin
+                .apply(
+                    lambda row: f"({row['score']:.2f}) {wrap_comment(row['text'], 100)}",
+                    axis=1,
+                )
+            )
+            hover_texts = [first_texts.get(i, "") for i in range(len(bins) - 1)]
 
-            # Add to Bar trace
+            # Add trace
             fig.add_trace(
                 go.Bar(
-                    x=(bins[:-1] + bins[1:]) / 2,
+                    x=bin_centers,
                     y=counts,
                     name=sentiment.capitalize(),
                     marker=dict(color=color),
                     opacity=0.7,
-                    text=texts,
+                    text=hover_texts,
                     hovertemplate="<b>%{y}</b> comments<br>%{text}<extra></extra>",
                 )
             )

@@ -1,5 +1,7 @@
 # Standard library
 from datetime import datetime, timedelta
+import time
+import logging
 
 # Third-party packages
 import numpy as np
@@ -27,7 +29,23 @@ from widgets.avg_sentiment_chart import render_avg_sentiment_by_game_widget
 from widgets.sentiment_score_dists import render_sentiment_distribution_histogram
 from widgets.comment_summary import render_commenter_summary_widget
 from widgets.sentiment_vs_run_diff import render_sentiment_vs_run_diff
-from widgets.reddit_wordcloud import render_wordcloud_widget
+from widgets.event_pie import render_event_pie_chart
+
+# -------------------
+# Logging setup
+# -------------------
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
+logger = logging.getLogger(__name__)
+
+
+def log_time(msg, start_time):
+    elapsed = time.time() - start_time
+    logger.info(f"{msg} (took {elapsed:.2f} s)")
+    return time.time()
+
 
 # -------------------
 # Streamlit setup
@@ -45,19 +63,28 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+logger.info("==== Streamlit app rerun started ====")
+t0 = time.time()
+
+# -------------------
 # Initialize engine
+# -------------------
+t = time.time()
 engine = get_engine()
+t = log_time("Initialized SQL engine", t)
 
 # -------------------
 # Title
 # -------------------
 st.title("MLB Pulse Dashboard")
+logger.info("Rendered app title")
 
 # -------------------
 # Pick a team
 # -------------------
 team_name = st.sidebar.selectbox("Select Team", options=get_all_team_names(), index=18)
 team_acronym = get_team_acronym_from_team_name(team_name)
+logger.info(f"Selected team: {team_name} ({team_acronym})")
 
 # -------------------
 # Pick a date range (default: last 30 days)
@@ -71,19 +98,24 @@ game_dates = st.sidebar.date_input(
     min_value=datetime(2024, 1, 1).date(),
     max_value=datetime.today().date(),
 )
+logger.info(f"Selected date range: {game_dates}")
 
 # Sidebar: overall database stats
 with st.sidebar:
+    t = time.time()
     total_comments = get_total_comments(engine)
+    t = log_time("Fetched total comments", t)
     st.metric("Total Comments in DB", f"{total_comments:,}")
-
 
 # -------------------
 # Load games in range
 # -------------------
+t = time.time()
 games_df = load_games(game_dates, team_acronym, engine)
+t = log_time("Loaded games_df", t)
 
 if games_df.empty:
+    logger.warning("No games found for this team in the selected range.")
     st.warning("No games found for this team in the selected range.")
     st.stop()
 
@@ -92,12 +124,14 @@ if games_df.empty:
 # -------------------
 if "selected_game_id" not in st.session_state:
     st.session_state["selected_game_id"] = int(games_df.iloc[0]["game_id"])
+    logger.info(f"Initialized selected_game_id={st.session_state['selected_game_id']}")
 
-# If the currently selected game is no longer in the new range, reset it
 if st.session_state["selected_game_id"] not in games_df["game_id"].values:
     st.session_state["selected_game_id"] = int(games_df.iloc[0]["game_id"])
+    logger.info(f"Reset selected_game_id={st.session_state['selected_game_id']}")
 
 selected_game_id = st.session_state["selected_game_id"]
+logger.info(f"Using selected_game_id={selected_game_id}")
 
 # -------------------
 # Team/game context
@@ -107,39 +141,51 @@ team_is_home = (
     games_df.loc[games_df["game_id"] == selected_game_id, "home_team"].values[0]
     == team_acronym
 )
+logger.info(f"team_id={team_id}, team_is_home={team_is_home}")
 
 # -------------------
 # Query events & comments
 # -------------------
-
+t = time.time()
 events_df = load_events(team_id, engine)
+t = log_time("Loaded events_df", t)
+
+t = time.time()
 comments_df = load_comments(team_id, engine)
-# Keep only games in this window
+t = log_time("Loaded comments_df", t)
+
+# Filter
 events_df = events_df[events_df["game_id"].isin(games_df["game_id"])]
 comments_df = comments_df[comments_df["game_id"].isin(games_df["game_id"])]
+logger.info(f"Filtered events_df={len(events_df)}, comments_df={len(comments_df)}")
+
 # -------------------
 # Render data summary metrics
 # -------------------
+t = time.time()
 data_summary(comments_df, games_df, events_df, team_acronym)
+t = log_time("Rendered data_summary widget", t)
 
 # -------------------
 # Render widgets
 # -------------------
 row1_col1, row1_col2 = st.columns(2)
 
-# Avg sentiment chart (used to pick the game)
 with row1_col1:
+    t = time.time()
     clicked_game_id = render_avg_sentiment_by_game_widget(
         comments_df, games_df, selected_game_id, team_acronym
     )
+    t = log_time("Rendered avg_sentiment_by_game_widget", t)
     if clicked_game_id is not None:
+        logger.info(f"User clicked game_id={clicked_game_id}, rerunning")
         st.session_state["selected_game_id"] = int(clicked_game_id)
         st.rerun()
 
-# Sentiment timeline for the selected game
 with row1_col2:
     game_specific_events_df = events_df[events_df["game_id"] == selected_game_id]
     game_specific_comments_df = comments_df[comments_df["game_id"] == selected_game_id]
+    t = time.time()
     render_sentiment_widget(
         game_specific_comments_df,
         game_specific_events_df,
@@ -148,21 +194,32 @@ with row1_col2:
         games_df,
         selected_game_id,
     )
+    t = log_time("Rendered sentiment_widget", t)
 
 # Wins/Losses histogram
 row2_col1, row2_col2 = st.columns(2)
 with row2_col1:
+    t = time.time()
     render_sentiment_vs_run_diff(comments_df, games_df, events_df, team_acronym)
+    t = log_time("Rendered sentiment_vs_run_diff", t)
 
 with row2_col2:
+    t = time.time()
     render_sentiment_distribution_histogram(comments_df)
+    t = log_time("Rendered sentiment_distribution_histogram", t)
 
 # Commenter summary widget
+t = time.time()
 render_commenter_summary_widget(comments_df)
+t = log_time("Rendered commenter_summary_widget", t)
 
 # Sentiment vs Run Differential
 row3_col1, row3_col2 = st.columns(2)
+
 with row3_col1:
-    render_wordcloud_widget(comments_df)
-with row3_col2:
-    pass
+    t = time.time()
+    render_event_pie_chart(events_df)
+    t = log_time("Rendered event_pie_chart", t)
+
+logger.info("==== Streamlit app rerun finished ====")
+logger.info(f"TOTAL runtime for rerun: {time.time() - t0:.2f} s")

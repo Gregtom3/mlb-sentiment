@@ -24,32 +24,19 @@ def render_sentiment_vs_run_diff(
     team_acronym: str,
     window_minutes: int = 4,
 ) -> None:
-    """
-    Scatter plot of average sentiment (per window) vs. run differential
-    for the given team, using closest event differential in time.
-
-    Parameters
-    ----------
-    comments_df : pd.DataFrame
-        Must contain ['created_est','sentiment_score'].
-    games_df : pd.DataFrame
-        Must contain ['game_id','home_team','away_team','home_score','away_score']
-    events_df : pd.DataFrame
-        Must contain ['est','home_team','away_team','home_score','away_score'].
-    team_acronym : str
-        Team of interest (positive differential if this team is leading).
-    window_minutes : int
-        Size of rolling window in minutes (default = 4).
-    """
+    """Fast scatter plot of avg sentiment vs run differential."""
 
     # --- Styling
-    container_css = """
-.st-key-sentiment-run-diff {
-    background-color: #FFFFFF;
-    padding: 10px;
-}
-    """
-    st.html(f"<style>{container_css}</style>")
+    st.html(
+        """
+        <style>
+        .st-key-sentiment-run-diff {
+            background-color: #FFFFFF;
+            padding: 10px;
+        }
+        </style>
+        """
+    )
 
     with st.container(border=True, key="sentiment-run-diff", height=620):
         if comments_df is None or comments_df.empty:
@@ -58,6 +45,7 @@ def render_sentiment_vs_run_diff(
         if events_df is None or events_df.empty:
             st.info("No events available for run differential.")
             return
+
         required_events = {"est", "home_team", "away_team", "home_score", "away_score"}
         required_comments = {"created_est", "sentiment_score"}
         if not required_events.issubset(
@@ -86,6 +74,7 @@ def render_sentiment_vs_run_diff(
             """,
             unsafe_allow_html=True,
         )
+
         # --- Game filters
         row1_col1, row1_col2 = st.columns(2)
         with row1_col1:
@@ -96,6 +85,7 @@ def render_sentiment_vs_run_diff(
         if not include_home and not include_away:
             st.info("Select at least one of Home or Away games.")
             return
+
         row2_col1, row2_col2 = st.columns(2)
         with row2_col1:
             include_wins = st.checkbox("Won Games", value=True, key="sent-wins")
@@ -103,102 +93,102 @@ def render_sentiment_vs_run_diff(
             include_losses = st.checkbox("Lost Games", value=True, key="sent-losses")
         if not include_wins and not include_losses:
             st.info("Select at least one of Won or Lost games.")
-        # Filter events_df by home/away
+
+        # --- Filter events_df
         if include_home and not include_away:
             events_df = events_df[events_df["home_team"] == team_acronym]
         elif include_away and not include_home:
             events_df = events_df[events_df["away_team"] == team_acronym]
-        # Filter events_df by wins/losses
-        # --- Filter events_df by wins/losses ---
-        if include_wins and not include_losses:
+
+        if include_wins ^ include_losses:  # XOR → only wins OR only losses
             valid_games = [
                 gid
                 for gid, gdf in events_df.groupby("game_id")
-                if get_game_outcome(gdf, team_acronym) == "win"
+                if get_game_outcome(gdf, team_acronym)
+                == ("win" if include_wins else "loss")
             ]
             events_df = events_df[events_df["game_id"].isin(valid_games)]
 
-        elif include_losses and not include_wins:
-            valid_games = [
-                gid
-                for gid, gdf in events_df.groupby("game_id")
-                if get_game_outcome(gdf, team_acronym) == "loss"
-            ]
-            events_df = events_df[events_df["game_id"].isin(valid_games)]
-
+        # --- Ensure datetime
         comments_df = comments_df.copy()
         comments_df["created_est"] = pd.to_datetime(comments_df["created_est"])
         events_df = events_df.copy()
         events_df["est"] = pd.to_datetime(events_df["est"])
 
-        # Compute run differential for each event
-        diffs = []
-        for _, row in events_df.iterrows():
-            if row["home_team"] == team_acronym:
-                diff = row["home_score"] - row["away_score"]
-            elif row["away_team"] == team_acronym:
-                diff = row["away_score"] - row["home_score"]
-            else:
-                diff = np.nan
-            diffs.append(diff)
-        events_df["run_diff"] = diffs
+        # --- Vectorized run differential
+        is_home = events_df["home_team"] == team_acronym
+        is_away = events_df["away_team"] == team_acronym
+        events_df.loc[is_home, "run_diff"] = (
+            events_df["home_score"] - events_df["away_score"]
+        )
+        events_df.loc[is_away, "run_diff"] = (
+            events_df["away_score"] - events_df["home_score"]
+        )
         events_df = events_df.dropna(subset=["run_diff"])
 
         results = []
 
-        # --- Group by game_id
+        # --- Process each game (fewer Python loops, more groupby)
         for game_id, gdf in events_df.groupby("game_id"):
-            gdf = gdf.sort_values("est").reset_index(drop=True)
-            # Identify run_diff change points
-            gdf["block_id"] = (gdf["run_diff"].shift() != gdf["run_diff"]).cumsum()
+            gdf = gdf.sort_values("est")
+            # identify change points: True where diff changes
+            change_points = gdf["run_diff"].ne(gdf["run_diff"].shift()).cumsum()
+            gdf["block_id"] = change_points
 
-            for block_id, bdf in gdf.groupby("block_id"):
-                run_diff = bdf["run_diff"].iloc[0]
-                start_time = bdf["est"].min()
-                end_time = bdf["est"].max()
-                game_date = bdf["est"].iloc[0].date().strftime("%Y-%m-%d")
-                # Select comments that fall inside this block window
-                mask = (comments_df["created_est"] >= start_time) & (
-                    comments_df["created_est"] <= end_time
+            block_summary = (
+                gdf.groupby("block_id")
+                .agg(
+                    run_diff=("run_diff", "first"),
+                    start_time=("est", "min"),
+                    end_time=("est", "max"),
+                )
+                .reset_index(drop=True)
+            )
+            block_summary["game_id"] = game_id
+            block_summary["game_date"] = gdf["est"].iloc[0].date().strftime("%Y-%m-%d")
+
+            # --- Assign comments to blocks (vectorized join)
+            for _, block in block_summary.iterrows():
+                mask = (comments_df["created_est"] >= block["start_time"]) & (
+                    comments_df["created_est"] <= block["end_time"]
                 )
                 block_comments = comments_df.loc[mask, "sentiment_score"]
-                if block_comments.size < 8:
+                if len(block_comments) < 8:
                     continue
                 results.append(
                     {
                         "game_id": game_id,
-                        "game_date": game_date,
-                        "block_id": block_id,
-                        "run_diff": run_diff,
-                        "start_time": start_time,
-                        "end_time": end_time,
-                        "avg_sentiment": (
-                            block_comments.mean()
-                            if not block_comments.empty
-                            else np.nan
-                        ),
+                        "game_date": block["game_date"],
+                        "run_diff": block["run_diff"],
+                        "avg_sentiment": block_comments.mean(),
                         "n_comments": len(block_comments),
                     }
                 )
-        if results == []:
+
+        if not results:
             st.info("No sentiment/run differential data available for plotting.")
             return
-        results = pd.DataFrame(results).dropna(subset=["avg_sentiment"])
 
-        x = results["run_diff"].values
-        y = results["avg_sentiment"].values
+        results = pd.DataFrame(results)
+
+        # --- Scatter + regression
+        x = results["run_diff"].to_numpy()
+        y = results["avg_sentiment"].to_numpy()
         customdata = np.stack([results["game_date"], results["n_comments"]], axis=-1)
-        # --- Linear regression
-        m, b = np.polyfit(x, y, 1)
-        y_pred = m * x + b
-        ss_res = np.sum((y - y_pred) ** 2)
-        ss_tot = np.sum((y - np.mean(y)) ** 2)
-        r2 = 1 - ss_res / ss_tot if ss_tot > 0 else 0
 
-        # --- Build figure
+        # Linear regression
+        if len(x) >= 2:
+            m, b = np.polyfit(x, y, 1)
+            y_pred = m * x + b
+            ss_res = np.sum((y - y_pred) ** 2)
+            ss_tot = np.sum((y - np.mean(y)) ** 2)
+            r2 = 1 - ss_res / ss_tot if ss_tot > 0 else 0
+        else:
+            m, b, r2 = 0, 0, 0
+
         fig = go.Figure()
 
-        # Scatter points
+        # Scatter
         fig.add_trace(
             go.Scatter(
                 x=x,
@@ -211,18 +201,19 @@ def render_sentiment_vs_run_diff(
             )
         )
 
-        # Best-fit line
-        line_x = np.linspace(min(x), max(x), 100)
-        line_y = m * line_x + b
-        fig.add_trace(
-            go.Scatter(
-                x=line_x,
-                y=line_y,
-                mode="lines",
-                name=f"Fit: y={m:.2f}x{'+' if b > 0 else ''}{b:.2f}, R²={r2:.2f}",
-                line=dict(color="black", dash="dash"),
+        # Regression line
+        if len(x) >= 2:
+            line_x = np.linspace(min(x), max(x), 100)
+            line_y = m * line_x + b
+            fig.add_trace(
+                go.Scatter(
+                    x=line_x,
+                    y=line_y,
+                    mode="lines",
+                    name=f"Fit: y={m:.2f}x{'+' if b > 0 else ''}{b:.2f}, R²={r2:.2f}",
+                    line=dict(color="black", dash="dash"),
+                )
             )
-        )
 
         fig.update_layout(
             autosize=True,
@@ -230,7 +221,9 @@ def render_sentiment_vs_run_diff(
             plot_bgcolor="white",
             font=dict(family="Montserrat, sans-serif", size=14, color="black"),
             xaxis=dict(title="Run Differential"),
-            yaxis=dict(title="Average Sentiment (per 4 min)", range=[-1, 1]),
+            yaxis=dict(
+                title=f"Average Sentiment (per {window_minutes} min)", range=[-1, 1]
+            ),
             margin=dict(l=75, r=20, t=40, b=40),
             showlegend=True,
         )
