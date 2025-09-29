@@ -115,6 +115,7 @@ def render_sentiment_distribution_histogram(comments_df: pd.DataFrame) -> None:
             xaxis=dict(title="Sentiment Score", showgrid=True, zeroline=False),
             yaxis=dict(title="Count", zeroline=True, zerolinecolor="black"),
             margin=dict(l=60, r=20, t=40, b=40),
+            showlegend=False,
         )
 
         st.plotly_chart(fig, use_container_width=True)

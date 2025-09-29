@@ -1,5 +1,5 @@
 # Standard library
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import time
 import logging
 
@@ -32,6 +32,7 @@ from widgets.comment_summary import render_commenter_summary_widget
 from widgets.sentiment_vs_run_diff import render_sentiment_vs_run_diff
 from widgets.event_pie import render_event_pie_chart
 from widgets.sentiment_per_inning import render_inning_sentiment_widget
+from widgets.sentiment_per_game import render_win_loss_sentiment_widget
 
 # -------------------
 # Logging setup
@@ -91,7 +92,7 @@ logger.info(f"Selected team: {team_name} ({team_acronym})")
 # -------------------
 # Pick a date range (default: last 30 days)
 # -------------------
-default_start = datetime.today().date() - timedelta(days=30)
+default_start = date(2025, 3, 27)
 default_end = datetime.today().date()
 
 game_dates = st.sidebar.date_input(
@@ -202,27 +203,33 @@ with row1_col2:
     )
     t = log_time("Rendered sentiment_widget", t)
 
-# Wins/Losses histogram
+# Row 2
 row2_col1, row2_col2 = st.columns(2)
 with row2_col1:
+    t = time.time()
+    render_win_loss_sentiment_widget(comments_df, games_df, team_acronym)
+    t = log_time("Rendered win_loss_sentiment_widget", t)
+with row2_col2:
     t = time.time()
     render_sentiment_vs_run_diff(comments_df, games_df, events_df, team_acronym)
     t = log_time("Rendered sentiment_vs_run_diff", t)
 
-with row2_col2:
+row3_col1, row3_col2 = st.columns(2)
+with row3_col1:
     t = time.time()
     render_sentiment_distribution_histogram(comments_df)
     t = log_time("Rendered sentiment_distribution_histogram", t)
 
 # Commenter summary widget
-t = time.time()
-render_commenter_summary_widget(comments_df)
-t = log_time("Rendered commenter_summary_widget", t)
+with row3_col2:
+    t = time.time()
+    render_commenter_summary_widget(comments_df)
+    t = log_time("Rendered commenter_summary_widget", t)
 
 # Sentiment vs Run Differential
-row3_col1, row3_col2, row3_col3, row3_col4 = st.columns(4)
+row4_col1, row4_col2, row4_col3 = st.columns([1, 1, 2])
 
-with row3_col1:
+with row4_col1:
     t = time.time()
     render_event_pie_chart(
         events_df,
@@ -231,7 +238,7 @@ with row3_col1:
         do_opponent=False,
     )
     t = log_time("Rendered event_pie_chart", t)
-with row3_col2:
+with row4_col2:
     t = time.time()
     render_event_pie_chart(
         events_df,
@@ -241,9 +248,10 @@ with row3_col2:
     )
     t = log_time("Rendered event_pie_chart", t)
 
-with row3_col3:
+with row4_col3:
     t = time.time()
     render_inning_sentiment_widget(comments_df, events_df, games_df)
     t = log_time("Rendered inning_sentiment_widget", t)
+
 logger.info("==== Streamlit app rerun finished ====")
 logger.info(f"TOTAL runtime for rerun: {time.time() - t0:.2f} s")

@@ -25,7 +25,7 @@ def render_commenter_summary_widget(comments_df: pd.DataFrame) -> None:
     # --- Compute Top ---
     # Remove 'None' from authors
     comments_df = comments_df[comments_df["author"] != "None"]
-    top_commenters = comments_df["author"].value_counts().head(6)
+    top_commenters = comments_df["author"].value_counts().head(20)
 
     pos_df = comments_df[comments_df["sentiment"] == "positive"]
     top_positive = pos_df["author"].value_counts().head(3)
@@ -44,7 +44,7 @@ def render_commenter_summary_widget(comments_df: pd.DataFrame) -> None:
         box-shadow: 0px 1px 3px rgba(0,0,0,0.05);
         margin-bottom: 12px;
         font-family: 'Poppins', sans-serif;
-        height: 250px;
+        height: 605px;
         overflow-y: auto;
     }
     .metric-title {
@@ -53,7 +53,9 @@ def render_commenter_summary_widget(comments_df: pd.DataFrame) -> None:
         margin-bottom: 6px;
     }
     .comment-green { color: #2E8B57; margin-top: 4px; }
+    .comment-dark-green { color: #006400; margin-top: 4px; }
     .comment-red { color: #B22222; margin-top: 4px; }
+    .comment-dark-red { color: #8B0000; margin-top: 4px; }
     .user-line { margin-bottom: 4px; }
     </style>
     """
@@ -87,18 +89,16 @@ def render_commenter_summary_widget(comments_df: pd.DataFrame) -> None:
         if not top_positive.empty:
             top_user = top_positive.index[0]
             user_comments = pos_df.sort_values("sentiment_score", ascending=False).head(
-                3
+                8
             )
             for _, row in user_comments.iterrows():
-                ts = pd.to_datetime(row["created_est"]).strftime("%Y-%m-%d %H:%M")
-                score = round(row["sentiment_score"], 5)
+                ts = pd.to_datetime(row["created_est"]).strftime("%m/%d/%Y")
+                score = round(row["sentiment_score"], 4)
                 text = row["text"]
-                extra += (
-                    f"<div class='comment-green'>[{ts}] (Score {score}) — {text}</div>"
-                )
+                extra += f"<div class='comment-dark-green'>[{ts}] (Score {score})</div><div class='comment-green'>{text}</div>"
         html = f"""
         <div class='metric-container'>
-            <div class='metric-title'>Most Positive Commenters</div>
+            <div class='metric-title'>Most Positive Comments</div>
             {format_top(top_positive) if not top_positive.empty else 'N/A'}
             {extra}
         </div>
@@ -111,18 +111,16 @@ def render_commenter_summary_widget(comments_df: pd.DataFrame) -> None:
         if not top_negative.empty:
             top_user = top_negative.index[0]
             user_comments = neg_df.sort_values("sentiment_score", ascending=True).head(
-                3
+                8
             )
             for _, row in user_comments.iterrows():
-                ts = pd.to_datetime(row["created_est"]).strftime("%Y-%m-%d %H:%M")
-                score = round(row["sentiment_score"], 5)
+                ts = pd.to_datetime(row["created_est"]).strftime("%m/%d/%Y")
+                score = round(row["sentiment_score"], 4)
                 text = row["text"]
-                extra += (
-                    f"<div class='comment-red'>[{ts}] (Score {score}) — {text}</div>"
-                )
+                extra += f"<div class='comment-dark-red'>[{ts}] (Score {score})</div><div class='comment-red'>{text}</div>"
         html = f"""
         <div class='metric-container'>
-            <div class='metric-title'>Most Negative Commenters</div>
+            <div class='metric-title'>Most Negative Comments</div>
             {format_top(top_negative) if not top_negative.empty else 'N/A'}
             {extra}
         </div>
