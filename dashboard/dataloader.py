@@ -55,6 +55,23 @@ def get_total_comments(_engine):
 
 
 # -------------------
+# Cached all games count
+# -------------------
+@st.cache_data
+def get_total_games(_engine):
+    """Return the row count of dbo.games where the game_id (apart from the first three characters) is unique."""
+    query = """
+    SELECT COUNT(DISTINCT SUBSTRING(CAST(game_id AS VARCHAR), 4, LEN(CAST(game_id AS VARCHAR)) - 3)) 
+    AS total_games
+    FROM dbo.games;
+    """
+    df = safe_read_sql(query, _engine, columns=["total_games"])
+    if df.empty:
+        return 0
+    return int(df.iloc[0]["total_games"])
+
+
+# -------------------
 # Cached queries
 # -------------------
 @st.cache_data

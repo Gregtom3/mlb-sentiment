@@ -23,6 +23,8 @@ def render_commenter_summary_widget(comments_df: pd.DataFrame) -> None:
         return
 
     # --- Compute Top ---
+    # Remove 'None' from authors
+    comments_df = comments_df[comments_df["author"] != "None"]
     top_commenters = comments_df["author"].value_counts().head(6)
 
     pos_df = comments_df[comments_df["sentiment"] == "positive"]

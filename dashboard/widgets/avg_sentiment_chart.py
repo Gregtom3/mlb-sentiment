@@ -221,15 +221,16 @@ def render_avg_sentiment_by_game_widget(
 
         # Compute cumulative differential
         games_df["differential"] = games_df["wins"] - games_df["losses"]
-
+        daily_diff = games_df.groupby("game_date")["differential"].last().reset_index()
         # Split into positive/negative for coloring
-        positive_mask = games_df["differential"] >= 0
+        positive_mask = daily_diff["differential"] >= 0
         negative_mask = ~positive_mask
 
         # Maximum differential for y-axis range
         max_diff = (
             max(
-                abs(games_df["differential"].min()), abs(games_df["differential"].max())
+                abs(daily_diff["differential"].min()),
+                abs(daily_diff["differential"].max()),
             )
             + 1
         )
@@ -237,8 +238,8 @@ def render_avg_sentiment_by_game_widget(
         # Blue bars for positive differential
         fig.add_trace(
             go.Bar(
-                x=list(games_df.loc[positive_mask, "game_date"]),
-                y=list(games_df.loc[positive_mask, "differential"]),
+                x=list(daily_diff.loc[positive_mask, "game_date"]),
+                y=list(daily_diff.loc[positive_mask, "differential"]),
                 name="Above .500",
                 marker_color="rgba(200,200,200,0.6)",
                 hovertemplate="Date: %{x|%Y-%m-%d}<br>Differential: %{y}<extra></extra>",
@@ -249,8 +250,8 @@ def render_avg_sentiment_by_game_widget(
         # Red bars for negative differential
         fig.add_trace(
             go.Bar(
-                x=list(games_df.loc[negative_mask, "game_date"]),
-                y=list(games_df.loc[negative_mask, "differential"]),
+                x=list(daily_diff.loc[negative_mask, "game_date"]),
+                y=list(daily_diff.loc[negative_mask, "differential"]),
                 name="Below .500",
                 marker_color="rgba(150,150,150,0.6)",
                 hovertemplate="Date: %{x|%Y-%m-%d}<br>Differential: %{y}<extra></extra>",

@@ -18,6 +18,7 @@ from dataloader import (
     load_events,
     load_games,
     get_total_comments,
+    get_total_games,
 )
 from mlb_sentiment.info import (
     get_all_team_names,
@@ -30,6 +31,7 @@ from widgets.sentiment_score_dists import render_sentiment_distribution_histogra
 from widgets.comment_summary import render_commenter_summary_widget
 from widgets.sentiment_vs_run_diff import render_sentiment_vs_run_diff
 from widgets.event_pie import render_event_pie_chart
+from widgets.sentiment_per_inning import render_inning_sentiment_widget
 
 # -------------------
 # Logging setup
@@ -106,6 +108,10 @@ with st.sidebar:
     total_comments = get_total_comments(engine)
     t = log_time("Fetched total comments", t)
     st.metric("Total Comments in Database", f"{total_comments:,}")
+
+with st.sidebar:
+    total_games = get_total_games(engine)
+    st.metric("Total Games in Database", f"{total_games:,}")
 
 # -------------------
 # Load games in range
@@ -235,5 +241,9 @@ with row3_col2:
     )
     t = log_time("Rendered event_pie_chart", t)
 
+with row3_col3:
+    t = time.time()
+    render_inning_sentiment_widget(comments_df, events_df, games_df)
+    t = log_time("Rendered inning_sentiment_widget", t)
 logger.info("==== Streamlit app rerun finished ====")
 logger.info(f"TOTAL runtime for rerun: {time.time() - t0:.2f} s")
