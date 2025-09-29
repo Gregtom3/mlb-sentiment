@@ -59,7 +59,6 @@ def get_total_comments(_engine):
 # -------------------
 @st.cache_data
 def load_games(game_dates, team_acronym, _engine):
-
     game_id_first_three = get_team_info(team_acronym, "id")
     query = f"""
     SELECT game_id, game_start_time_est, home_team, away_team, game_date, home_score, away_score, wins, losses
