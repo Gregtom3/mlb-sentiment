@@ -105,7 +105,7 @@ with st.sidebar:
     t = time.time()
     total_comments = get_total_comments(engine)
     t = log_time("Fetched total comments", t)
-    st.metric("Total Comments in DB", f"{total_comments:,}")
+    st.metric("Total Comments in Database", f"{total_comments:,}")
 
 # -------------------
 # Load games in range
@@ -214,11 +214,25 @@ render_commenter_summary_widget(comments_df)
 t = log_time("Rendered commenter_summary_widget", t)
 
 # Sentiment vs Run Differential
-row3_col1, row3_col2 = st.columns(2)
+row3_col1, row3_col2, row3_col3, row3_col4 = st.columns(4)
 
 with row3_col1:
     t = time.time()
-    render_event_pie_chart(events_df)
+    render_event_pie_chart(
+        events_df,
+        title=f"Most Common {team_acronym} Batting Events",
+        team_acronym=team_acronym,
+        do_opponent=False,
+    )
+    t = log_time("Rendered event_pie_chart", t)
+with row3_col2:
+    t = time.time()
+    render_event_pie_chart(
+        events_df,
+        title=f"Most Common Opponent Batting Events",
+        team_acronym=team_acronym,
+        do_opponent=True,
+    )
     t = log_time("Rendered event_pie_chart", t)
 
 logger.info("==== Streamlit app rerun finished ====")

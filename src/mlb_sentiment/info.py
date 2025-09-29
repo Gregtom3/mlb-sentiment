@@ -62,6 +62,7 @@ SUBREDDIT_INFO = {
 def get_team_info(team_acronym, key):
     """Get specific information about a team given its acronym."""
     team_info = statsapi.lookup_team(team_acronym)
+
     if team_info is None:
         raise ValueError(f"Invalid team acronym: {team_acronym}")
     else:
@@ -93,7 +94,10 @@ def get_team_acronym_from_team_name(team_name):
     teams = statsapi.get("teams", {})
     for team in teams.get("teams", []):
         if team.get("name", "").lower() == team_name.lower():
-            return team.get("abbreviation", None)
+            abbr = team.get("abbreviation", None)
+            if abbr == "AZ":
+                abbr = "ARI"
+            return abbr
     return None
 
 
@@ -109,6 +113,7 @@ def get_all_team_acronyms():
         abbr = team.get("abbreviation", "")
         if abbr:
             acronyms.append(abbr)
+
     return sorted(acronyms)
 
 
