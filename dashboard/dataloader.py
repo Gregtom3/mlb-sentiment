@@ -42,6 +42,26 @@ def get_engine():
 
 
 # -------------------
+# Test load comments
+# -------------------
+# @st.cache_data
+def test_load_comments(team_acronym, _engine):
+    query = f"""
+    SELECT game_id, team
+    FROM dbo.commentsTruncated
+    WHERE team = '{team_acronym}'
+    """
+    df = safe_read_sql(
+        query,
+        _engine,
+        columns=[
+            "game_id",
+        ],
+    )
+    return df
+
+
+# -------------------
 # Cached all comments count
 # -------------------
 @st.cache_data
@@ -75,12 +95,13 @@ def get_total_games(_engine):
 # -------------------
 @st.cache_data
 def load_games(game_dates, team_acronym, _engine):
+    # old: WHERE SUBSTRING(CAST(game_id AS VARCHAR), 1, 3) = '{team_acronym}'
     game_id_first_three = get_team_info(team_acronym, "id")
     query = f"""
     SELECT game_id, game_start_time_est, home_team, away_team, game_date, home_score, away_score, wins, losses
     FROM dbo.games
     WHERE CAST(game_date AS DATE) BETWEEN '{game_dates[0]}' AND '{game_dates[-1]}'
-    AND SUBSTRING(CAST(game_id AS VARCHAR), 1, 3) = '{game_id_first_three}'
+    AND team = '{team_acronym}'
     """
     games = safe_read_sql(
         query,
@@ -101,11 +122,12 @@ def load_games(game_dates, team_acronym, _engine):
 
 
 @st.cache_data
-def load_events(team_id, _engine):
+def load_events(team_acronym, _engine):
+    # old: WHERE SUBSTRING(CAST(game_id AS VARCHAR), 1, 3) = '{team_id}'
     query = f"""
-    SELECT game_id, event_id, event, description, inning, halfInning, home_team, visiting_team, home_score, away_score, est
+    SELECT game_id, event_id, event, description, inning, halfInning, home_team, visiting_team, home_score, away_score, est, team
     FROM dbo.gameEvents
-    WHERE SUBSTRING(CAST(game_id AS VARCHAR), 1, 3) = '{team_id}'
+    WHERE team = '{team_acronym}'
     ORDER BY event_id
     """
     df = safe_read_sql(
@@ -135,13 +157,13 @@ def load_events(team_id, _engine):
 
 
 @st.cache_data
-def load_comments(team_id, _engine):
+def load_comments(team_acronym, _engine):
     # Use commentsTruncated which trims comments within game window
     # -5 minutes before game start to +8 minutes after game end
     query = f"""
-    SELECT game_id,author,text,created_est,sentiment,sentiment_score
+    SELECT game_id,author,text,created_est,sentiment,sentiment_score,team
     FROM dbo.commentsTruncated
-    WHERE SUBSTRING(CAST(game_id AS VARCHAR), 1, 3) = '{team_id}'
+    WHERE team = '{team_acronym}'
     ORDER BY created_est
     """
     df = safe_read_sql(

@@ -19,6 +19,7 @@ from dataloader import (
     load_games,
     get_total_comments,
     get_total_games,
+    test_load_comments,
 )
 from mlb_sentiment.info import (
     get_all_team_names,
@@ -154,11 +155,11 @@ logger.info(f"team_id={team_id}, team_is_home={team_is_home}")
 # Query events & comments
 # -------------------
 t = time.time()
-events_df = load_events(team_id, engine)
+events_df = load_events(team_acronym, engine)
 t = log_time("Loaded events_df", t)
 
 t = time.time()
-comments_df = load_comments(team_id, engine)
+comments_df = load_comments(team_acronym, engine)
 t = log_time("Loaded comments_df", t)
 
 # Filter
@@ -166,6 +167,9 @@ events_df = events_df[events_df["game_id"].isin(games_df["game_id"])]
 comments_df = comments_df[comments_df["game_id"].isin(games_df["game_id"])]
 logger.info(f"Filtered events_df={len(events_df)}, comments_df={len(comments_df)}")
 
+# t = time.time()
+# test_load_comments(team_acronym, engine)
+# t = log_time("Test loaded comments_df", t)
 # -------------------
 # Render data summary metrics
 # -------------------
