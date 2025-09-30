@@ -233,7 +233,7 @@ with row4_col1:
     t = time.time()
     render_event_pie_chart(
         events_df,
-        title=f"Most Common {team_acronym} Batting Events",
+        title=f"{team_acronym} Batting Events",
         team_acronym=team_acronym,
         do_opponent=False,
     )
@@ -242,7 +242,7 @@ with row4_col2:
     t = time.time()
     render_event_pie_chart(
         events_df,
-        title=f"Most Common Opponent Batting Events",
+        title=f"Opponent Batting Events",
         team_acronym=team_acronym,
         do_opponent=True,
     )

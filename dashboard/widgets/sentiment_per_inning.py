@@ -1,43 +1,72 @@
-import streamlit as st
 import pandas as pd
+import streamlit as st
 import plotly.graph_objects as go
 
 
-def render_inning_sentiment_widget(
-    comments_df: pd.DataFrame,
-    events_df: pd.DataFrame,
-    games_df: pd.DataFrame,
-) -> None:
-    """
-    Render average sentiment per inning across all games.
+@st.cache_data
+def compute_inning_sentiment(comments_df, events_df):
+    # Ensure datetime
+    events_df = events_df.copy()
+    events_df["est"] = pd.to_datetime(events_df["est"])
+    comments_df = comments_df.copy()
+    comments_df["created_est"] = pd.to_datetime(comments_df["created_est"])
 
-    Parameters
-    ----------
-    comments_df : pd.DataFrame
-        Must contain ['created_est','sentiment_score','game_id'].
-    events_df : pd.DataFrame
-        Must contain ['est','halfInning','game_id'].
-    games_df : pd.DataFrame
-        Must contain ['game_id','game_date','home_team','away_team'].
-    """
+    # --- Find inning boundaries: last event time per (game_id, inning)
+    inning_bounds = (
+        events_df.groupby(["game_id", "inning"])["est"]
+        .max()
+        .reset_index()
+        .sort_values(["game_id", "est"])
+    )
 
-    # --- Styling
-    container_css = """
-.st-key-inning-sentiment-container {
-    background-color: #FFFFFF;
-    padding: 10px;
-}
-    """
-    st.html(f"<style>{container_css}</style>")
+    # --- Add start time = previous boundary (or game start)
+    inning_bounds["start_time"] = inning_bounds.groupby("game_id")["est"].shift(1)
+    inning_bounds["start_time"] = inning_bounds["start_time"].fillna(
+        events_df.groupby("game_id")["est"].transform("min")
+    )
 
+    # --- Join with comments
+    merged = pd.merge(
+        comments_df,
+        inning_bounds,
+        on="game_id",
+        how="inner",
+    )
+
+    mask = (merged["created_est"] >= merged["start_time"]) & (
+        merged["created_est"] < merged["est"]
+    )
+    merged = merged[mask]
+
+    # Average sentiment per inning across games
+    results = (
+        merged.groupby("inning")["sentiment_score"]
+        .mean()
+        .reset_index(name="avg_sentiment")
+    )
+
+    return results
+
+
+def render_inning_sentiment_widget(comments_df, events_df, games_df):
+    st.html(
+        """
+        <style>
+        .st-key-inning-sentiment-container {
+            background-color: #FFFFFF;
+            padding: 10px;
+        }
+        </style>
+        """
+    )
     with st.container(border=True, key="inning-sentiment-container", height=530):
-
-        # Defensive checks
-        if comments_df is None or comments_df.empty:
-            st.info("No comments available for inning sentiment.")
-            return
-        if events_df is None or events_df.empty:
-            st.info("No game events available to segment by inning.")
+        if (
+            comments_df is None
+            or comments_df.empty
+            or events_df is None
+            or events_df.empty
+        ):
+            st.info("No data available.")
             return
 
         st.markdown(
@@ -59,60 +88,17 @@ def render_inning_sentiment_widget(
             unsafe_allow_html=True,
         )
 
-        # --- Prep data
-        events_df = events_df.copy()
-        events_df["est"] = pd.to_datetime(events_df["est"])
-        comments_df = comments_df.copy()
-        comments_df["created_est"] = pd.to_datetime(comments_df["created_est"])
+        agg_df = compute_inning_sentiment(comments_df, events_df)
 
-        all_results = []
-
-        # Loop over games
-        for gid in events_df["game_id"].unique():
-            ev_game = events_df[events_df["game_id"] == gid].sort_values("est")
-            cm_game = comments_df[comments_df["game_id"] == gid].sort_values(
-                "created_est"
-            )
-
-            if ev_game.empty or cm_game.empty:
-                continue
-
-            # inning boundaries (last event in each inning)
-            inning_bounds = (
-                ev_game.groupby("inning")["est"]
-                .max()
-                .reset_index()
-                .sort_values("est")
-                .reset_index(drop=True)
-            )
-
-            prev_time = ev_game["est"].min()
-            for _, row in inning_bounds.iterrows():
-                inning = row["inning"]
-                end_time = row["est"]
-
-                mask = (cm_game["created_est"] >= prev_time) & (
-                    cm_game["created_est"] < end_time
-                )
-                if mask.any():
-                    avg_sent = cm_game.loc[mask, "sentiment_score"].mean()
-                    all_results.append({"Inning": inning, "avg_sentiment": avg_sent})
-                prev_time = end_time
-
-        results_df = pd.DataFrame(all_results)
-
-        if results_df.empty:
+        if agg_df.empty:
             st.info("No inning sentiment could be computed across games.")
             return
-
-        # Aggregate across games → average sentiment per inning label
-        agg_df = results_df.groupby("Inning")["avg_sentiment"].mean().reset_index()
 
         # --- Plot
         fig = go.Figure()
         fig.add_trace(
             go.Bar(
-                x=agg_df["Inning"],
+                x=agg_df["inning"],
                 y=agg_df["avg_sentiment"],
                 marker_color=[
                     "rgba(52,194,48,0.8)" if v > 0 else "rgba(255,0,0,0.8)"
@@ -129,8 +115,8 @@ def render_inning_sentiment_widget(
             xaxis=dict(
                 title="Inning",
                 tickmode="array",
-                tickvals=list(agg_df["Inning"]),
-                ticktext=list(agg_df["Inning"]),
+                tickvals=list(agg_df["inning"]),
+                ticktext=list(agg_df["inning"]),
             ),
             margin=dict(l=40, r=20, t=40, b=40),
         )
