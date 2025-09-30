@@ -47,7 +47,7 @@ def get_engine():
 @st.cache_data
 def get_total_comments(_engine):
     """Return the total number of rows in dbo.comments."""
-    query = "SELECT COUNT(*) AS total_comments FROM dbo.comments"
+    query = "SELECT total_comments FROM dbo.totals;"
     df = safe_read_sql(query, _engine, columns=["total_comments"])
     if df.empty:
         return 0
@@ -61,9 +61,8 @@ def get_total_comments(_engine):
 def get_total_games(_engine):
     """Return the row count of dbo.games where the game_id (apart from the first three characters) is unique."""
     query = """
-    SELECT COUNT(DISTINCT SUBSTRING(CAST(game_id AS VARCHAR), 4, LEN(CAST(game_id AS VARCHAR)) - 3)) 
-    AS total_games
-    FROM dbo.games;
+    SELECT total_games
+    FROM dbo.totals;
     """
     df = safe_read_sql(query, _engine, columns=["total_games"])
     if df.empty:
