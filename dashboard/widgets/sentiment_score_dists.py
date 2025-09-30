@@ -48,7 +48,7 @@ def render_sentiment_distribution_histogram(comments_df: pd.DataFrame) -> None:
                 font-size:1.2em;
                 font-weight:400;
             ">
-                Sentiment Distribution (Selected Date Range)
+                📦 Sentiment Distribution (Selected Date Range)
             </div>
             """,
             unsafe_allow_html=True,

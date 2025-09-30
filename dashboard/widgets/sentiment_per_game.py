@@ -59,7 +59,7 @@ def render_win_loss_sentiment_widget(
                 font-size:1.2em;
                 font-weight:400;
             ">
-                Rolling Sentiment by Game Outcome ({team_acronym})
+                🏁 Rolling Sentiment by Game Outcome ({team_acronym})
             </div>
             """,
             unsafe_allow_html=True,

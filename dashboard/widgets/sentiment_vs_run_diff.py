@@ -63,7 +63,7 @@ def render_sentiment_vs_run_diff(
                 font-size:1.2em;
                 font-weight:400;
             ">
-                Game-Level Sentiment vs. Final Run Differential — {team_acronym}
+                ⚖️ Game-Level Sentiment vs. Final Run Differential — {team_acronym}
             </div>
             """,
             unsafe_allow_html=True,

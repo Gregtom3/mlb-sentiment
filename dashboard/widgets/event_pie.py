@@ -83,7 +83,7 @@ def render_event_pie_chart(
                 font-size:1.2em;
                 font-weight:400;
             ">
-            {title if title else 'Event Distribution'}
+            {('📊 ' + title) if title else '📊 Event Distribution'}
             </div>
             """,
             unsafe_allow_html=True,

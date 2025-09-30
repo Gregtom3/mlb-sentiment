@@ -82,7 +82,7 @@ def render_inning_sentiment_widget(comments_df, events_df, games_df):
                 font-size:1.2em;
                 font-weight:400;
             ">
-                Average Inning Sentiment (All Games)
+                🧢 Average Inning Sentiment (All Games)
             </div>
             """,
             unsafe_allow_html=True,

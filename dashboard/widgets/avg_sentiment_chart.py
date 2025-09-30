@@ -64,7 +64,7 @@ def render_avg_sentiment_by_game_widget(
                 font-size:1.2em;
                 font-weight:400;
             ">
-                Subreddit Sentiment Over Time
+                📰 Subreddit Sentiment Over Time
             </div>
             """,
             unsafe_allow_html=True,

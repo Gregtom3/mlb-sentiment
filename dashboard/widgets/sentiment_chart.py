@@ -69,19 +69,17 @@ def render_sentiment_widget(
 
                     if winner is not None:
                         header_text = (
-                            f"Individual Game: {away} @ {home} — {date} "
+                            f"🎯 Individual Game: {away} @ {home} — {date} "
                             f"(<b>{winner} won {score_str}</b>)"
                         )
                     else:
-                        header_text = (
-                            f"Individual Game: {away} @ {home} — {date} ({score_str})"
-                        )
+                        header_text = f"🎯 Individual Game: {away} @ {home} — {date} ({score_str})"
                 else:
-                    header_text = f"Individual Game: {away} @ {home} — {date}"
+                    header_text = f"🎯 Individual Game: {away} @ {home} — {date}"
             except Exception:
                 header_text = "Fan Sentiment & Game Events Over Time"
         else:
-            header_text = "Fan Sentiment & Game Events Over Time"
+            header_text = "📈 Fan Sentiment & Game Events Over Time"
 
         st.markdown(
             f"""
@@ -104,7 +102,7 @@ def render_sentiment_widget(
 
         # Italic note
         st.markdown(
-            "<i>Click on sentiment peaks/valleys to see related game events and comments.</i>",
+            "<i>Click on sentiment peaks/valleys to see related game events and comments. 🔍</i>",
             unsafe_allow_html=True,
         )
         window_minutes = 4

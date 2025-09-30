@@ -76,13 +76,15 @@ def data_summary(
     st.html(f"<style>{col_css}</style>")
 
     with col1.container(border=True, key="col1-container"):
-        st.metric(f"Queried {team_acronym} Subreddit Comments", f"{comments_count:,}")
+        st.metric(
+            f"💬 Queried {team_acronym} Subreddit Comments", f"{comments_count:,}"
+        )
 
     with col2.container(border=True, key="col2-container"):
-        st.metric(f"Queried {team_acronym} Games", f"{games_count:,}")
+        st.metric(f"⚾ Queried {team_acronym} Games", f"{games_count:,}")
 
     with col3.container(border=True, key="col3-container"):
-        st.metric(f"Queried {team_acronym} Game Events", f"{events_count:,}")
+        st.metric(f"🎯 Queried {team_acronym} Game Events", f"{events_count:,}")
 
     with col4.container(border=True, key="col4-container"):
-        st.metric(f"Win-Loss", f"{wins}-{losses} ({win_pct}%)")
+        st.metric(f"🏆 Win-Loss", f"{wins}-{losses} ({win_pct}%)")
