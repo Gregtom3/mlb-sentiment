@@ -1,9 +1,14 @@
 name: Scheduled Uploads
-
+# This workflow uploads data and recalculates database totals on a schedule.
+# This runs daily at 6am Eastern Time (10am UTC).
+# It will also run on push to main and can be triggered manually.
 on:
   schedule:
     - cron: "0 10 * * *" # 6am Eastern Time (10am UTC)
   workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
   upload-data:
@@ -37,9 +42,9 @@ jobs:
       env:
         AZURE_BLOB_CONNECTION_STRING: ${{ secrets.AZURE_BLOB_CONNECTION_STRING }}
         AZURE_BLOB_CONTAINER: ${{ secrets.AZURE_BLOB_CONTAINER }}
-        AZURE_SYNAPSE_SERVER: ${{ secrets.AZURE_SYNAPSE_SERVER }}
-        AZURE_SYNAPSE_DB: ${{ secrets.AZURE_SYNAPSE_DB }}
-        AZURE_SYNAPSE_USERNAME: ${{ secrets.AZURE_SYNAPSE_USERNAME }}
-        AZURE_SYNAPSE_PASSWORD: ${{ secrets.AZURE_SYNAPSE_PASSWORD }}
+        SYNAPSE_SERVER: ${{ secrets.SYNAPSE_SERVER }}
+        SYNAPSE_DATABASE: ${{ secrets.SYNAPSE_DATABASE }}
+        SYNAPSE_USERNAME: ${{ secrets.SYNAPSE_USERNAME }}
+        SYNAPSE_PASSWORD: ${{ secrets.SYNAPSE_PASSWORD }}
       run: |
         python dashboard/app_ci_scripts/aggregate_global.py
