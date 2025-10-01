@@ -48,8 +48,7 @@ def get_engine():
 def test_load_comments(team_acronym, _engine):
     query = f"""
     SELECT game_id, team
-    FROM dbo.commentsTruncated
-    WHERE team = '{team_acronym}'
+    FROM dbo.commentsTruncated_{team_acronym}
     """
     df = safe_read_sql(
         query,
@@ -99,9 +98,8 @@ def load_games(game_dates, team_acronym, _engine):
     game_id_first_three = get_team_info(team_acronym, "id")
     query = f"""
     SELECT game_id, game_start_time_est, home_team, away_team, game_date, home_score, away_score, wins, losses
-    FROM dbo.games
+    FROM dbo.games_{team_acronym}
     WHERE CAST(game_date AS DATE) BETWEEN '{game_dates[0]}' AND '{game_dates[-1]}'
-    AND team = '{team_acronym}'
     """
     games = safe_read_sql(
         query,
@@ -126,8 +124,7 @@ def load_events(team_acronym, _engine):
     # old: WHERE SUBSTRING(CAST(game_id AS VARCHAR), 1, 3) = '{team_id}'
     query = f"""
     SELECT game_id, event_id, event, description, inning, halfInning, home_team, visiting_team, home_score, away_score, est, team
-    FROM dbo.gameEvents
-    WHERE team = '{team_acronym}'
+    FROM dbo.gameEvents_{team_acronym}
     ORDER BY event_id
     """
     df = safe_read_sql(
@@ -162,8 +159,7 @@ def load_comments(team_acronym, _engine):
     # -5 minutes before game start to +8 minutes after game end
     query = f"""
     SELECT game_id,author,text,created_est,sentiment,sentiment_score,team
-    FROM dbo.commentsTruncated
-    WHERE team = '{team_acronym}'
+    FROM dbo.commentsTruncated_{team_acronym}
     ORDER BY created_est
     """
     df = safe_read_sql(
@@ -180,8 +176,6 @@ def load_comments(team_acronym, _engine):
     )
     if not df.empty:
         df["created_est"] = pd.to_datetime(df["created_est"])
-    if len(df) > 2:
-        df = df.iloc[:-2]  # drop last two rows (usually later stickied comments)
     # If sentiment is neutral set score to 0.0
     df.loc[df["sentiment"] == "neutral", "sentiment_score"] = 0.0
     # If sentiment is negative force score to negative value
