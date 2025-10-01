@@ -37,5 +37,9 @@ jobs:
       env:
         AZURE_BLOB_CONNECTION_STRING: ${{ secrets.AZURE_BLOB_CONNECTION_STRING }}
         AZURE_BLOB_CONTAINER: ${{ secrets.AZURE_BLOB_CONTAINER }}
+        AZURE_SYNAPSE_SERVER: ${{ secrets.AZURE_SYNAPSE_SERVER }}
+        AZURE_SYNAPSE_DB: ${{ secrets.AZURE_SYNAPSE_DB }}
+        AZURE_SYNAPSE_USERNAME: ${{ secrets.AZURE_SYNAPSE_USERNAME }}
+        AZURE_SYNAPSE_PASSWORD: ${{ secrets.AZURE_SYNAPSE_PASSWORD }}
       run: |
         python dashboard/app_ci_scripts/aggregate_global.py
