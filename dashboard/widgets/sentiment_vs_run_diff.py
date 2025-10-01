@@ -63,7 +63,7 @@ def render_sentiment_vs_run_diff(
                 font-size:1.2em;
                 font-weight:400;
             ">
-                ⚖️ Game-Level Sentiment vs. Final Run Differential — {team_acronym}
+                🤖 Game-Level Sentiment vs. Final Run Differential — {team_acronym}
             </div>
             """,
             unsafe_allow_html=True,
@@ -141,7 +141,7 @@ def render_sentiment_vs_run_diff(
                     x=line_x,
                     y=line_y,
                     mode="lines",
-                    name=f"Fit: y={m:.2f}x{'+' if b > 0 else ''}{b:.2f}, R²={r2:.2f}",
+                    name=f"Fit: y={m:.3f}x{'+' if b > 0 else ''}{b:.3f}, R²={r2:.3f}",
                     line=dict(color="black", dash="dash"),
                 )
             )
@@ -150,7 +150,7 @@ def render_sentiment_vs_run_diff(
             autosize=True,
             paper_bgcolor="white",
             plot_bgcolor="white",
-            font=dict(family="Montserrat, sans-serif", size=14, color="black"),
+            # font=dict(family="Montserrat, sans-serif", size=14, color="black"),
             xaxis=dict(title="Final Run Differential"),
             yaxis=dict(
                 title="Average Sentiment (whole game)",
@@ -158,6 +158,14 @@ def render_sentiment_vs_run_diff(
             ),
             margin=dict(l=75, r=20, t=40, b=40),
             showlegend=True,
+            legend=dict(
+                orientation="h",  # horizontal
+                yanchor="bottom",  # anchor legend's bottom
+                y=-0.5,  # just below the plotting area
+                xanchor="center",  # anchor legend to center
+                x=0.5,  # center it horizontally
+                font=dict(size=18),
+            ),
         )
 
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})

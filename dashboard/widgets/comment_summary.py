@@ -98,7 +98,7 @@ def render_commenter_summary_widget(comments_df: pd.DataFrame) -> None:
                 extra += f"<div class='comment-dark-green'>[{ts}] (Score {score})</div><div class='comment-green'>{text}</div>"
         html = f"""
         <div class='metric-container'>
-            <div class='metric-title'>🌟 Most Positive Comments</div>
+            <div class='metric-title'>🤩 Most Positive Comments</div>
             {format_top(top_positive) if not top_positive.empty else 'N/A'}
             {extra}
         </div>
@@ -120,7 +120,7 @@ def render_commenter_summary_widget(comments_df: pd.DataFrame) -> None:
                 extra += f"<div class='comment-dark-red'>[{ts}] (Score {score})</div><div class='comment-red'>{text}</div>"
         html = f"""
         <div class='metric-container'>
-            <div class='metric-title'>⚠️ Most Negative Comments</div>
+            <div class='metric-title'>😡 Most Negative Comments</div>
             {format_top(top_negative) if not top_negative.empty else 'N/A'}
             {extra}
         </div>

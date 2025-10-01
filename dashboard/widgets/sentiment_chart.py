@@ -205,6 +205,14 @@ def render_sentiment_widget(
             paper_bgcolor="white",
             plot_bgcolor="white",
             margin=dict(l=75, r=20, t=20, b=60),
+            legend=dict(
+                orientation="h",  # horizontal
+                yanchor="bottom",  # anchor legend's bottom
+                y=-0.5,  # just below the plotting area
+                xanchor="center",  # anchor legend to center
+                x=0.5,  # center it horizontally
+                font=dict(size=18),
+            ),
         )
         max_abs_diff = (
             np.nanmax(np.abs(diff_series.values)) if diff_series is not None else 1

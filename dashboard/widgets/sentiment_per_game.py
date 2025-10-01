@@ -139,6 +139,7 @@ def render_win_loss_sentiment_widget(
                 mode="markers",
                 marker=dict(color="green", size=10, symbol="triangle-up"),
                 name="Win (avg sentiment)",
+                visible="legendonly",
             )
         )
         # Losses scatter
@@ -149,6 +150,7 @@ def render_win_loss_sentiment_widget(
                 mode="markers",
                 marker=dict(color="red", size=10, symbol="triangle-down"),
                 name="Loss (avg sentiment)",
+                visible="legendonly",
             )
         )
 
@@ -207,6 +209,14 @@ def render_win_loss_sentiment_widget(
             ),
             xaxis=dict(title="Game Date (EST)"),
             margin=dict(l=40, r=20, t=40, b=40),
+            legend=dict(
+                orientation="h",  # horizontal
+                yanchor="bottom",  # anchor legend's bottom
+                y=-0.5,  # just below the plotting area
+                xanchor="center",  # anchor legend to center
+                x=0.5,  # center it horizontally
+                font=dict(size=18),
+            ),
         )
 
         st.plotly_chart(fig, use_container_width=True)

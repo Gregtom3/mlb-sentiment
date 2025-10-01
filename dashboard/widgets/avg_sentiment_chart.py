@@ -202,7 +202,7 @@ def render_avg_sentiment_by_game_widget(
             autosize=True,
             paper_bgcolor="white",
             plot_bgcolor="white",
-            font=dict(family="Montserrat, sans-serif", size=14, color="black"),
+            # font=dict(family="Montserrat, sans-serif", size=14, color="black"),
             xaxis=dict(showgrid=True, zeroline=False, color="gray"),
             yaxis2=dict(
                 zeroline=True,
@@ -210,7 +210,15 @@ def render_avg_sentiment_by_game_widget(
                 side="left",
                 range=[-abs_max_sentiment, abs_max_sentiment],
             ),
-            margin=dict(l=75, r=20, t=20, b=40),
+            margin=dict(l=75, r=20, t=20, b=0),
+            legend=dict(
+                orientation="h",  # horizontal
+                yanchor="bottom",  # anchor legend's bottom
+                y=1.02,  # just below the plotting area
+                xanchor="center",  # anchor legend to center
+                x=0.5,  # center it horizontally
+                font=dict(size=18),
+            ),
         )
         # --- Prepare data
         games_df = games_df.copy()

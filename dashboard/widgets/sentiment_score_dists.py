@@ -111,7 +111,7 @@ def render_sentiment_distribution_histogram(comments_df: pd.DataFrame) -> None:
             height=550,
             paper_bgcolor="white",
             plot_bgcolor="white",
-            font=dict(family="Montserrat, sans-serif", size=14, color="black"),
+            font=dict(size=18, color="black"),
             xaxis=dict(title="Sentiment Score", showgrid=True, zeroline=False),
             yaxis=dict(title="Count", zeroline=True, zerolinecolor="black"),
             margin=dict(l=60, r=20, t=40, b=40),
