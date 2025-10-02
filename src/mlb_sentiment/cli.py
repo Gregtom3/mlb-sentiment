@@ -133,33 +133,33 @@ def upload(
         year = datetime.strptime(date, "%m/%d/%Y").year
         reddit_blob = create_blob_name("reddit", team_acronym, date)
         upload_to_azure_blob(
-            filename + "_comments.parquet",
+            filename + f"_comments_{team_acronym}.parquet",
             reddit_blob,
             subdirectory=f"activeDatabase/comments/{team_acronym}/year={year}",
             remove_local=not keep_local,
         )
         upload_to_azure_blob(
-            filename + "_posts.parquet",
+            filename + f"_posts_{team_acronym}.parquet",
             reddit_blob,
             subdirectory=f"activeDatabase/posts/{team_acronym}/year={year}",
             remove_local=not keep_local,
         )
         click.echo(
             f"\t Reddit blob names: "
-            f"{reddit_blob.replace('.parquet', '_comments.parquet')}, "
-            f"{reddit_blob.replace('.parquet', '_posts.parquet')}"
+            f"{reddit_blob.replace('.parquet', f'_comments_{team_acronym}.parquet')}, "
+            f"{reddit_blob.replace('.parquet', f'_posts_{team_acronym}.parquet')}"
         )
 
         # MLB
         mlb_blob = create_blob_name("mlb", team_acronym, date)
         upload_to_azure_blob(
-            filename + "_games.parquet",
+            filename + f"_games_{team_acronym}.parquet",
             mlb_blob,
             subdirectory=f"activeDatabase/games/{team_acronym}/year={year}",
             remove_local=not keep_local,
         )
         upload_to_azure_blob(
-            filename + "_game_events.parquet",
+            filename + f"_game_events_{team_acronym}.parquet",
             mlb_blob,
             subdirectory=f"activeDatabase/gameEvents/{team_acronym}/year={year}",
             remove_local=not keep_local,

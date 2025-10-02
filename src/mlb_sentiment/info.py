@@ -18,7 +18,7 @@ SUBREDDIT_INFO = {
     },
     "NYY": {
         "subreddit": "https://www.reddit.com/r/NYYankees/",
-        "game_thread_user": "Yankeesbot",
+        "game_thread_user": "Yankeebot",
     },
     "ARI": {
         "subreddit": "https://www.reddit.com/r/azdiamondbacks/",
