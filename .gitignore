@@ -214,3 +214,4 @@ MyDatabase.db
 quick_script.sh
 deploy1.sh
 deploy2.sh
+run_dashboard_locally.sh
