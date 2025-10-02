@@ -215,3 +215,5 @@ quick_script.sh
 deploy1.sh
 deploy2.sh
 run_dashboard_locally.sh
+full_deploy.sh
+prevent_herobrine_locally.sh
