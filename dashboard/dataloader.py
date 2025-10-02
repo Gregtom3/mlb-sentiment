@@ -90,6 +90,38 @@ def get_total_games(_engine):
 
 
 # -------------------
+# Cached sentiment totals
+# -------------------
+@st.cache_data
+def load_sentimentTotals(_engine):
+    """Load the full sentiment totals dataframe from dbo.sentimentTotals."""
+    query = """
+    SELECT team_acronym,
+           num_comments,
+           win_avg_sentiment,
+           loss_avg_sentiment,
+           slope_m,
+           intercept_b,
+           r2
+    FROM dbo.sentimentTotals
+    """
+    df = safe_read_sql(
+        query,
+        _engine,
+        columns=[
+            "team_acronym",
+            "num_comments",
+            "win_avg_sentiment",
+            "loss_avg_sentiment",
+            "slope_m",
+            "intercept_b",
+            "r2",
+        ],
+    )
+    return df
+
+
+# -------------------
 # Cached queries
 # -------------------
 @st.cache_data

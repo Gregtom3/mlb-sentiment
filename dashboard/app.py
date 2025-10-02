@@ -20,6 +20,7 @@ from dataloader import (
     get_total_comments,
     get_total_games,
     test_load_comments,
+    load_sentimentTotals,
 )
 from mlb_sentiment.info import (
     get_all_team_names,
@@ -117,6 +118,52 @@ with st.sidebar:
     total_games = get_total_games(engine)
     st.metric("Total Games in Database", f"{total_games:,}")
 
+with st.sidebar:
+    # --- Load sentiment totals for all teams
+    t = time.time()
+    sentiment_totals_df = load_sentimentTotals(engine)
+    t = log_time("Loaded sentiment_totals_df", t)
+    # Rename columns for clarity
+    sentiment_totals_df.rename(
+        columns={
+            "team_acronym": "Team",
+            "win_avg_sentiment": "Win",
+            "loss_avg_sentiment": "Loss",
+        },
+        inplace=True,
+    )
+    # Display
+    if sentiment_totals_df.empty:
+        st.info("No sentiment totals available.")
+    else:
+        st.markdown("### Team Sentiment Averages")
+
+        # Style dataframe
+        styled_df = (
+            sentiment_totals_df[["Team", "Win", "Loss"]].style.format(
+                {"Win": "{:.4f}", "Loss": "{:.4f}"}
+            )
+            # Green gradient: higher Win sentiment = darker green
+            .background_gradient(
+                subset=["Win"],
+                cmap="Greens",
+                vmin=sentiment_totals_df["Win"].min() - 0.01,
+                vmax=sentiment_totals_df["Win"].max() + 0.01,
+            )
+            # Red gradient: more negative Loss sentiment = darker red
+            .background_gradient(
+                subset=["Loss"],
+                cmap="Reds_r",
+                vmin=sentiment_totals_df["Loss"].min() - 0.01,
+                vmax=sentiment_totals_df["Loss"].max() + 0.01,
+            )
+        )
+
+        st.dataframe(
+            styled_df,
+            use_container_width=True,
+            hide_index=True,
+        )
 # -------------------
 # Load games in range
 # -------------------

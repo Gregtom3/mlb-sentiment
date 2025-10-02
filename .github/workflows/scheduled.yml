@@ -57,3 +57,4 @@ jobs:
         SYNAPSE_PASSWORD: ${{ secrets.SYNAPSE_PASSWORD }}
       run: |
         python dashboard/app_ci_scripts/aggregate_global.py
+        python dashboard/app_ci_scripts/aggregate_sentiment.py
