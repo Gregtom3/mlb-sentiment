@@ -44,7 +44,9 @@ jobs:
         AZURE_BLOB_CONTAINER: ${{ secrets.AZURE_BLOB_CONTAINER }}
       run: |
         mlb-sentiment upload --team-acronym NYM --yesterday --azure --comments-limit 0 --sentiment-model twitter-roberta-base-sentiment
-
+        mlb-sentiment upload --team-acronym ATL --yesterday --azure --comments-limit 0 --sentiment-model twitter-roberta-base-sentiment
+        mlb-sentiment upload --team-acronym SEA --yesterday --azure --comments-limit 0 --sentiment-model twitter-roberta-base-sentiment
+        
     - name: Recalculate Database Totals
       env:
         AZURE_BLOB_CONNECTION_STRING: ${{ secrets.AZURE_BLOB_CONNECTION_STRING }}

@@ -1,6 +1,8 @@
 import statsapi
 from functools import lru_cache
 
+PROCESSED_TEAMS = ["NYM", "ATL", "SEA"]  # As of 10/02/2025
+
 SUBREDDIT_INFO = {
     "NYM": {
         "subreddit": "https://www.reddit.com/r/NewYorkMets/",
@@ -103,7 +105,12 @@ def get_team_acronym_from_team_name(team_name):
 
 # Return list of all team acronyms
 @lru_cache(maxsize=None)
-def get_all_team_acronyms():
+def get_all_team_acronyms(processed=False):
+    """
+    Return list of all team acronyms.
+    If processed=True, only return teams with processed sentiment data.
+    """
+
     teams = statsapi.get("teams", {})
     acronyms = []
     leagues = []
@@ -114,12 +121,20 @@ def get_all_team_acronyms():
         if abbr:
             acronyms.append(abbr)
 
+    if processed:
+        acronyms = [abbr for abbr in acronyms if abbr in PROCESSED_TEAMS]
+
     return sorted(acronyms)
 
 
 # Return list of all team names
 @lru_cache(maxsize=None)
-def get_all_team_names():
+def get_all_team_names(processed=False):
+    """
+    Return list of all team names.
+    If processed=True, only return teams with processed sentiment data.
+    """
+
     teams = statsapi.get("teams", {})
     names = []
     leagues = []
@@ -128,5 +143,7 @@ def get_all_team_names():
             continue
         name = team.get("name", "")
         if name:
+            if processed and team.get("abbreviation") not in PROCESSED_TEAMS:
+                continue
             names.append(name)
     return sorted(names)

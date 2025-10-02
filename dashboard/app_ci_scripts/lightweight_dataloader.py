@@ -1,5 +1,5 @@
-import time
 import pandas as pd
+import time
 
 
 def safe_read_sql(query, engine, columns=None, retries: int = 3, backoff: float = 0.5):

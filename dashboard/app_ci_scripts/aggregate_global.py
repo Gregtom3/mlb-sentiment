@@ -1,6 +1,6 @@
 from mlb_sentiment.config import load_synapse_engine
 from mlb_sentiment.utility import upload_to_azure_blob
-from dashboard.app_ci_scripts.lightweight_dataloader import safe_read_sql
+from lightweight_dataloader import safe_read_sql
 import pandas as pd
 import os
 

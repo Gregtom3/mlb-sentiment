@@ -86,7 +86,9 @@ logger.info("Rendered app title")
 # -------------------
 # Pick a team
 # -------------------
-team_name = st.sidebar.selectbox("Select Team", options=get_all_team_names(), index=18)
+team_name = st.sidebar.selectbox(
+    "Select Team", options=get_all_team_names(processed=True), index=1
+)
 team_acronym = get_team_acronym_from_team_name(team_name)
 logger.info(f"Selected team: {team_name} ({team_acronym})")
 
