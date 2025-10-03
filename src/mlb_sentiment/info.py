@@ -1,7 +1,7 @@
 import statsapi
 from functools import lru_cache
 
-PROCESSED_TEAMS = ["NYM", "ATL", "SEA", "NYY", "LAD"]  # As of 10/02/2025
+PROCESSED_TEAMS = ["NYM", "ATL", "SEA", "NYY"]  # As of 10/02/2025
 
 SUBREDDIT_INFO = {
     "NYM": {
