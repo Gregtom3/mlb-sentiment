@@ -30,12 +30,6 @@ def cli():
     help="Max number of Reddit comments to save.",
 )
 @click.option(
-    "--filename",
-    default="MyDatabase.parquet",
-    show_default=True,
-    help="Output filename.",
-)
-@click.option(
     "--azure",
     is_flag=True,
     help="Upload results to Azure Blob Storage instead of only local.",
@@ -66,7 +60,6 @@ def upload(
     team_acronym,
     date,
     comments_limit,
-    filename,
     azure,
     keep_local,
     yesterday,
@@ -78,7 +71,7 @@ def upload(
     # Handle yesterday flag
     if yesterday:
         date = (datetime.now() - timedelta(days=1)).strftime("%m/%d/%Y")
-
+    filename = f"MyDatabase_{team_acronym}.parquet"
     # --------------------------
     # Pretty options summary
     # --------------------------
@@ -92,7 +85,7 @@ def upload(
         click.echo(f"{'Comments Limit:':20} {comments_limit}")
     else:
         click.echo(f"{'Comments Limit:':20} {comments_limit} (ALL)")
-    click.echo(f"{'Output File:':20} {filename}")
+        click.echo(f"{'Output File:':20} {filename}")
     click.echo(f"{'Azure Upload:':20} {'Yes' if azure else 'No'}")
     if azure:
         click.echo(f"{'Keep Local Copy:':20} {'Yes' if keep_local else 'No'}")
@@ -133,33 +126,33 @@ def upload(
         year = datetime.strptime(date, "%m/%d/%Y").year
         reddit_blob = create_blob_name("reddit", team_acronym, date)
         upload_to_azure_blob(
-            filename + f"_comments_{team_acronym}.parquet",
+            filename + f"_comments.parquet",
             reddit_blob,
             subdirectory=f"activeDatabase/comments/{team_acronym}/year={year}",
             remove_local=not keep_local,
         )
         upload_to_azure_blob(
-            filename + f"_posts_{team_acronym}.parquet",
+            filename + f"_posts.parquet",
             reddit_blob,
             subdirectory=f"activeDatabase/posts/{team_acronym}/year={year}",
             remove_local=not keep_local,
         )
         click.echo(
             f"\t Reddit blob names: "
-            f"{reddit_blob.replace('.parquet', f'_comments_{team_acronym}.parquet')}, "
-            f"{reddit_blob.replace('.parquet', f'_posts_{team_acronym}.parquet')}"
+            f"{reddit_blob.replace('.parquet', f'_comments.parquet')}, "
+            f"{reddit_blob.replace('.parquet', f'_posts.parquet')}"
         )
 
         # MLB
         mlb_blob = create_blob_name("mlb", team_acronym, date)
         upload_to_azure_blob(
-            filename + f"_games_{team_acronym}.parquet",
+            filename + f"_games.parquet",
             mlb_blob,
             subdirectory=f"activeDatabase/games/{team_acronym}/year={year}",
             remove_local=not keep_local,
         )
         upload_to_azure_blob(
-            filename + f"_game_events_{team_acronym}.parquet",
+            filename + f"_game_events.parquet",
             mlb_blob,
             subdirectory=f"activeDatabase/gameEvents/{team_acronym}/year={year}",
             remove_local=not keep_local,

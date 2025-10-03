@@ -46,7 +46,9 @@ jobs:
         mlb-sentiment upload --team-acronym NYM --yesterday --azure --comments-limit 0 --sentiment-model twitter-roberta-base-sentiment
         mlb-sentiment upload --team-acronym ATL --yesterday --azure --comments-limit 0 --sentiment-model twitter-roberta-base-sentiment
         mlb-sentiment upload --team-acronym SEA --yesterday --azure --comments-limit 0 --sentiment-model twitter-roberta-base-sentiment
-        
+        mlb-sentiment upload --team-acronym NYY --yesterday --azure --comments-limit 0 --sentiment-model twitter-roberta-base-sentiment
+        mlb-sentiment upload --team-acronym LAD --yesterday --azure --comments-limit 0 --sentiment-model twitter-roberta-base-sentiment
+
     - name: Recalculate Database Totals
       env:
         AZURE_BLOB_CONNECTION_STRING: ${{ secrets.AZURE_BLOB_CONNECTION_STRING }}
