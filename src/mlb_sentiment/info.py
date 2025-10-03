@@ -1,7 +1,7 @@
 import statsapi
 from functools import lru_cache
 
-PROCESSED_TEAMS = ["NYM", "ATL", "SEA", "NYY"]  # As of 10/02/2025
+PROCESSED_TEAMS = ["NYM", "ATL", "SEA", "NYY", "LAD"]  # As of 10/02/2025
 
 SUBREDDIT_INFO = {
     "NYM": {
@@ -63,7 +63,10 @@ SUBREDDIT_INFO = {
 # Safe access of TEAM_INFO
 def get_team_info(team_acronym, key):
     """Get specific information about a team given its acronym."""
-    team_info = statsapi.lookup_team(team_acronym)
+    team_name = get_team_name_from_team_acronym(team_acronym)
+    if team_name is None:
+        raise ValueError(f"Invalid team acronym: {team_acronym}")
+    team_info = statsapi.lookup_team(team_name)
 
     if team_info is None:
         raise ValueError(f"Invalid team acronym: {team_acronym}")
@@ -100,6 +103,15 @@ def get_team_acronym_from_team_name(team_name):
             if abbr == "AZ":
                 abbr = "ARI"
             return abbr
+    return None
+
+
+# Get team name from team acronym
+def get_team_name_from_team_acronym(team_acronym):
+    teams = statsapi.get("teams", {})
+    for team in teams.get("teams", []):
+        if team.get("abbreviation", "") == team_acronym:
+            return team.get("name", "")
     return None
 
 

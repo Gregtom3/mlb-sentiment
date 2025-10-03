@@ -168,6 +168,7 @@ def fetch_mlb_games(team_acronym, date=None):
         raise ValueError("Date must be in MM/DD/YYYY format.")
 
     TEAM_ID = info.get_team_info(team_acronym, "team_id")
+
     date_str = datetime.strptime(date, "%m/%d/%Y").strftime("%m/%d/%Y")
 
     s = statsapi.schedule(team=TEAM_ID, start_date=date_str, end_date=date_str)

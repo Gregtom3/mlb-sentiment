@@ -135,6 +135,7 @@ def render_avg_sentiment_by_game_widget(
             return f"{team_of_interest_score}-{opponent_score} ({result})"
 
         merged["result_str"] = merged.apply(outcome, axis=1)
+        print(merged)
         # --- Build figure
         fig = make_subplots(specs=[[{"secondary_y": True}]])
         fig.add_trace(
