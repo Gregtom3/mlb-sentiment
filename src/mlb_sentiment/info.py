@@ -1,7 +1,7 @@
 import statsapi
 from functools import lru_cache
 
-PROCESSED_TEAMS = ["NYM", "ATL", "SEA", "NYY", "LAD"]  # As of 10/02/2025
+PROCESSED_TEAMS = ["NYM", "ATL", "SEA", "NYY", "LAD", "TOR"]  # As of 10/06/2025
 
 SUBREDDIT_INFO = {
     "NYM": {
@@ -56,6 +56,10 @@ SUBREDDIT_INFO = {
         "subreddit": "https://www.reddit.com/r/Brewers/",
         "game_thread_user": "BrewersBot",
     },
+    "TOR": {
+        "subreddit": "https://www.reddit.com/r/Torontobluejays/",
+        "game_thread_user": "BlueJaysBaseball",
+    }
     # TODO: Add additional teams here
 }
 
