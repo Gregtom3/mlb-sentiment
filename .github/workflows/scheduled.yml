@@ -5,7 +5,7 @@ name: Scheduled Uploads
 on:
   schedule:
     - cron: "0 10 * * *" # 6am Eastern Time (10am UTC)
-  workflow_dispatch:
+  workflow_dispatch: 
   push:
     branches:
       - main
