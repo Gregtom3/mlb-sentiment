@@ -325,6 +325,54 @@ main {
   max-width: 100%;
 }
 
+/* ---------- biggest moments ---------- */
+.moments-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+  padding: 14px;
+}
+.moment {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  background: var(--panel-2);
+  border-radius: 10px;
+  border-left: 5px solid var(--rule);
+  min-width: 0;
+}
+.moment.surge {
+  border-left-color: var(--pos);
+}
+.moment.groan {
+  border-left-color: var(--neg);
+}
+.moment .m-swing {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 17px;
+  white-space: nowrap;
+}
+.moment.surge .m-swing {
+  color: var(--pos);
+}
+.moment.groan .m-swing {
+  color: var(--neg);
+}
+.moment .m-play {
+  font-size: 13.5px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.moment .m-meta {
+  margin-top: 4px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
 /* ---------- press box ---------- */
 .tabs,
 .league-controls {

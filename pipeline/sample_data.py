@@ -151,6 +151,7 @@ def build_team(team: str = TEAM, seed: int = 7):
         mets_left = mets_runs
         opp_left = opp_runs
         run_home = run_away = 0
+        scoring_moments = []  # (time, mets_scored) for reaction bursts
         t = first_pitch
         for inning in range(1, 10):
             for half in ("top", "bottom"):
@@ -171,6 +172,7 @@ def build_team(team: str = TEAM, seed: int = 7):
                 for _ in range(n_plays):
                     t += timedelta(minutes=rng.randint(2, 5))
                     scored = runs_this_half > 0 and rng.random() < 0.5
+                    cap = rng.randint(0, 60)
                     if scored:
                         runs_this_half -= 1
                         if batting_is_mets and home:
@@ -182,6 +184,8 @@ def build_team(team: str = TEAM, seed: int = 7):
                         else:
                             run_home += 1
                         event = rng.choice(EVENTS_SCORING)
+                        cap = rng.randint(78, 99)  # scoring plays are dramatic
+                        scoring_moments.append((t, batting_is_mets))
                     else:
                         event = rng.choice(EVENTS_OUT + EVENTS_ON)
                     events.append(
@@ -199,7 +203,7 @@ def build_team(team: str = TEAM, seed: int = 7):
                             "away_score": run_away,
                             "outs": rng.randint(0, 2),
                             "people_on_base": rng.randint(0, 3),
-                            "captivatingIndex": rng.randint(0, 100),
+                            "captivatingIndex": cap,
                         }
                     )
                     event_id += 1
@@ -253,6 +257,28 @@ def build_team(team: str = TEAM, seed: int = 7):
                 }
             )
             comment_id += 1
+
+        # Reaction bursts: a flurry of strong comments right after each run,
+        # so the crowd visibly swings (drives the "Biggest Moments" feature).
+        for st, mets_scored in scoring_moments:
+            for _ in range(rng.randint(5, 9)):
+                ts = st + timedelta(seconds=rng.randint(10, 300))
+                if mets_scored:
+                    label, line = "positive", rng.choice(POSITIVE_LINES)
+                else:
+                    label, line = "negative", rng.choice(NEGATIVE_LINES)
+                comments.append(
+                    {
+                        "id": comment_id,
+                        "game_id": game_id,
+                        "author": rng.choice(AUTHORS),
+                        "text": line,
+                        "created_est": _est(ts),
+                        "sentiment": label,
+                        "sentiment_score": round(rng.uniform(0.8, 0.99), 4),
+                    }
+                )
+                comment_id += 1
 
     comments.sort(key=lambda c: c["created_est"])
     return (

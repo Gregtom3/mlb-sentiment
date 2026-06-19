@@ -175,6 +175,7 @@
         `${g.home_score}-${g.away_score}</span>`;
     }
     Charts.gameDetail($("chart-detail"), pg.sentiment_ts || [], pg.run_diff_ts || [], d.team);
+    renderMoments(pg);
     renderComments();
 
     // ---- Trends view ----
@@ -188,6 +189,25 @@
     // ---- Season + Fans views ----
     renderSeason(d.season);
     renderCommenters(d.commenters);
+  }
+
+  function renderMoments(pg) {
+    const m = (pg && pg.moments) || [];
+    $("moments-list").innerHTML = m.length
+      ? m
+          .map((x) => {
+            const cls = x.swing >= 0 ? "surge" : "groan";
+            const arrow = x.swing >= 0 ? "▲" : "▼";
+            return (
+              `<div class="moment ${cls}">` +
+              `<div class="m-swing">${arrow} ${signed(x.swing)}</div>` +
+              `<div class="m-body"><div class="m-play">${escapeHtml(x.description)}</div>` +
+              `<div class="m-meta">${x.half} ${x.inning} · ${x.t} · ${x.score}</div></div>` +
+              `</div>`
+            );
+          })
+          .join("")
+      : `<div class="empty">Not enough comment volume to pinpoint moments for this game.</div>`;
   }
 
   function renderComments() {

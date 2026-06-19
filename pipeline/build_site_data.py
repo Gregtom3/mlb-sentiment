@@ -309,6 +309,74 @@ def _top_commenters(comments: pd.DataFrame) -> dict:
     }
 
 
+def _biggest_moments(gc, ge, window_min=6, min_side=3, top=5):
+    """Plays that moved the crowd most: mood right after a notable play minus
+    mood right before it. Candidates are scoring plays or high-drama plays
+    (captivatingIndex); ranked by absolute mood swing, kept time-separated."""
+    if gc.empty or ge.empty:
+        return []
+    ev = ge.copy()
+    ev["est"] = pd.to_datetime(ev["est"])
+    ev = ev.sort_values("est").reset_index(drop=True)
+    home = pd.to_numeric(ev["home_score"], errors="coerce").fillna(0).to_numpy()
+    away = pd.to_numeric(ev["away_score"], errors="coerce").fillna(0).to_numpy()
+    cap = pd.to_numeric(ev["captivatingIndex"], errors="coerce").fillna(0).to_numpy()
+    total = home + away
+
+    W = pd.Timedelta(minutes=window_min)
+    found = []
+    for i in range(len(ev)):
+        scoring = i > 0 and total[i] > total[i - 1]
+        if not scoring and cap[i] < 70:
+            continue
+        t = ev["est"].iloc[i]
+        pre = gc.loc[
+            (gc["created_est"] >= t - W) & (gc["created_est"] < t), "sentiment_score"
+        ]
+        post = gc.loc[
+            (gc["created_est"] >= t) & (gc["created_est"] < t + W), "sentiment_score"
+        ]
+        if len(pre) < min_side or len(post) < min_side:
+            continue
+        found.append(
+            {
+                "t_dt": t,
+                "swing": float(post.mean() - pre.mean()),
+                "inning": int(ev["inning"].iloc[i]),
+                "half": str(ev["halfInning"].iloc[i]).title(),
+                "event": str(ev["event"].iloc[i]),
+                "description": str(ev["description"].iloc[i]),
+                "home_score": int(home[i]),
+                "away_score": int(away[i]),
+            }
+        )
+
+    # Rank by magnitude, then greedily keep moments at least one window apart.
+    found.sort(key=lambda m: abs(m["swing"]), reverse=True)
+    picked = []
+    for m in found:
+        if all(
+            abs((m["t_dt"] - p["t_dt"]).total_seconds()) >= window_min * 60
+            for p in picked
+        ):
+            picked.append(m)
+        if len(picked) >= top:
+            break
+    picked.sort(key=lambda m: m["t_dt"])  # display chronologically
+    return [
+        {
+            "t": m["t_dt"].strftime("%H:%M"),
+            "swing": round(m["swing"], 3),
+            "inning": m["inning"],
+            "half": m["half"],
+            "event": m["event"],
+            "description": m["description"],
+            "score": f"{m['home_score']}-{m['away_score']}",
+        }
+        for m in picked
+    ]
+
+
 def build_team(con, team: str, team_dir: str) -> dict:
     comments = _signed_comments(con, team_dir)
     games = _read(con, team_dir, "games")
@@ -373,6 +441,7 @@ def build_team(con, team: str, team_dir: str) -> dict:
             "team_is_home": bool(team_is_home),
             "sentiment_ts": _sentiment_ts(gc),
             "run_diff_ts": _run_diff_ts(ge, team_is_home),
+            "moments": _biggest_moments(gc, ge),
             "comments": _game_comment_panels(gc),
         }
 
