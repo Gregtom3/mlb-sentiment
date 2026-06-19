@@ -23,15 +23,40 @@ import duckdb
 import numpy as np
 import pandas as pd
 
-# Reuse the canonical team metadata from the package when statsapi is reachable;
-# fall back to a small local map so the build never depends on network access.
+# Full club names keyed by Stats API abbreviation. Hardcoded (not imported from
+# the package) because the deploy job installs only DuckDB/pandas, not
+# mlb_sentiment — and we never want the build to depend on network access.
 TEAM_NAMES = {
-    "NYM": "New York Mets",
     "ATL": "Atlanta Braves",
-    "SEA": "Seattle Mariners",
-    "NYY": "New York Yankees",
+    "AZ": "Arizona Diamondbacks",
+    "BAL": "Baltimore Orioles",
+    "BOS": "Boston Red Sox",
+    "CHC": "Chicago Cubs",
+    "CIN": "Cincinnati Reds",
+    "CLE": "Cleveland Guardians",
+    "COL": "Colorado Rockies",
+    "CWS": "Chicago White Sox",
+    "DET": "Detroit Tigers",
+    "HOU": "Houston Astros",
+    "KC": "Kansas City Royals",
+    "LAA": "Los Angeles Angels",
     "LAD": "Los Angeles Dodgers",
+    "MIA": "Miami Marlins",
+    "MIL": "Milwaukee Brewers",
+    "MIN": "Minnesota Twins",
+    "NYM": "New York Mets",
+    "NYY": "New York Yankees",
+    "PHI": "Philadelphia Phillies",
+    "PIT": "Pittsburgh Pirates",
+    "SD": "San Diego Padres",
+    "SEA": "Seattle Mariners",
+    "SF": "San Francisco Giants",
+    "STL": "St. Louis Cardinals",
+    "TB": "Tampa Bay Rays",
+    "TEX": "Texas Rangers",
     "TOR": "Toronto Blue Jays",
+    "WSH": "Washington Nationals",
+    "ATH": "Athletics",
 }
 
 WINDOW_MIN = 4  # comment-binning window for the per-game sentiment line
