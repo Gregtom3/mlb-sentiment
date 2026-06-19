@@ -363,9 +363,11 @@ def main():
 
     os.makedirs(args.out, exist_ok=True)
     con = duckdb.connect()
-    teams = discover_teams(args.data)
+    teams = discover_teams(args.data) if os.path.isdir(args.data) else []
     if not teams:
-        raise SystemExit(f"No team data found under {args.data}/")
+        # No data yet (e.g. before the first scheduled refresh). Emit an empty
+        # manifest so the site renders a friendly "no data" state instead of 404.
+        print(f"No team data under {args.data}/ — writing empty manifest.")
 
     manifest = []
     for team in teams:

@@ -25,6 +25,13 @@
         `Run <code>python pipeline/build_site_data.py</code> first.</div>`;
       return;
     }
+    if (!manifest.teams || !manifest.teams.length) {
+      $("app").innerHTML =
+        `<div class="empty">No data yet — the daily refresh will populate ` +
+        `the dashboard shortly. Check back after the next build.</div>`;
+      $("footer-generated").textContent = "Data built " + manifest.generated_at;
+      return;
+    }
     const sel = $("team-select");
     manifest.teams.forEach((t) => {
       const o = document.createElement("option");
