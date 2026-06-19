@@ -8,9 +8,32 @@ from tqdm import tqdm
 from datetime import datetime
 
 
+def _is_game_thread(title):
+    """True for live game-thread titles, excluding pre/post-game threads."""
+    upper = title.upper()
+    collapsed = "".join(upper.split())
+    return (
+        (
+            "GAME THREAD" in upper
+            or "GAME CHAT" in upper
+            or "GDT:" in upper
+            or "GAMEDAY THREAD" in upper
+        )
+        and "PREGAME" not in collapsed
+        and "PRE-GAME" not in collapsed
+        and "POSTGAME" not in collapsed
+        and "POST-GAME" not in collapsed
+    )
+
+
 def fetch_reddit_posts(team_acronym, date=None):
     """
-    Fetch game thread posts made by the specified team's game thread user for a specific date (MM/DD/YYYY).
+    Fetch game thread posts for a team on a specific date (MM/DD/YYYY).
+
+    If the team has a configured ``game_thread_user`` that bot's submissions are
+    read directly; otherwise the team subreddit's recent posts are scanned and
+    matched by title. Both sources return newest-first, so the early ``break``
+    on older posts holds either way.
 
     Args:
         team_acronym (str): Acronym of the MLB team (e.g., "NYM" for New York Mets).
@@ -25,27 +48,25 @@ def fetch_reddit_posts(team_acronym, date=None):
     # Load Reddit client from info.py
     reddit = config.load_reddit_client()
 
-    # Get the user object
-    user = reddit.redditor(info.get_team_info(team_acronym, "game_thread_user"))
+    # Choose the submission stream: the dedicated bot if configured, else a
+    # scan of the team subreddit.
+    game_thread_user = info.get_team_info(team_acronym, "game_thread_user")
+    if game_thread_user:
+        submissions = reddit.redditor(game_thread_user).submissions.new(
+            limit=MAX_LOOKUP
+        )
+    else:
+        subreddit_url = info.get_team_info(team_acronym, "subreddit")
+        subreddit_name = subreddit_url.split("/r/")[1].strip("/")
+        submissions = reddit.subreddit(subreddit_name).new(limit=MAX_LOOKUP)
 
     posts = []
     # Parse date if provided
     start_dt = datetime.strptime(date, "%m/%d/%Y") if date else None
 
     # Collect posts
-    for submission in user.submissions.new(limit=MAX_LOOKUP):
-        if (
-            (
-                "GAME THREAD" in submission.title.upper()
-                or "GAME CHAT" in submission.title.upper()
-                or "GDT:" in submission.title.upper()
-                or "GAMEDAY THREAD" in submission.title.upper()
-            )
-            and "PREGAME" not in "".join(submission.title.upper().split())
-            and "PRE-GAME" not in "".join(submission.title.upper().split())
-            and "POSTGAME" not in "".join(submission.title.upper().split())
-            and "POST-GAME" not in "".join(submission.title.upper().split())
-        ):
+    for submission in submissions:
+        if _is_game_thread(submission.title):
             created_est_str = utility.utc_to_est(submission.created_utc)  # returns str
             created_est_dt = datetime.strptime(created_est_str, "%Y-%m-%d %H:%M:%S")
             post_date_str = created_est_dt.strftime("%m/%d/%Y")

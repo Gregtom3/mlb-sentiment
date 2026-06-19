@@ -34,7 +34,9 @@ jobs:
           REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
           REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT }}
         run: |
-          for TEAM in NYM ATL SEA NYY LAD TOR; do
+          TEAMS=$(python -c "from mlb_sentiment.info import PROCESSED_TEAMS; print(' '.join(PROCESSED_TEAMS))")
+          echo "Fetching ${TEAMS}"
+          for TEAM in $TEAMS; do
             echo "::group::$TEAM"
             mlb-sentiment upload --team-acronym "$TEAM" --yesterday \
               --comments-limit 0 --sentiment-model twitter-roberta-base-sentiment || true

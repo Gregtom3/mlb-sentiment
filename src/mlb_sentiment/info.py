@@ -1,67 +1,95 @@
 import statsapi
 from functools import lru_cache
 
-PROCESSED_TEAMS = ["NYM", "ATL", "SEA", "NYY", "LAD", "TOR"]  # As of 10/06/2025
-
+# All 30 clubs, keyed by their MLB Stats API abbreviation (Arizona is "AZ").
+#
+# "game_thread_user" is OPTIONAL. When present, that bot's submissions are read
+# directly (most reliable). When absent, fetch_reddit_posts falls back to
+# scanning the subreddit's recent posts and matching game threads by title — so
+# a team only needs a verified subreddit to be collected.
 SUBREDDIT_INFO = {
-    "NYM": {
-        "subreddit": "https://www.reddit.com/r/NewYorkMets/",
-        "game_thread_user": "NewYorkMetsBot2",
-    },
-    "ATL": {
-        "subreddit": "https://www.reddit.com/r/Braves/",
-        "game_thread_user": "Blooper_Bot",
-    },
-    "SEA": {
-        "subreddit": "https://www.reddit.com/r/Mariners/",
-        "game_thread_user": "Mariners_bot",
+    # --- AL East ---
+    "BAL": {"subreddit": "https://www.reddit.com/r/orioles/"},
+    "BOS": {
+        "subreddit": "https://www.reddit.com/r/RedSox/",
+        "game_thread_user": "RedSoxGameday",
     },
     "NYY": {
         "subreddit": "https://www.reddit.com/r/NYYankees/",
         "game_thread_user": "Yankeebot",
     },
-    "ARI": {
-        "subreddit": "https://www.reddit.com/r/azdiamondbacks/",
-        "game_thread_user": "SnakeBot",
-    },
     "TB": {
         "subreddit": "https://www.reddit.com/r/tampabayrays/",
         "game_thread_user": "RaysBot",
-    },
-    "LAD": {
-        "subreddit": "https://www.reddit.com/r/Dodgers/",
-        "game_thread_user": "DodgerBot",
-    },
-    "BOS": {
-        "subreddit": "https://www.reddit.com/r/RedSox/",
-        "game_thread_user": "RedSoxGameday",
-    },
-    "CHC": {
-        "subreddit": "https://www.reddit.com/r/CHICubs/",
-        "game_thread_user": "ChiCubsbot",
-    },
-    "SF": {
-        "subreddit": "https://www.reddit.com/r/SFGiants/",
-        "game_thread_user": "sfgbot",
-    },
-    "CLE": {
-        "subreddit": "https://www.reddit.com/r/ClevelandGuardians/",
-        "game_thread_user": "BotFeller",
-    },
-    "KC": {
-        "subreddit": "https://www.reddit.com/r/KCRoyals/",
-        "game_thread_user": "KCRoyalsBot",
-    },
-    "MIL": {
-        "subreddit": "https://www.reddit.com/r/Brewers/",
-        "game_thread_user": "BrewersBot",
     },
     "TOR": {
         "subreddit": "https://www.reddit.com/r/Torontobluejays/",
         "game_thread_user": "BlueJaysBaseball",
     },
-    # TODO: Add additional teams here
+    # --- AL Central ---
+    "CWS": {"subreddit": "https://www.reddit.com/r/whitesox/"},
+    "CLE": {
+        "subreddit": "https://www.reddit.com/r/ClevelandGuardians/",
+        "game_thread_user": "BotFeller",
+    },
+    "DET": {"subreddit": "https://www.reddit.com/r/motorcitykitties/"},
+    "KC": {
+        "subreddit": "https://www.reddit.com/r/KCRoyals/",
+        "game_thread_user": "KCRoyalsBot",
+    },
+    "MIN": {"subreddit": "https://www.reddit.com/r/minnesotatwins/"},
+    # --- AL West ---
+    "HOU": {"subreddit": "https://www.reddit.com/r/Astros/"},
+    "LAA": {"subreddit": "https://www.reddit.com/r/angelsbaseball/"},
+    "ATH": {"subreddit": "https://www.reddit.com/r/oaklandathletics/"},
+    "SEA": {
+        "subreddit": "https://www.reddit.com/r/Mariners/",
+        "game_thread_user": "Mariners_bot",
+    },
+    "TEX": {"subreddit": "https://www.reddit.com/r/TexasRangers/"},
+    # --- NL East ---
+    "ATL": {
+        "subreddit": "https://www.reddit.com/r/Braves/",
+        "game_thread_user": "Blooper_Bot",
+    },
+    "MIA": {"subreddit": "https://www.reddit.com/r/letsgofish/"},
+    "NYM": {
+        "subreddit": "https://www.reddit.com/r/NewYorkMets/",
+        "game_thread_user": "NewYorkMetsBot2",
+    },
+    "PHI": {"subreddit": "https://www.reddit.com/r/phillies/"},
+    "WSH": {"subreddit": "https://www.reddit.com/r/Nationals/"},
+    # --- NL Central ---
+    "CHC": {
+        "subreddit": "https://www.reddit.com/r/CHICubs/",
+        "game_thread_user": "ChiCubsbot",
+    },
+    "CIN": {"subreddit": "https://www.reddit.com/r/Reds/"},
+    "MIL": {
+        "subreddit": "https://www.reddit.com/r/Brewers/",
+        "game_thread_user": "BrewersBot",
+    },
+    "PIT": {"subreddit": "https://www.reddit.com/r/buccos/"},
+    "STL": {"subreddit": "https://www.reddit.com/r/Cardinals/"},
+    # --- NL West ---
+    "AZ": {
+        "subreddit": "https://www.reddit.com/r/azdiamondbacks/",
+        "game_thread_user": "SnakeBot",
+    },
+    "COL": {"subreddit": "https://www.reddit.com/r/ColoradoRockies/"},
+    "LAD": {
+        "subreddit": "https://www.reddit.com/r/Dodgers/",
+        "game_thread_user": "DodgerBot",
+    },
+    "SD": {"subreddit": "https://www.reddit.com/r/Padres/"},
+    "SF": {
+        "subreddit": "https://www.reddit.com/r/SFGiants/",
+        "game_thread_user": "sfgbot",
+    },
 }
+
+# Teams the pipeline fetches. Single source of truth = the configured clubs.
+PROCESSED_TEAMS = sorted(SUBREDDIT_INFO)
 
 
 @lru_cache(maxsize=1)
@@ -74,11 +102,14 @@ def get_all_teams():
 def get_team_info(team_acronym, key):
     """Get specific information about a team given its acronym."""
     # Subreddit metadata lives locally and needs no statsapi lookup.
-    if key in ("subreddit", "game_thread_user"):
-        value = SUBREDDIT_INFO.get(team_acronym, {}).get(key, "")
-        if value == "":
-            raise ValueError(f"{key} not found for team acronym: {team_acronym}")
+    if key == "subreddit":
+        value = SUBREDDIT_INFO.get(team_acronym, {}).get("subreddit", "")
+        if not value:
+            raise ValueError(f"subreddit not found for team acronym: {team_acronym}")
         return value
+    if key == "game_thread_user":
+        # Optional: teams without a bot fall back to a subreddit title scan.
+        return SUBREDDIT_INFO.get(team_acronym, {}).get("game_thread_user")
 
     team_name = get_team_name_from_team_acronym(team_acronym)
     if team_name is None:
