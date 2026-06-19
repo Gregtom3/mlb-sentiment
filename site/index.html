@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>MLB Pulse — Fan Sentiment Scoreboard</title>
+    <title>MLB Pulse — Fan Sentiment</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -22,13 +22,13 @@
         </div>
       </div>
       <label class="picker">
-        <span>Now batting</span>
+        <span>Team</span>
         <select id="team-select"></select>
       </label>
     </header>
 
     <main id="app">
-      <!-- Scoreboard nameplate -->
+      <!-- Persistent team context -->
       <section class="nameplate">
         <div class="nameplate-main">
           <h1 id="team-title">Loading…</h1>
@@ -43,82 +43,112 @@
 
       <section id="stat-tiles" class="tiles"></section>
 
-      <section class="board">
-        <article class="panel">
-          <div class="panel-head">Sentiment by Game<span class="hint">tap a marker to load a game</span></div>
-          <div id="chart-gameline" class="chart"></div>
-        </article>
+      <!-- View switcher -->
+      <nav class="viewnav" id="viewnav">
+        <button class="vbtn is-active" data-view="game">⚾ The Game</button>
+        <button class="vbtn" data-view="trends">📈 Trends</button>
+        <button class="vbtn" data-view="season">🎙 Season in Quotes</button>
+        <button class="vbtn" data-view="fans">👥 Fan Base</button>
+        <button class="vbtn" data-view="league">🏟 League Compare</button>
+      </nav>
 
-        <article class="panel">
-          <div class="panel-head"><span id="detail-title">Selected game</span></div>
-          <div id="chart-detail" class="chart"></div>
-        </article>
-
-        <!-- Press box: per-game comment explorer -->
-        <article class="panel full pressbox">
-          <div class="panel-head">
-            Game Thread · Press Box
-            <span class="hint">what the crowd was saying</span>
-          </div>
-          <div class="tabs" id="comment-tabs">
-            <button class="tab is-active" data-tab="top">Loudest Cheers</button>
-            <button class="tab" data-tab="bottom">Harshest Boos</button>
-            <button class="tab" data-tab="spread">Inning by Inning</button>
-          </div>
-          <div id="comments-list" class="comments-list"></div>
-        </article>
-
-        <article class="panel">
-          <div class="panel-head">Sentiment Spread</div>
-          <div id="chart-hist" class="chart"></div>
-        </article>
-        <article class="panel">
-          <div class="panel-head">Mood vs. Final Run Differential</div>
-          <div id="chart-scatter" class="chart"></div>
-        </article>
-
-        <article class="panel">
-          <div class="panel-head">Average Mood by Inning</div>
-          <div id="chart-innings" class="chart"></div>
-        </article>
-        <article class="panel">
-          <div class="panel-head">Batting Events</div>
-          <div class="pies">
-            <div class="pie-wrap">
-              <div class="pie-title" id="pie-team-title">Team</div>
-              <div id="pie-team" class="pie"></div>
-              <div id="legend-team" class="legend"></div>
+      <!-- VIEW: The Game -->
+      <section class="view is-active" id="view-game">
+        <div class="board">
+          <article class="panel">
+            <div class="panel-head">Sentiment by Game<span class="hint">tap a marker to load a game</span></div>
+            <div id="chart-gameline" class="chart"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><span id="detail-title">Selected game</span></div>
+            <div id="chart-detail" class="chart"></div>
+          </article>
+          <article class="panel full pressbox">
+            <div class="panel-head">Press Box<span class="hint">what the crowd was saying</span></div>
+            <div class="tabs" id="comment-tabs">
+              <button class="tab is-active" data-tab="top">Loudest Cheers</button>
+              <button class="tab" data-tab="bottom">Harshest Boos</button>
+              <button class="tab" data-tab="spread">Inning by Inning</button>
             </div>
-            <div class="pie-wrap">
-              <div class="pie-title">Opponent</div>
-              <div id="pie-opp" class="pie"></div>
-              <div id="legend-opp" class="legend"></div>
-            </div>
-          </div>
-        </article>
-      </section>
-
-      <!-- Season-long highlight reel -->
-      <section class="season full">
-        <div class="season-head">
-          <h2>The Season in Quotes</h2>
-          <p class="season-sub">The highest- and lowest-scored comments across every game on record.</p>
-        </div>
-        <div class="season-grid">
-          <div class="season-col cheers">
-            <h3>🔊 Loudest Cheers</h3>
-            <div id="season-cheers"></div>
-          </div>
-          <div class="season-col boos">
-            <h3>📣 Harshest Boos</h3>
-            <div id="season-boos"></div>
-          </div>
+            <div id="comments-list" class="comments-list"></div>
+          </article>
         </div>
       </section>
 
-      <section class="panel full">
-        <div class="panel-head">Who's in the Stands</div>
-        <div id="commenters" class="commenters"></div>
+      <!-- VIEW: Trends -->
+      <section class="view" id="view-trends">
+        <div class="board">
+          <article class="panel">
+            <div class="panel-head">Sentiment Spread</div>
+            <div id="chart-hist" class="chart"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head">Mood vs. Final Run Differential</div>
+            <div id="chart-scatter" class="chart"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head">Average Mood by Inning</div>
+            <div id="chart-innings" class="chart"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head">Batting Events</div>
+            <div class="pies">
+              <div class="pie-wrap">
+                <div class="pie-title" id="pie-team-title">Team</div>
+                <div id="pie-team" class="pie"></div>
+                <div id="legend-team" class="legend"></div>
+              </div>
+              <div class="pie-wrap">
+                <div class="pie-title">Opponent</div>
+                <div id="pie-opp" class="pie"></div>
+                <div id="legend-opp" class="legend"></div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- VIEW: Season in Quotes -->
+      <section class="view" id="view-season">
+        <div class="season">
+          <div class="season-head">
+            <h2>The Season in Quotes</h2>
+            <p class="season-sub">The highest- and lowest-scored comments across every game on record.</p>
+          </div>
+          <div class="season-grid">
+            <div class="season-col cheers">
+              <h3>🔊 Loudest Cheers</h3>
+              <div id="season-cheers"></div>
+            </div>
+            <div class="season-col boos">
+              <h3>📣 Harshest Boos</h3>
+              <div id="season-boos"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW: Fan Base -->
+      <section class="view" id="view-fans">
+        <article class="panel">
+          <div class="panel-head">Who's in the Stands</div>
+          <div id="commenters" class="commenters"></div>
+        </article>
+      </section>
+
+      <!-- VIEW: League Compare -->
+      <section class="view" id="view-league">
+        <article class="panel">
+          <div class="panel-head">League Compare<span class="hint">every tracked fan base, ranked</span></div>
+          <div class="league-controls" id="league-metric">
+            <button class="tab is-active" data-metric="overall">Overall Mood</button>
+            <button class="tab" data-metric="win">When Winning</button>
+            <button class="tab" data-metric="loss">When Losing</button>
+            <button class="tab" data-metric="pct_negative">Toxicity</button>
+          </div>
+          <p class="league-note" id="league-note"></p>
+          <div id="league-list" class="league-list"></div>
+        </article>
       </section>
     </main>
 

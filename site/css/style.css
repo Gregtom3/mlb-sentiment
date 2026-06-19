@@ -1,49 +1,45 @@
 /* ============================================================
-   MLB Pulse — "night-game manual scoreboard"
-   Palette committed: ground #0C1F16 (field-night green), chalk text,
-   stadium-amber accent, field-green / clay sentiment.
+   MLB Pulse — classic ballpark palette: navy ground, MLB red,
+   cream text, green/red sentiment. View-switched (no long scroll).
    ============================================================ */
 :root {
-  --ground: #0c1f16;
-  --panel: #14271d;
-  --panel-2: #1b3327;
-  --rule: #2a4636;
-  --text: #f2eee1;
-  --muted: #8fa697;
-  --accent: #ffb627; /* stadium amber */
-  --pos: #46c46a; /* field green */
-  --neg: #e2543b; /* infield clay */
+  --navy: #0a1a33;
+  --panel: #112643;
+  --panel-2: #16304f;
+  --rule: #23456e;
+  --text: #f5f2e9;
+  --muted: #9db1ce;
+  --accent: #e4002b; /* MLB red */
+  --blue: #4a90e2;
+  --pos: #2fbf71;
+  --neg: #e4002b;
   --display: "Bebas Neue", "Haettenschweiler", "Arial Narrow", sans-serif;
   --body: "Space Grotesk", system-ui, -apple-system, sans-serif;
-  --mono: "Space Mono", ui-monospace, "SFMono-Regular", monospace;
+  --mono: "Space Mono", ui-monospace, monospace;
 }
 
 * {
   box-sizing: border-box;
+}
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden; /* no sideways slide on mobile */
 }
 html {
   scroll-behavior: smooth;
 }
 body {
   margin: 0;
-  background-color: var(--ground);
-  /* faint chalk baselines, like an infield diamond under lights */
+  background-color: var(--navy);
   background-image: radial-gradient(
-      1200px 500px at 50% -10%,
-      rgba(255, 182, 39, 0.06),
-      transparent 70%
-    ),
-    repeating-linear-gradient(
-      0deg,
-      transparent 0 38px,
-      rgba(242, 238, 225, 0.015) 38px 39px
-    );
+    1100px 460px at 50% -8%,
+    rgba(228, 0, 43, 0.08),
+    transparent 70%
+  );
   color: var(--text);
   font-family: var(--body);
   -webkit-font-smoothing: antialiased;
-}
-a {
-  color: var(--accent);
 }
 h1,
 h2,
@@ -61,28 +57,29 @@ h3 {
   justify-content: space-between;
   gap: 16px;
   padding: 12px 22px;
-  background: linear-gradient(180deg, #0a1812, #0c1f16);
-  border-bottom: 2px solid var(--rule);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+  background: linear-gradient(180deg, #071224, #0a1a33);
+  border-bottom: 3px solid var(--accent);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
 }
 .brand {
   display: flex;
   align-items: center;
   gap: 14px;
+  min-width: 0;
 }
 .bulb {
   width: 16px;
   height: 16px;
   border-radius: 50%;
   background: var(--accent);
-  box-shadow: 0 0 0 4px rgba(255, 182, 39, 0.18), 0 0 18px 2px rgba(255, 182, 39, 0.55);
+  box-shadow: 0 0 0 4px rgba(228, 0, 43, 0.2), 0 0 16px 2px rgba(228, 0, 43, 0.55);
+  flex: none;
 }
 .wordmark {
   font-family: var(--display);
   font-size: 30px;
   letter-spacing: 3px;
   line-height: 0.9;
-  color: var(--text);
 }
 .tagline {
   font-size: 11px;
@@ -100,59 +97,61 @@ h3 {
   color: var(--muted);
 }
 #team-select {
-  font-family: var(--display);
-  letter-spacing: 1.5px;
-  font-size: 20px;
-  color: var(--ground);
-  background: var(--accent);
+  font-family: var(--body);
+  font-weight: 700;
+  font-size: 15px;
+  max-width: 60vw;
+  color: var(--navy);
+  background: var(--text);
   border: none;
-  border-radius: 4px;
-  padding: 6px 12px;
+  border-radius: 6px;
+  padding: 8px 12px;
   cursor: pointer;
 }
 
-/* ---------- layout shell ---------- */
+/* ---------- shell ---------- */
 main {
-  max-width: 1200px;
+  max-width: 1180px;
   margin: 0 auto;
-  padding: 26px 20px 48px;
+  padding: 22px 18px 46px;
 }
 
-/* ---------- scoreboard nameplate (hero) ---------- */
+/* ---------- nameplate ---------- */
 .nameplate {
   display: flex;
   flex-wrap: wrap;
-  align-items: stretch;
-  gap: 18px;
-  margin-bottom: 22px;
+  gap: 16px;
+  margin-bottom: 18px;
 }
 .nameplate-main {
   flex: 1 1 320px;
+  min-width: 0;
   background: linear-gradient(180deg, var(--panel-2), var(--panel));
   border: 2px solid var(--rule);
   border-left: 6px solid var(--accent);
   border-radius: 10px;
-  padding: 20px 22px;
+  padding: 18px 20px;
 }
 #team-title {
   font-family: var(--display);
   font-weight: 400;
-  font-size: clamp(38px, 6vw, 68px);
-  letter-spacing: 2px;
+  font-size: clamp(34px, 6vw, 64px);
+  letter-spacing: 1.5px;
   line-height: 0.92;
   text-transform: uppercase;
+  overflow-wrap: anywhere;
 }
 .nameplate-record {
-  flex: 0 0 200px;
+  flex: 0 0 190px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   text-align: center;
-  background: #0a1712;
+  background: #06101f;
   border: 2px solid var(--rule);
   border-radius: 10px;
-  padding: 14px;
+  padding: 12px;
 }
 .rec-label,
 .stamp {
@@ -164,30 +163,26 @@ main {
 .rec-digits {
   font-family: var(--mono);
   font-weight: 700;
-  font-size: 40px;
-  color: var(--accent);
-  letter-spacing: 1px;
-  text-shadow: 0 0 14px rgba(255, 182, 39, 0.35);
+  font-size: 38px;
+  color: var(--text);
 }
 .stamp {
   margin-top: 6px;
 }
-
-/* mood badges */
 .badges {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 16px;
+  margin-top: 14px;
 }
 .badge {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #0a1712;
+  background: #06101f;
   border: 1px solid var(--rule);
   border-radius: 999px;
-  padding: 6px 14px;
+  padding: 6px 13px;
   font-size: 12px;
 }
 .badge span {
@@ -211,20 +206,20 @@ main {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 14px;
-  margin-bottom: 22px;
+  margin-bottom: 18px;
 }
 .tile {
   background: var(--panel);
   border: 2px solid var(--rule);
   border-radius: 10px;
-  padding: 16px 18px;
+  padding: 15px 16px;
+  min-width: 0;
 }
 .tile-val {
   font-family: var(--mono);
   font-weight: 700;
-  font-size: 30px;
+  font-size: 28px;
   line-height: 1;
-  color: var(--text);
 }
 .tile-lbl {
   margin-top: 8px;
@@ -232,6 +227,55 @@ main {
   letter-spacing: 1.5px;
   text-transform: uppercase;
   color: var(--muted);
+}
+
+/* ---------- view switcher ---------- */
+.viewnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.vbtn {
+  font-family: var(--display);
+  font-size: 19px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text);
+  background: var(--panel);
+  border: 2px solid var(--rule);
+  border-radius: 10px;
+  padding: 10px 18px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.05s;
+}
+.vbtn:hover {
+  border-color: var(--blue);
+}
+.vbtn:active {
+  transform: translateY(1px);
+}
+.vbtn.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.view {
+  display: none;
+}
+.view.is-active {
+  display: block;
+  animation: fade 0.18s ease;
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* ---------- board grid + panels ---------- */
@@ -245,6 +289,7 @@ main {
   border: 2px solid var(--rule);
   border-radius: 12px;
   overflow: hidden;
+  min-width: 0;
 }
 .full {
   grid-column: 1 / -1;
@@ -254,12 +299,13 @@ main {
   align-items: baseline;
   justify-content: space-between;
   gap: 10px;
+  flex-wrap: wrap;
   padding: 12px 16px;
-  background: #0a1712;
+  background: #06101f;
   border-bottom: 2px solid var(--rule);
   font-family: var(--display);
   font-size: 19px;
-  letter-spacing: 1.5px;
+  letter-spacing: 1.2px;
   text-transform: uppercase;
   color: var(--accent);
 }
@@ -276,13 +322,15 @@ main {
 }
 .chart-svg {
   display: block;
+  max-width: 100%;
 }
 
-/* ---------- press box (game comments) ---------- */
-.tabs {
+/* ---------- press box ---------- */
+.tabs,
+.league-controls {
   display: flex;
-  gap: 6px;
-  padding: 12px 14px 0;
+  gap: 8px;
+  padding: 14px 14px 4px;
   flex-wrap: wrap;
 }
 .tab {
@@ -294,7 +342,7 @@ main {
   background: transparent;
   border: 2px solid var(--rule);
   border-radius: 999px;
-  padding: 6px 16px;
+  padding: 6px 15px;
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
@@ -302,26 +350,30 @@ main {
   color: var(--text);
 }
 .tab.is-active {
-  color: var(--ground);
+  color: #fff;
   background: var(--accent);
   border-color: var(--accent);
 }
 .comments-list {
-  padding: 14px;
+  padding: 12px 14px 16px;
   display: grid;
   gap: 8px;
-  max-height: 460px;
+  max-height: 520px;
   overflow-y: auto;
 }
 .crow {
   display: grid;
-  grid-template-columns: 64px 52px 1fr auto;
+  grid-template-columns: 58px 48px 1fr auto;
   gap: 12px;
   align-items: start;
   padding: 10px 12px;
   background: var(--panel-2);
   border-radius: 8px;
   border-left: 4px solid var(--rule);
+  min-width: 0;
+}
+.crow > * {
+  min-width: 0;
 }
 .crow.pos {
   border-left-color: var(--pos);
@@ -332,7 +384,7 @@ main {
 .crow .score {
   font-family: var(--mono);
   font-weight: 700;
-  font-size: 15px;
+  font-size: 14px;
 }
 .crow.pos .score {
   color: var(--pos);
@@ -350,12 +402,14 @@ main {
 }
 .crow .body .who {
   font-size: 12px;
-  color: var(--accent);
+  color: var(--blue);
   margin-bottom: 2px;
+  overflow-wrap: anywhere;
 }
 .crow .body .said {
   font-size: 14px;
   line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 .crow .when {
   font-family: var(--mono);
@@ -372,6 +426,7 @@ main {
 .pie-wrap {
   flex: 1;
   text-align: center;
+  min-width: 0;
 }
 .pie-title {
   font-family: var(--display);
@@ -412,17 +467,16 @@ main {
   fill: var(--text);
 }
 
-/* ---------- season highlight reel ---------- */
+/* ---------- season reel ---------- */
 .season {
-  margin-top: 22px;
   background: linear-gradient(180deg, var(--panel-2), var(--panel));
   border: 2px solid var(--rule);
   border-radius: 12px;
-  padding: 22px;
+  padding: 20px;
 }
 .season-head h2 {
   font-family: var(--display);
-  font-size: 34px;
+  font-size: 32px;
   letter-spacing: 2px;
   text-transform: uppercase;
 }
@@ -435,14 +489,14 @@ main {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 18px;
-  margin-top: 18px;
+  margin-top: 16px;
 }
 .season-col h3 {
   font-family: var(--display);
   letter-spacing: 1.5px;
   text-transform: uppercase;
   font-size: 20px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 .cheers h3 {
   color: var(--pos);
@@ -451,8 +505,7 @@ main {
   color: var(--neg);
 }
 .quote {
-  position: relative;
-  background: #0a1712;
+  background: #06101f;
   border: 1px solid var(--rule);
   border-radius: 10px;
   padding: 12px 14px;
@@ -467,6 +520,7 @@ main {
 .quote .said {
   font-size: 15px;
   line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 .quote .meta {
   display: flex;
@@ -500,7 +554,6 @@ main {
   text-transform: uppercase;
   font-size: 16px;
   margin: 0 0 8px;
-  color: var(--text);
 }
 .cm-col ul {
   margin: 0;
@@ -511,6 +564,7 @@ main {
 .cm-col li {
   padding: 3px 0;
   color: var(--muted);
+  overflow-wrap: anywhere;
 }
 .cm-col li b {
   color: var(--text);
@@ -521,7 +575,8 @@ main {
   padding: 8px 10px;
   border-radius: 8px;
   margin-bottom: 7px;
-  background: #0a1712;
+  background: #06101f;
+  overflow-wrap: anywhere;
 }
 .ex.win {
   border-left: 3px solid var(--pos);
@@ -538,7 +593,64 @@ main {
   font-family: var(--mono);
 }
 
-/* ---------- shared bits ---------- */
+/* ---------- league compare ---------- */
+.league-note {
+  margin: 6px 16px 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.league-list {
+  padding: 14px 16px 18px;
+  display: grid;
+  gap: 6px;
+}
+.lrow {
+  display: grid;
+  grid-template-columns: 24px minmax(120px, 1fr) 2fr 64px;
+  gap: 12px;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(35, 69, 110, 0.5);
+}
+.lrow .rank {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+  text-align: right;
+}
+.lrow .team {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.lrow .val {
+  font-family: var(--mono);
+  font-weight: 700;
+  text-align: right;
+  font-size: 13px;
+}
+.bar {
+  position: relative;
+  height: 14px;
+  background: rgba(35, 69, 110, 0.4);
+  border-radius: 7px;
+}
+.bar.diverge::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  bottom: -2px;
+  width: 1px;
+  background: rgba(245, 242, 233, 0.3);
+}
+.bar .fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 7px;
+}
+
+/* ---------- shared ---------- */
 .win {
   color: var(--pos);
 }
@@ -566,26 +678,26 @@ main {
   position: fixed;
   z-index: 50;
   pointer-events: none;
-  background: #06120c;
+  background: #05101f;
   color: var(--text);
   border: 1px solid var(--accent);
   font-size: 12px;
   line-height: 1.4;
   padding: 7px 10px;
   border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-  max-width: 280px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+  max-width: 260px;
 }
 .foot {
-  max-width: 1200px;
+  max-width: 1180px;
   margin: 0 auto;
   padding: 18px 20px 32px;
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 12px;
   color: var(--muted);
   font-size: 11px;
-  letter-spacing: 0.5px;
 }
 
 /* ---------- responsive ---------- */
@@ -599,11 +711,14 @@ main {
     grid-template-columns: 1fr;
   }
   .crow {
-    grid-template-columns: 56px 1fr;
+    grid-template-columns: 52px 1fr;
   }
   .crow .inn,
   .crow .when {
     display: none;
+  }
+  .lrow {
+    grid-template-columns: 22px minmax(90px, 1fr) 1.4fr 54px;
   }
 }
 
@@ -611,5 +726,6 @@ main {
   * {
     scroll-behavior: auto;
     transition: none !important;
+    animation: none !important;
   }
 }

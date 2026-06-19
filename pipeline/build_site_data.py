@@ -363,6 +363,15 @@ def build_team(con, team: str, team_dir: str) -> dict:
     y = np.array([r["avg_sentiment"] for r in scatter], dtype=float)
     m, b, r2 = _regression(x, y)
 
+    overall = (
+        round(float(comments["sentiment_score"].mean()), 4) if len(comments) else None
+    )
+    pct_negative = (
+        round(float((comments["sentiment"] == "negative").mean()) * 100, 1)
+        if len(comments)
+        else None
+    )
+
     return {
         "team": team,
         "team_name": TEAM_NAMES.get(team, team),
@@ -379,6 +388,8 @@ def build_team(con, team: str, team_dir: str) -> dict:
             "loss_avg_sentiment": (
                 round(float(np.mean(loss_vals)), 4) if loss_vals else None
             ),
+            "overall_avg_sentiment": overall,
+            "pct_negative": pct_negative,
             "slope": round(m, 4) if m is not None else None,
             "intercept": round(b, 4) if b is not None else None,
             "r2": round(r2, 4) if r2 is not None else None,
@@ -421,6 +432,7 @@ def main():
         print(f"No team data under {args.data}/ — writing empty manifest.")
 
     manifest = []
+    league = []
     for team in teams:
         payload = build_team(con, team, os.path.join(args.data, team))
         with open(os.path.join(args.out, f"{team}.json"), "w") as fh:
@@ -433,9 +445,34 @@ def main():
                 "total_games": payload["totals"]["total_games"],
             }
         )
+        s = payload["summary"]
+        league.append(
+            {
+                "team": team,
+                "team_name": payload["team_name"],
+                "comments": payload["totals"]["total_comments"],
+                "games": payload["totals"]["total_games"],
+                "overall": s["overall_avg_sentiment"],
+                "win": s["win_avg_sentiment"],
+                "loss": s["loss_avg_sentiment"],
+                "pct_negative": s["pct_negative"],
+            }
+        )
         print(
             f"  built {team}: {payload['totals']['total_comments']} comments, "
             f"{payload['totals']['total_games']} games"
+        )
+
+    with open(os.path.join(args.out, "league.json"), "w") as fh:
+        json.dump(
+            {
+                "teams": league,
+                "generated_at": datetime.now(timezone.utc).strftime(
+                    "%Y-%m-%d %H:%M UTC"
+                ),
+            },
+            fh,
+            indent=2,
         )
 
     with open(os.path.join(args.out, "manifest.json"), "w") as fh:
