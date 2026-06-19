@@ -147,33 +147,90 @@ def _distribution(comments: pd.DataFrame) -> dict:
     }
 
 
-def _inning_sentiment(comments: pd.DataFrame, events: pd.DataFrame) -> list:
+def _attach_innings(comments: pd.DataFrame, events: pd.DataFrame) -> pd.DataFrame:
+    """Add an ``inning`` column to each comment from per-game inning windows."""
+    comments = comments.copy()
+    comments["inning"] = pd.NA
     if comments.empty or events.empty:
-        return []
+        return comments
     ev = events.copy()
     ev["est"] = pd.to_datetime(ev["est"])
-    bounds = (
-        ev.groupby(["game_id", "inning"])["est"]
-        .max()
-        .reset_index()
-        .sort_values(["game_id", "est"])
-    )
-    bounds["start"] = bounds.groupby("game_id")["est"].shift(1)
-    bounds["start"] = bounds["start"].fillna(
-        ev.groupby("game_id")["est"].transform("min")
-    )
-    merged = comments.merge(bounds, on="game_id", how="inner")
-    mask = (merged["created_est"] >= merged["start"]) & (
-        merged["created_est"] < merged["est"]
-    )
-    merged = merged[mask]
-    if merged.empty:
+    for gid, g_ev in ev.groupby("game_id"):
+        bounds = g_ev.groupby("inning")["est"].max().sort_values()
+        if bounds.empty:
+            continue
+        innings = list(bounds.index)
+        ends = list(bounds.values)
+        starts = [g_ev["est"].min()] + ends[:-1]
+        ends[-1] = pd.Timestamp("2100-01-01")  # capture comments after the last out
+        in_game = comments["game_id"] == gid
+        for inning, start, end in zip(innings, starts, ends):
+            m = (
+                in_game
+                & (comments["created_est"] >= start)
+                & (comments["created_est"] < end)
+            )
+            comments.loc[m, "inning"] = int(inning)
+    return comments
+
+
+def _inning_sentiment(comments: pd.DataFrame) -> list:
+    """Average sentiment per inning across all games (comments pre-annotated)."""
+    c = comments.dropna(subset=["inning"])
+    if c.empty:
         return []
-    agg = merged.groupby("inning")["sentiment_score"].mean().reset_index()
+    agg = c.groupby("inning")["sentiment_score"].mean().reset_index()
+    agg = agg.sort_values("inning")
     return [
         {"inning": int(i), "avg_sentiment": round(float(s), 4)}
         for i, s in zip(agg["inning"], agg["sentiment_score"])
     ]
+
+
+def _fmt_comment(r, with_date=False):
+    out = {
+        "author": r["author"],
+        "score": round(float(r["sentiment_score"]), 3),
+        "text": r["text"],
+        "inning": None if pd.isna(r["inning"]) else int(r["inning"]),
+        "t": pd.to_datetime(r["created_est"]).strftime("%H:%M"),
+    }
+    if with_date:
+        out["game_date"] = r.get("game_date")
+    return out
+
+
+def _game_comment_panels(gc: pd.DataFrame) -> dict:
+    """Top 10, bottom 10, and 10 evenly spread across the game's innings."""
+    gc = gc[gc["author"] != "None"]
+    top = gc.sort_values("sentiment_score", ascending=False).head(10)
+    bottom = gc.sort_values("sentiment_score").head(10)
+    by_time = gc.sort_values("created_est")
+    n = len(by_time)
+    if n <= 10:
+        spread = by_time
+    else:
+        idx = sorted({round(i * (n - 1) / 9) for i in range(10)})
+        spread = by_time.iloc[idx]
+    return {
+        "top": [_fmt_comment(r) for _, r in top.iterrows()],
+        "bottom": [_fmt_comment(r) for _, r in bottom.iterrows()],
+        "spread": [_fmt_comment(r) for _, r in spread.iterrows()],
+    }
+
+
+def _season_highlights(comments: pd.DataFrame, date_map: dict, n: int = 15) -> dict:
+    """Most positive / most negative comments across the whole season."""
+    c = comments[comments["author"] != "None"].copy()
+    if c.empty:
+        return {"positive": [], "negative": []}
+    c["game_date"] = c["game_id"].map(date_map)
+    pos = c.sort_values("sentiment_score", ascending=False).head(n)
+    neg = c.sort_values("sentiment_score").head(n)
+    return {
+        "positive": [_fmt_comment(r, with_date=True) for _, r in pos.iterrows()],
+        "negative": [_fmt_comment(r, with_date=True) for _, r in neg.iterrows()],
+    }
 
 
 def _event_pie(events: pd.DataFrame, team: str, top_n: int = 8) -> dict:
@@ -237,6 +294,10 @@ def build_team(con, team: str, team_dir: str) -> dict:
     games["game_date"] = pd.to_datetime(games["game_date"])
     games = games.sort_values("game_date").reset_index(drop=True)
 
+    # Tag every comment with its inning once; reused by panels + aggregates.
+    comments = _attach_innings(comments, events)
+    date_map = dict(zip(games["game_id"], games["game_date"].dt.strftime("%Y-%m-%d")))
+
     # Per-game average sentiment.
     game_avg = (
         comments.groupby("game_id")["sentiment_score"]
@@ -283,22 +344,11 @@ def build_team(con, team: str, team_dir: str) -> dict:
 
         gc = comments[comments["game_id"] == gid]
         ge = events[events["game_id"] == gid]
-        top = gc.sort_values(
-            "sentiment_score", key=lambda s: s.abs(), ascending=False
-        ).head(25)[["author", "sentiment_score", "text", "created_est"]]
         per_game[str(gid)] = {
             "team_is_home": bool(team_is_home),
             "sentiment_ts": _sentiment_ts(gc),
             "run_diff_ts": _run_diff_ts(ge, team_is_home),
-            "comments": [
-                {
-                    "author": r["author"],
-                    "score": round(float(r["sentiment_score"]), 3),
-                    "text": r["text"],
-                    "t": pd.to_datetime(r["created_est"]).strftime("%H:%M"),
-                }
-                for _, r in top.iterrows()
-            ],
+            "comments": _game_comment_panels(gc),
         }
 
     # Win/loss averages + global regression (sentiment vs run differential).
@@ -336,11 +386,12 @@ def build_team(con, team: str, team_dir: str) -> dict:
         "games": game_rows,
         "per_game": per_game,
         "distribution": _distribution(comments),
-        "inning_sentiment": _inning_sentiment(comments, events),
+        "inning_sentiment": _inning_sentiment(comments),
         "scatter": scatter,
         "regression": {"slope": m, "intercept": b, "r2": r2},
         "event_pie": _event_pie(events, team),
         "commenters": _top_commenters(comments),
+        "season": _season_highlights(comments, date_map),
     }
 
 

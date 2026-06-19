@@ -6,16 +6,16 @@
 
   const SVGNS = "http://www.w3.org/2000/svg";
   const COL = {
-    pos: "#2EA56B",
-    posFill: "rgba(46,165,107,0.45)",
-    neg: "#D7494B",
-    negFill: "rgba(215,73,75,0.45)",
-    line: "#2b2b2b",
-    accent: "#5b8def",
-    grid: "#e3e6ea",
-    axis: "#9aa0a6",
-    text: "#3d3a2a",
-    gold: "#f2b705",
+    pos: "#46C46A",
+    posFill: "rgba(70,196,106,0.40)",
+    neg: "#E2543B",
+    negFill: "rgba(226,84,59,0.38)",
+    line: "#F2EEE1", // chalk sentiment line
+    accent: "#FFB627", // stadium amber
+    grid: "rgba(242,238,225,0.10)",
+    axis: "#5d7468", // muted zero-lines
+    text: "#F2EEE1",
+    gold: "#FFB627",
   };
 
   function el(name, attrs, parent) {
@@ -126,7 +126,7 @@
     // connecting line
     let d = "";
     pts.forEach((p, i) => (d += (i ? "L" : "M") + xScale(i) + " " + yScale(p.avg_sentiment)));
-    el("path", { d, fill: "none", stroke: "rgba(0,0,0,0.35)", "stroke-width": 2 }, s);
+    el("path", { d, fill: "none", stroke: "rgba(242,238,225,0.30)", "stroke-width": 2 }, s);
     // markers
     pts.forEach((p, i) => {
       const cx = xScale(i), cy = yScale(p.avg_sentiment);
@@ -139,7 +139,7 @@
         el("path", {
           d: triangle(cx, cy, 8, win),
           fill: win ? COL.pos : COL.neg,
-          stroke: "rgba(0,0,0,0.4)", "stroke-width": 1.2,
+          stroke: "rgba(242,238,225,0.55)", "stroke-width": 1.2,
         }, g);
       }
       const hit = el("circle", { cx, cy, r: 14, fill: "transparent" }, g);
@@ -189,7 +189,7 @@
         if (i) rd += "L" + xScale(t) + " " + y2(runDiff[i - 1].diff);
         rd += (i ? "L" : "M") + xScale(t) + " " + y2(p.diff);
       });
-      el("path", { d: rd, fill: "none", stroke: "#7a7f87", "stroke-width": 2, "stroke-dasharray": "5 4" }, s);
+      el("path", { d: rd, fill: "none", stroke: "#8FA697", "stroke-width": 2, "stroke-dasharray": "5 4" }, s);
       niceTicks(-dmax, dmax, 4).forEach((t) => {
         el("text", { x: x1 + 8, y: y2(t) + 4, "text-anchor": "start", class: "ax-lbl" }, s).textContent = t;
       });
@@ -274,8 +274,8 @@
     }
     pts.forEach((p) => {
       const cx = xScale(p.run_diff), cy = yScale(p.avg_sentiment);
-      const dot = el("circle", { cx, cy, r: 6, fill: "rgba(91,141,239,0.8)",
-        stroke: "#33518f", "stroke-width": 1 }, s);
+      const dot = el("circle", { cx, cy, r: 6, fill: "rgba(255,182,39,0.85)",
+        stroke: "#8a6410", "stroke-width": 1 }, s);
       const lbl = `${p.date}<br>Run diff: <b>${p.run_diff}</b><br>Avg sentiment: <b>${p.avg_sentiment.toFixed(3)}</b>`;
       dot.addEventListener("mousemove", (e) => showTip(lbl, e));
       dot.addEventListener("mouseleave", hideTip);
@@ -323,7 +323,7 @@
       const a2 = ang + frac * 2 * Math.PI;
       const color = palette[i % palette.length];
       const path = arc(cx, cy, r, ir, ang, a2);
-      const seg = el("path", { d: path, fill: color, stroke: "#fff", "stroke-width": 1.5 }, s);
+      const seg = el("path", { d: path, fill: color, stroke: "#0C1F16", "stroke-width": 1.5 }, s);
       const lbl = `${it.event}: <b>${it.count}</b> (${(frac * 100).toFixed(0)}%)`;
       seg.addEventListener("mousemove", (e) => showTip(lbl, e));
       seg.addEventListener("mouseleave", hideTip);
@@ -346,7 +346,7 @@
       const a = (Math.PI / 5) * i - Math.PI / 2;
       d += (i ? "L" : "M") + (cx + rad * Math.cos(a)) + " " + (cy + rad * Math.sin(a));
     }
-    el("path", { d: d + "Z", fill, stroke: "rgba(0,0,0,0.4)", "stroke-width": 1 }, parent);
+    el("path", { d: d + "Z", fill, stroke: "rgba(242,238,225,0.55)", "stroke-width": 1 }, parent);
   }
   function arc(cx, cy, r, ir, a1, a2) {
     const large = a2 - a1 > Math.PI ? 1 : 0;

@@ -3,61 +3,89 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>MLB Pulse — Fan Sentiment</title>
+    <title>MLB Pulse — Fan Sentiment Scoreboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="css/style.css" />
   </head>
   <body>
-    <header class="topbar">
+    <header class="marquee">
       <div class="brand">
-        <span class="logo">⚾</span>
-        <div>
-          <div class="title">MLB Pulse</div>
-          <div class="subtitle">Quantifying how fan bases react to game events</div>
+        <span class="bulb"></span>
+        <div class="brand-text">
+          <div class="wordmark">MLB&nbsp;PULSE</div>
+          <div class="tagline">The crowd, inning by inning</div>
         </div>
       </div>
-      <div class="controls">
-        <label for="team-select">Team</label>
+      <label class="picker">
+        <span>Now batting</span>
         <select id="team-select"></select>
-      </div>
+      </label>
     </header>
 
     <main id="app">
-      <section class="hero">
-        <h1 id="team-title">Loading…</h1>
-        <div class="meta">Generated <span id="generated">—</span></div>
-        <div id="summary-badges" class="badges"></div>
+      <!-- Scoreboard nameplate -->
+      <section class="nameplate">
+        <div class="nameplate-main">
+          <h1 id="team-title">Loading…</h1>
+          <div id="summary-badges" class="badges"></div>
+        </div>
+        <div class="nameplate-record">
+          <div class="rec-label">Record</div>
+          <div id="record-digits" class="rec-digits">—</div>
+          <div id="generated" class="stamp">—</div>
+        </div>
       </section>
 
-      <section id="stat-cards" class="cards-row"></section>
+      <section id="stat-tiles" class="tiles"></section>
 
-      <section class="grid">
-        <div class="card">
-          <div class="card-head">📰 Sentiment by Game<span class="hint">click a marker to inspect a game</span></div>
+      <section class="board">
+        <article class="panel">
+          <div class="panel-head">Sentiment by Game<span class="hint">tap a marker to load a game</span></div>
           <div id="chart-gameline" class="chart"></div>
-        </div>
-        <div class="card">
-          <div class="card-head">📈 <span id="detail-title">Selected game</span></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head"><span id="detail-title">Selected game</span></div>
           <div id="chart-detail" class="chart"></div>
-        </div>
+        </article>
 
-        <div class="card">
-          <div class="card-head">📦 Sentiment Distribution</div>
+        <!-- Press box: per-game comment explorer -->
+        <article class="panel full pressbox">
+          <div class="panel-head">
+            Game Thread · Press Box
+            <span class="hint">what the crowd was saying</span>
+          </div>
+          <div class="tabs" id="comment-tabs">
+            <button class="tab is-active" data-tab="top">Loudest Cheers</button>
+            <button class="tab" data-tab="bottom">Harshest Boos</button>
+            <button class="tab" data-tab="spread">Inning by Inning</button>
+          </div>
+          <div id="comments-list" class="comments-list"></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">Sentiment Spread</div>
           <div id="chart-hist" class="chart"></div>
-        </div>
-        <div class="card">
-          <div class="card-head">🤖 Sentiment vs. Final Run Differential</div>
+        </article>
+        <article class="panel">
+          <div class="panel-head">Mood vs. Final Run Differential</div>
           <div id="chart-scatter" class="chart"></div>
-        </div>
+        </article>
 
-        <div class="card">
-          <div class="card-head">🧢 Average Sentiment by Inning</div>
+        <article class="panel">
+          <div class="panel-head">Average Mood by Inning</div>
           <div id="chart-innings" class="chart"></div>
-        </div>
-        <div class="card">
-          <div class="card-head">📊 Batting Events</div>
+        </article>
+        <article class="panel">
+          <div class="panel-head">Batting Events</div>
           <div class="pies">
             <div class="pie-wrap">
-              <div class="pie-title">Team</div>
+              <div class="pie-title" id="pie-team-title">Team</div>
               <div id="pie-team" class="pie"></div>
               <div id="legend-team" class="legend"></div>
             </div>
@@ -67,28 +95,36 @@
               <div id="legend-opp" class="legend"></div>
             </div>
           </div>
-        </div>
+        </article>
+      </section>
 
-        <div class="card wide">
-          <div class="card-head">💬 Top Comments — Selected Game</div>
-          <div class="table-wrap">
-            <table class="comments">
-              <thead><tr><th>Time</th><th>Score</th><th>User</th><th>Comment</th></tr></thead>
-              <tbody id="comments-body"></tbody>
-            </table>
+      <!-- Season-long highlight reel -->
+      <section class="season full">
+        <div class="season-head">
+          <h2>The Season in Quotes</h2>
+          <p class="season-sub">The highest- and lowest-scored comments across every game on record.</p>
+        </div>
+        <div class="season-grid">
+          <div class="season-col cheers">
+            <h3>🔊 Loudest Cheers</h3>
+            <div id="season-cheers"></div>
+          </div>
+          <div class="season-col boos">
+            <h3>📣 Harshest Boos</h3>
+            <div id="season-boos"></div>
           </div>
         </div>
+      </section>
 
-        <div class="card wide">
-          <div class="card-head">👥 Commenters</div>
-          <div id="commenters" class="commenters"></div>
-        </div>
+      <section class="panel full">
+        <div class="panel-head">Who's in the Stands</div>
+        <div id="commenters" class="commenters"></div>
       </section>
     </main>
 
     <footer class="foot">
       <span id="footer-generated"></span>
-      <span>Built with DuckDB + static SVG · no tracking, no backend</span>
+      <span>Built with DuckDB + hand-drawn SVG · no backend, no tracking</span>
     </footer>
 
     <script src="js/charts.js"></script>
