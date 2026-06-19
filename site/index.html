@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MLB Pulse — Fan Sentiment</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo">⚾</span>
+        <div>
+          <div class="title">MLB Pulse</div>
+          <div class="subtitle">Quantifying how fan bases react to game events</div>
+        </div>
+      </div>
+      <div class="controls">
+        <label for="team-select">Team</label>
+        <select id="team-select"></select>
+      </div>
+    </header>
+
+    <main id="app">
+      <section class="hero">
+        <h1 id="team-title">Loading…</h1>
+        <div class="meta">Generated <span id="generated">—</span></div>
+        <div id="summary-badges" class="badges"></div>
+      </section>
+
+      <section id="stat-cards" class="cards-row"></section>
+
+      <section class="grid">
+        <div class="card">
+          <div class="card-head">📰 Sentiment by Game<span class="hint">click a marker to inspect a game</span></div>
+          <div id="chart-gameline" class="chart"></div>
+        </div>
+        <div class="card">
+          <div class="card-head">📈 <span id="detail-title">Selected game</span></div>
+          <div id="chart-detail" class="chart"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">📦 Sentiment Distribution</div>
+          <div id="chart-hist" class="chart"></div>
+        </div>
+        <div class="card">
+          <div class="card-head">🤖 Sentiment vs. Final Run Differential</div>
+          <div id="chart-scatter" class="chart"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">🧢 Average Sentiment by Inning</div>
+          <div id="chart-innings" class="chart"></div>
+        </div>
+        <div class="card">
+          <div class="card-head">📊 Batting Events</div>
+          <div class="pies">
+            <div class="pie-wrap">
+              <div class="pie-title">Team</div>
+              <div id="pie-team" class="pie"></div>
+              <div id="legend-team" class="legend"></div>
+            </div>
+            <div class="pie-wrap">
+              <div class="pie-title">Opponent</div>
+              <div id="pie-opp" class="pie"></div>
+              <div id="legend-opp" class="legend"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card wide">
+          <div class="card-head">💬 Top Comments — Selected Game</div>
+          <div class="table-wrap">
+            <table class="comments">
+              <thead><tr><th>Time</th><th>Score</th><th>User</th><th>Comment</th></tr></thead>
+              <tbody id="comments-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card wide">
+          <div class="card-head">👥 Commenters</div>
+          <div id="commenters" class="commenters"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <span id="footer-generated"></span>
+      <span>Built with DuckDB + static SVG · no tracking, no backend</span>
+    </footer>
+
+    <script src="js/charts.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>

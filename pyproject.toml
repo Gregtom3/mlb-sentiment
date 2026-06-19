@@ -15,32 +15,32 @@ dependencies = [
     "pytz>=2025.2",
     "click>=8.0.0",
     "tqdm>=4.66.0",
-    "azure-storage-blob>=12.26.0",
     "pandas>=2.3.2",
-    "pytest>=8.0.0",
-    "black>=24.0.0",
-    "flake8-pyproject>=1.2.3",
-    "mypy>=1.0.0",
-    "streamlit>=1.49.1",
-    "sqlalchemy>=2.0.43",
-    "streamlit-plotly-events2>=0.0.7",
-    "pyodbc>=5.2.0",
-    "streamlit-date-picker>=0.0.5",
-    "wordcloud>=1.9.4",
-    "plotly>=6.3.0",
+    "numpy>=1.26.0",
+    "pyarrow>=15.0.0",
+    "duckdb>=1.0.0",
     "praw>=7.8.1",
     "MLB-StatsAPI>=1.6.0",
 ]
 
 [project.optional-dependencies]
+# Sentiment models used by the fetch step (heavy; only needed when scoring).
+models = [
+    "vaderSentiment>=3.3.2",
+    "transformers>=4.46.3",
+]
 dev = [
+    "pytest>=8.0.0",
+    "black>=24.0.0",
+    "flake8-pyproject>=1.2.3",
+    "mypy>=1.0.0",
     "vaderSentiment>=3.3.2",
     "transformers>=4.46.3",
 ]
 
 [tool.flake8]
 max-line-length = 200
-exclude = [".venv"]
+exclude = [".venv", "node_modules", "build", "dist"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

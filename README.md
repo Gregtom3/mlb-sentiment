@@ -6,129 +6,145 @@ Quantifying how different MLB fan bases respond to in-game events.
 
 `mlb-sentiment` pairs play-by-play data from the MLB Stats API with the comment
 streams of team subreddit game threads, scores each comment for sentiment, and
-visualizes the relationship between what happens on the field and how fans react
-in a Streamlit dashboard.
+publishes an interactive **static dashboard** — no database, no cloud services,
+no running server.
 
-## How it works
+## Architecture
+
+The whole thing is a batch pipeline that ends in flat files served from a CDN.
+Because the data only changes once a day, there is no need for a live backend.
 
 ```
+            (GitHub Action, nightly)
 Reddit game threads ─┐
-                     ├─► fetch ─► sentiment scoring ─► Parquet ─► Azure Blob ─► Synapse ─► Streamlit dashboard
-MLB Stats API ───────┘
+                     ├─► fetch + sentiment scoring ─► Parquet (data/<TEAM>/)
+MLB Stats API ───────┘                                     │
+                                                           ▼
+                                  DuckDB reads the Parquet, computes aggregates
+                                                           │
+                                                           ▼
+                                            JSON payloads (site/data/*.json)
+                                                           │
+                                                           ▼
+                              static dashboard (HTML/CSS + hand-rolled SVG charts)
+                                                           │
+                                                           ▼
+                                        GitHub Pages  ($0, CDN-fast, no server)
 ```
 
-1. **Fetch** – For a given team and date, pull the subreddit game-thread post(s)
-   and their comments, plus the game's events and final score from the MLB Stats
-   API.
-2. **Score** – Each comment is labelled `positive` / `neutral` / `negative` with
-   a configurable model (see [Sentiment models](#sentiment-models)).
-3. **Store** – Results are written to Parquet and (optionally) uploaded to Azure
-   Blob Storage, where they are surfaced to Azure Synapse as external tables.
-4. **Visualize** – `dashboard/app.py` is a Streamlit app that reads from Synapse
-   and renders per-game and per-team sentiment widgets.
+- **Fetch** (`mlb_sentiment` package / CLI): pull a team's game-thread post(s)
+  and comments, plus the game's events and final score, and label each comment
+  `positive` / `neutral` / `negative`.
+- **Build** (`pipeline/build_site_data.py`): DuckDB reads the accumulated
+  Parquet and emits one compact JSON file per team.
+- **Serve** (`site/`): a dependency-free single-page dashboard reads those JSON
+  files. The charts are plain SVG drawn in vanilla JS — no charting CDN.
 
 ## Project layout
 
 ```
 src/mlb_sentiment/        Installable package (the `mlb-sentiment` CLI)
-├── cli.py                `upload` command — orchestrates fetch + save + upload
-├── config.py             Reddit / Azure Blob / Synapse client construction
+├── cli.py                `upload` command — fetch + score + write Parquet
+├── config.py             Reddit (PRAW) client
 ├── info.py               Team metadata, subreddit map, statsapi lookups
-├── utility.py            Timezone helpers + Azure Blob upload
+├── utility.py            Timezone helpers
 ├── fetch/                Pull data from Reddit (reddit.py) and MLB (mlb.py)
 ├── database/             Serialize fetched data to Parquet
 └── models/process.py     Pluggable sentiment models
 
-dashboard/                Streamlit dashboard
-├── app.py                Entry point / layout
-├── dataloader.py         Cached Synapse queries
-├── compute.py            Shared sentiment time-series helper
-├── widgets/              Individual chart widgets
-└── app_ci_scripts/       Aggregation jobs run on a schedule
+pipeline/                 Data build (replaces the old Azure Synapse jobs)
+├── build_site_data.py    DuckDB: Parquet -> site/data/*.json
+└── sample_data.py        Generate a realistic week of demo data offline
 
-tests/                    pytest suite (hits live Reddit / MLB APIs)
+site/                     Static dashboard (deployed to GitHub Pages)
+├── index.html
+├── css/style.css
+├── js/charts.js          Tiny SVG charting toolkit (no dependencies)
+└── js/app.js             Loads JSON, renders the page
+
+data/<TEAM>/              Committed Parquet datasets that feed the build
+tests/                    pytest suite (incl. a hermetic pipeline test)
 ```
 
 ## Installation
 
 ```bash
-pip install -e .          # core package + CLI
-pip install -e .[dev]     # adds the sentiment-model dependencies (VADER, transformers)
-pip install -r requirements.txt   # CPU build of torch (needed for transformer models)
+pip install -e .            # core package + CLI (pandas, duckdb, praw, …)
+pip install -e .[models]    # adds the sentiment models (VADER, transformers)
+pip install -r requirements.txt   # CPU build of torch (for transformer models)
+pip install -e .[dev]       # tooling: pytest, black, flake8, mypy (+ models)
 ```
 
 Requires Python ≥ 3.8.10.
 
 ## Configuration
 
-Credentials are read from environment variables (a local `.env` file is loaded
-automatically via `python-dotenv`):
+Only Reddit credentials are needed (loaded from a local `.env` via
+`python-dotenv`, or from GitHub Actions secrets):
 
 | Variable | Used for |
 | --- | --- |
 | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_USER_AGENT` | Reddit (PRAW) client |
-| `AZURE_BLOB_CONNECTION_STRING`, `AZURE_BLOB_CONTAINER` | Uploading Parquet to Azure Blob |
-| `SYNAPSE_SERVER`, `SYNAPSE_DATABASE`, `SYNAPSE_USERNAME`, `SYNAPSE_PASSWORD` | Dashboard's Synapse connection |
+
+There is no Azure, Synapse, or database configuration — that has been retired.
 
 ## CLI usage
 
 ```bash
-# Fetch + score yesterday's Yankees game thread and upload to Azure
+# Fetch + score yesterday's Mets game thread into data/NYM/
 mlb-sentiment upload \
-    --team-acronym NYY \
+    --team-acronym NYM \
     --yesterday \
-    --azure \
     --comments-limit 0 \
     --sentiment-model twitter-roberta-base-sentiment
 ```
 
-Key options (`mlb-sentiment upload --help` for the full list):
+Options (`mlb-sentiment upload --help` for the full list):
 
 - `--team-acronym` – team to fetch, e.g. `NYM` (required)
 - `--date MM/DD/YYYY` / `--yesterday` – which day to fetch
 - `--comments-limit N` – cap comments per sort order (`0` = all)
 - `--sentiment-model` – `null`, `vader`, `distilbert-base-uncased-finetuned-sst-2-english`, or `twitter-roberta-base-sentiment`
-- `--azure` / `--keep-local` – upload to Azure Blob and optionally keep the local copy
+- `--data-dir` – output root (default `data/`)
 
-### Sentiment models
+Output goes to `data/<TEAM>/<TEAM>_<YYYY-MM-DD>_{games,game_events,comments,posts}.parquet`.
 
-| Model | Notes |
-| --- | --- |
-| `null` | No scoring; everything labelled neutral (fast default) |
-| `vader` | Rule-based VADER compound score |
-| `distilbert-base-uncased-finetuned-sst-2-english` | Hugging Face DistilBERT |
-| `twitter-roberta-base-sentiment` | Hugging Face RoBERTa fine-tuned on tweets |
-
-Teams currently covered by the subreddit map live in `SUBREDDIT_INFO`
-(`src/mlb_sentiment/info.py`); teams with processed data are listed in
-`PROCESSED_TEAMS`.
-
-## Dashboard
+## Build & view the dashboard locally
 
 ```bash
-streamlit run dashboard/app.py
+# 1. (optional) generate a synthetic week of Mets data for a quick demo
+python pipeline/sample_data.py
+
+# 2. build the JSON payloads from whatever is in data/
+python pipeline/build_site_data.py        # -> site/data/*.json
+
+# 3. serve the static site
+python -m http.server -d site 8000        # then open http://localhost:8000
 ```
 
-Or via Docker (bundles the SQL Server ODBC driver needed by Synapse):
+## Deployment
 
-```bash
-docker build -t mlb-sentiment .
-docker run -p 8501:8501 --env-file .env mlb-sentiment
-```
+`.github/workflows/deploy.yml` rebuilds the JSON from the committed Parquet and
+publishes `site/` to **GitHub Pages** on every push to `main` that touches
+`data/`, `site/`, or `pipeline/`. Enable Pages once via *Settings → Pages →
+Source: GitHub Actions*.
 
 ## Automation
 
-`.github/workflows/scheduled.yml` runs daily at 6 a.m. Eastern: it uploads the
-previous day's data for each processed team and then recomputes the global and
-per-team aggregates consumed by the dashboard.
+`.github/workflows/scheduled.yml` runs daily at 6 a.m. Eastern: it fetches the
+previous day's data for each tracked team, writes Parquet under `data/`, and
+commits it back to `main`. That commit triggers the deploy workflow, so the
+published dashboard stays current with no manual steps.
 
 ## Development
 
 ```bash
-black .          # formatting
-flake8 .         # linting
-pytest           # tests (require Reddit credentials; some hit live APIs)
+black .                            # formatting
+flake8 .                           # linting
+python pipeline/sample_data.py     # hermetic fixtures
+pytest tests/test_pipeline.py      # pipeline tests (no network needed)
+pytest                             # full suite (Reddit tests need credentials)
 ```
 
-`.github/workflows/ci.yml` runs the same checks on every push and pull request
-to `main`.
+`.github/workflows/ci.yml` runs the lint, format, and pipeline checks on every
+push and pull request to `main`.

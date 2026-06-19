@@ -1,8 +1,6 @@
 import os
 from dotenv import load_dotenv
 import praw
-from sqlalchemy import create_engine
-from urllib.parse import quote_plus
 
 load_dotenv()
 
@@ -17,49 +15,3 @@ def load_reddit_client():
         client_secret=REDDIT_SECRET,
         user_agent=REDDIT_USER_AGENT,
     )
-
-
-def load_azure_client():
-    """
-    Loads Azure Blob Storage configuration from .env and/or GitHub secrets.
-    Returns:
-        dict: { 'container': str, 'connection_string': str }
-    """
-    # Load from .env
-    container = os.getenv("AZURE_BLOB_CONTAINER")
-    connection_string = os.getenv("AZURE_BLOB_CONNECTION_STRING")
-    # Optionally, load from GitHub secrets if available
-    # For local dev, .env is primary
-    if not container or not connection_string:
-        raise RuntimeError(
-            "Azure Blob Storage configuration missing in .env or secrets."
-        )
-    return {"container": container, "connection_string": connection_string}
-
-
-def load_synapse_engine():
-    """
-    Loads Azure Synapse connection parameters from .env and/or GitHub secrets.
-    Returns:
-        sqlalchemy.Engine: SQLAlchemy engine for Synapse connection.
-    """
-    server = os.getenv("SYNAPSE_SERVER")
-    database = os.getenv("SYNAPSE_DATABASE")
-    username = os.getenv("SYNAPSE_USERNAME")
-    password = os.getenv("SYNAPSE_PASSWORD")
-
-    if not server or not database or not username or not password:
-        raise RuntimeError("Azure Synapse configuration missing in .env or secrets.")
-
-    odbc_str = (
-        f"DRIVER={{ODBC Driver 18 for SQL Server}};"
-        f"SERVER={server};"
-        f"DATABASE={database};"
-        f"UID={username};"
-        f"PWD={password};"
-        "Encrypt=yes;TrustServerCertificate=no;"
-    )
-
-    # URL encode the full ODBC string
-    conn_str = f"mssql+pyodbc:///?odbc_connect={quote_plus(odbc_str)}"
-    return create_engine(conn_str)

@@ -1,3 +1,4 @@
+import os
 import click
 from datetime import datetime, timedelta
 
@@ -5,7 +6,6 @@ from mlb_sentiment.fetch.reddit import fetch_reddit_posts, fetch_reddit_comments
 from mlb_sentiment.database.reddit import save_reddit_posts, save_reddit_comments
 from mlb_sentiment.fetch.mlb import fetch_mlb_events, fetch_mlb_games
 from mlb_sentiment.database.mlb import save_mlb_events, save_mlb_games
-from mlb_sentiment.utility import upload_to_azure_blob
 from mlb_sentiment.models.process import get_model_from_string
 
 
@@ -26,20 +26,18 @@ def cli():
     "--comments-limit",
     default=5,
     show_default=True,
-    help="Max number of Reddit comments to save.",
-)
-@click.option(
-    "--azure",
-    is_flag=True,
-    help="Upload results to Azure Blob Storage instead of only local.",
-)
-@click.option(
-    "--keep-local", is_flag=True, help="Keep local file after uploading to Azure."
+    help="Max number of Reddit comments to save (0 = all).",
 )
 @click.option(
     "--yesterday",
     is_flag=True,
     help="Shortcut: set --date to one day before current date.",
+)
+@click.option(
+    "--data-dir",
+    default="data",
+    show_default=True,
+    help="Root directory for per-team Parquet output.",
 )
 @click.option(
     "--sentiment-model",
@@ -59,114 +57,68 @@ def upload(
     team_acronym,
     date,
     comments_limit,
-    azure,
-    keep_local,
     yesterday,
+    data_dir,
     sentiment_model,
 ):
     """
-    Fetch and save BOTH Reddit game threads and MLB events for a given team/date or range.
+    Fetch Reddit game threads and MLB events for a team/date and write Parquet
+    to ``<data-dir>/<TEAM>/``. The static-site build (``pipeline/build_site_data``)
+    reads these files; no external storage is required.
     """
-    # Handle yesterday flag
     if yesterday:
         date = (datetime.now() - timedelta(days=1)).strftime("%m/%d/%Y")
-    filename = f"MyDatabase_{team_acronym}.parquet"
-    # --------------------------
-    # Pretty options summary
-    # --------------------------
-    click.echo("=" * 60)
-    click.echo(" MLB Sentiment Data Uploader ".center(60, "="))
-    click.echo("=" * 60)
-    click.echo(f"{'Team:':20} {team_acronym}")
-    if date:
-        click.echo(f"{'Date:':20} {date}")
-    limit_display = (
-        f"{comments_limit}" if comments_limit > 0 else f"{comments_limit} (ALL)"
-    )
-    click.echo(f"{'Comments Limit:':20} {limit_display}")
-    click.echo(f"{'Output File:':20} {filename}")
-    click.echo(f"{'Azure Upload:':20} {'Yes' if azure else 'No'}")
-    if azure:
-        click.echo(f"{'Keep Local Copy:':20} {'Yes' if keep_local else 'No'}")
-    click.echo(f"{'Sentiment Model:':20} {sentiment_model}")
-    click.echo("=" * 60 + "\n")
-    # --------------------------
-    # Fetch Reddit posts
-    # --------------------------
-    if date:
-        games = fetch_mlb_games(team_acronym, date=date)
-        if not games:
-            click.echo(f"No MLB games found for {team_acronym} on {date}. Exiting.")
-            return
-        game_events = fetch_mlb_events(team_acronym, date=date)
-        posts = fetch_reddit_posts(team_acronym, date=date)
-        if not posts:
-            click.echo(f"No Reddit posts found for {team_acronym} on {date}. Exiting.")
-            return
-        comments = fetch_reddit_comments(
-            posts,
-            limit=comments_limit,
-            sentiment_model=get_model_from_string(sentiment_model),
-        )
-    else:
+    if not date:
         click.echo("You must provide --date (or use --yesterday).")
         return
 
-    # Save locally
-    save_reddit_posts(posts, filename=filename)
-    save_reddit_comments(comments, filename=filename)
-    save_mlb_events(game_events, filename=filename)
-    save_mlb_games(games, filename=filename)
+    out_dir = os.path.join(data_dir, team_acronym)
+    os.makedirs(out_dir, exist_ok=True)
+    date_tag = datetime.strptime(date, "%m/%d/%Y").strftime("%Y-%m-%d")
+    base = os.path.join(out_dir, f"{team_acronym}_{date_tag}")
+
     # --------------------------
-    # Optional Azure upload
+    # Options summary
     # --------------------------
-    if azure:
-        # Reddit
-        year = datetime.strptime(date, "%m/%d/%Y").year
-        reddit_blob = create_blob_name("reddit", team_acronym, date)
-        upload_to_azure_blob(
-            filename + "_comments.parquet",
-            reddit_blob,
-            subdirectory=f"activeDatabase/comments/{team_acronym}/year={year}",
-            remove_local=not keep_local,
-        )
-        upload_to_azure_blob(
-            filename + "_posts.parquet",
-            reddit_blob,
-            subdirectory=f"activeDatabase/posts/{team_acronym}/year={year}",
-            remove_local=not keep_local,
-        )
-        click.echo(
-            f"\t Reddit blob names: "
-            f"{reddit_blob.replace('.parquet', '_comments.parquet')}, "
-            f"{reddit_blob.replace('.parquet', '_posts.parquet')}"
-        )
+    limit_display = (
+        f"{comments_limit}" if comments_limit > 0 else f"{comments_limit} (ALL)"
+    )
+    click.echo("=" * 60)
+    click.echo(" MLB Sentiment Data Fetcher ".center(60, "="))
+    click.echo("=" * 60)
+    click.echo(f"{'Team:':20} {team_acronym}")
+    click.echo(f"{'Date:':20} {date}")
+    click.echo(f"{'Comments Limit:':20} {limit_display}")
+    click.echo(f"{'Output Prefix:':20} {base}")
+    click.echo(f"{'Sentiment Model:':20} {sentiment_model}")
+    click.echo("=" * 60 + "\n")
 
-        # MLB
-        mlb_blob = create_blob_name("mlb", team_acronym, date)
-        upload_to_azure_blob(
-            filename + "_games.parquet",
-            mlb_blob,
-            subdirectory=f"activeDatabase/games/{team_acronym}/year={year}",
-            remove_local=not keep_local,
-        )
-        upload_to_azure_blob(
-            filename + "_game_events.parquet",
-            mlb_blob,
-            subdirectory=f"activeDatabase/gameEvents/{team_acronym}/year={year}",
-            remove_local=not keep_local,
-        )
-        click.echo(f"\t MLB blob name: {mlb_blob}")
+    # --------------------------
+    # Fetch
+    # --------------------------
+    games = fetch_mlb_games(team_acronym, date=date)
+    if not games:
+        click.echo(f"No MLB games found for {team_acronym} on {date}. Exiting.")
+        return
+    game_events = fetch_mlb_events(team_acronym, date=date)
+    posts = fetch_reddit_posts(team_acronym, date=date)
+    if not posts:
+        click.echo(f"No Reddit posts found for {team_acronym} on {date}. Exiting.")
+        return
+    comments = fetch_reddit_comments(
+        posts,
+        limit=comments_limit,
+        sentiment_model=get_model_from_string(sentiment_model),
+    )
 
-
-# --------------------------
-# Helpers
-# --------------------------
-def create_blob_name(prefix, team_acronym, game_date):
-    blob_name = f"{prefix}_{team_acronym}_date={game_date}.parquet".replace("/", "-")
-    if blob_name.endswith("_.parquet"):
-        blob_name = blob_name.replace("_.parquet", ".parquet")
-    return blob_name
+    # --------------------------
+    # Save Parquet
+    # --------------------------
+    save_reddit_posts(posts, filename=base)
+    save_reddit_comments(comments, filename=base)
+    save_mlb_events(game_events, filename=base)
+    save_mlb_games(games, filename=base)
+    click.echo(f"\nWrote Parquet for {team_acronym} {date_tag} to {out_dir}/")
 
 
 if __name__ == "__main__":

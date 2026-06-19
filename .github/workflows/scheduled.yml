@@ -1,63 +1,50 @@
-name: Scheduled Uploads
-# This workflow uploads data and recalculates database totals on a schedule.
-# This runs daily at 6am Eastern Time (10am UTC).
-# It will also run on push to main and can be triggered manually.
+name: Daily Data Refresh
+# Fetches the previous day's Reddit + MLB data for each tracked team, writes
+# Parquet under data/<TEAM>/, and commits it back to main. The commit to
+# data/** triggers the Deploy Dashboard workflow, which rebuilds and publishes
+# the static site. No Azure, no database.
 on:
   schedule:
-    - cron: "0 10 * * *" # 6am Eastern Time (10am UTC)
-  workflow_dispatch: 
-  push:
-    branches:
-      - main
+    - cron: "0 10 * * *" # 6am Eastern (10am UTC)
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
-  upload-data:
+  refresh:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e .[dev]
-        pip install -r requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[models]
+          pip install -r requirements.txt
 
-    - name: Install ODBC Driver for SQL Server
-      run: |
-        curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
-        curl https://packages.microsoft.com/config/ubuntu/20.04/prod.list | sudo tee /etc/apt/sources.list.d/mssql-release.list
-        sudo apt-get update
-        sudo ACCEPT_EULA=Y apt-get install -y msodbcsql18 unixodbc-dev
-        
-    - name: Upload Data 
-      env:
-        REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
-        REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
-        REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT }}
-        AZURE_BLOB_CONNECTION_STRING: ${{ secrets.AZURE_BLOB_CONNECTION_STRING }}
-        AZURE_BLOB_CONTAINER: ${{ secrets.AZURE_BLOB_CONTAINER }}
-      run: |
-        mlb-sentiment upload --team-acronym NYM --yesterday --azure --comments-limit 0 --sentiment-model twitter-roberta-base-sentiment
-        mlb-sentiment upload --team-acronym ATL --yesterday --azure --comments-limit 0 --sentiment-model twitter-roberta-base-sentiment
-        mlb-sentiment upload --team-acronym SEA --yesterday --azure --comments-limit 0 --sentiment-model twitter-roberta-base-sentiment
-        mlb-sentiment upload --team-acronym NYY --yesterday --azure --comments-limit 0 --sentiment-model twitter-roberta-base-sentiment
-        mlb-sentiment upload --team-acronym LAD --yesterday --azure --comments-limit 0 --sentiment-model twitter-roberta-base-sentiment
-        mlb-sentiment upload --team-acronym TOR --yesterday --azure --comments-limit 0 --sentiment-model twitter-roberta-base-sentiment
-        
-    - name: Recalculate Database Totals
-      env:
-        AZURE_BLOB_CONNECTION_STRING: ${{ secrets.AZURE_BLOB_CONNECTION_STRING }}
-        AZURE_BLOB_CONTAINER: ${{ secrets.AZURE_BLOB_CONTAINER }}
-        SYNAPSE_SERVER: ${{ secrets.SYNAPSE_SERVER }}
-        SYNAPSE_DATABASE: ${{ secrets.SYNAPSE_DATABASE }}
-        SYNAPSE_USERNAME: ${{ secrets.SYNAPSE_USERNAME }}
-        SYNAPSE_PASSWORD: ${{ secrets.SYNAPSE_PASSWORD }}
-      run: |
-        python dashboard/app_ci_scripts/aggregate_global.py
-        python dashboard/app_ci_scripts/aggregate_sentiment.py
+      - name: Fetch yesterday's data
+        env:
+          REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+          REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
+          REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT }}
+        run: |
+          for TEAM in NYM ATL SEA NYY LAD TOR; do
+            echo "::group::$TEAM"
+            mlb-sentiment upload --team-acronym "$TEAM" --yesterday \
+              --comments-limit 0 --sentiment-model twitter-roberta-base-sentiment || true
+            echo "::endgroup::"
+          done
+
+      - name: Commit refreshed data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git diff --staged --quiet || git commit -m "Daily data refresh ($(date -u +%F))"
+          git push
