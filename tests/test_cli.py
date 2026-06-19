@@ -1,5 +1,4 @@
 import subprocess
-import sys
 
 
 def test_cli_fetch():

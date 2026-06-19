@@ -58,13 +58,13 @@ def render_sentiment_widget(
                 # --- Compute W/L ---
                 if pd.notna(home_score) and pd.notna(away_score):
                     if home_score > away_score:
-                        winner, loser = home, away
+                        winner = home
                         score_str = f"{home_score}-{away_score}"
                     elif away_score > home_score:
-                        winner, loser = away, home
+                        winner = away
                         score_str = f"{away_score}-{home_score}"
                     else:
-                        winner, loser = None, None
+                        winner = None
                         score_str = f"Tied {home_score}-{away_score}"
 
                     if winner is not None:
@@ -112,18 +112,6 @@ def render_sentiment_widget(
             sentiment_ts = compute_sentiment_ts(comments_df, window_minutes)
         except Exception as e:
             st.error(f"Error computing sentiment time series: {e}")
-            return
-
-        # --- Comment counts (y2 axis)
-        try:
-            comment_counts = (
-                comments_df.set_index("created_est")
-                .resample(f"{window_minutes}Min")
-                .size()
-                .rename("comment_count")
-            )
-        except Exception as e:
-            st.error(f"Error aggregating comment counts: {e}")
             return
 
         # --- Compute score differential from events_df

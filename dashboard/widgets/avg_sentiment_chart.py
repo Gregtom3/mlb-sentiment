@@ -1,9 +1,10 @@
+from typing import Optional
+
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 from streamlit_plotly_events2 import plotly_events
 from plotly.subplots import make_subplots
-import os
 
 
 def render_avg_sentiment_by_game_widget(
@@ -11,7 +12,7 @@ def render_avg_sentiment_by_game_widget(
     games_df: pd.DataFrame,
     current_game_id: int,
     team_acronym: str = "",
-) -> None:
+) -> Optional[int]:
     """
     Render average sentiment score per game_id, aligned with game start times.
 
@@ -135,7 +136,6 @@ def render_avg_sentiment_by_game_widget(
             return f"{team_of_interest_score}-{opponent_score} ({result})"
 
         merged["result_str"] = merged.apply(outcome, axis=1)
-        print(merged)
         # --- Build figure
         fig = make_subplots(specs=[[{"secondary_y": True}]])
         fig.add_trace(

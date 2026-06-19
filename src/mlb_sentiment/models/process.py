@@ -1,6 +1,6 @@
 from enum import Enum
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-from typing import Tuple, Dict
+from typing import Any, Tuple, Dict
 from transformers import pipeline
 
 
@@ -26,7 +26,7 @@ HUGGING_FACE_MODELS = [
 # Cached analyzers/pipelines
 # ----------------------------
 _vader_analyzer = SentimentIntensityAnalyzer()
-_hf_pipelines: Dict[SentimentModelType, any] = {}
+_hf_pipelines: Dict[SentimentModelType, Any] = {}
 
 
 # ----------------------------

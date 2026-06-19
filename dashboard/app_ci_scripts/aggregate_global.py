@@ -2,7 +2,6 @@ from mlb_sentiment.config import load_synapse_engine
 from mlb_sentiment.utility import upload_to_azure_blob
 from lightweight_dataloader import safe_read_sql
 import pandas as pd
-import os
 
 
 def load_comment_data(engine):

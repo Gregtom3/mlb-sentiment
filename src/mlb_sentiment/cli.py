@@ -1,5 +1,4 @@
 import click
-import os
 from datetime import datetime, timedelta
 
 from mlb_sentiment.fetch.reddit import fetch_reddit_posts, fetch_reddit_comments
@@ -81,11 +80,11 @@ def upload(
     click.echo(f"{'Team:':20} {team_acronym}")
     if date:
         click.echo(f"{'Date:':20} {date}")
-    if comments_limit > 0:
-        click.echo(f"{'Comments Limit:':20} {comments_limit}")
-    else:
-        click.echo(f"{'Comments Limit:':20} {comments_limit} (ALL)")
-        click.echo(f"{'Output File:':20} {filename}")
+    limit_display = (
+        f"{comments_limit}" if comments_limit > 0 else f"{comments_limit} (ALL)"
+    )
+    click.echo(f"{'Comments Limit:':20} {limit_display}")
+    click.echo(f"{'Output File:':20} {filename}")
     click.echo(f"{'Azure Upload:':20} {'Yes' if azure else 'No'}")
     if azure:
         click.echo(f"{'Keep Local Copy:':20} {'Yes' if keep_local else 'No'}")
@@ -114,8 +113,8 @@ def upload(
         return
 
     # Save locally
-    save_reddit_posts(posts, limit=comments_limit, filename=filename)
-    save_reddit_comments(comments, limit=comments_limit, filename=filename)
+    save_reddit_posts(posts, filename=filename)
+    save_reddit_comments(comments, filename=filename)
     save_mlb_events(game_events, filename=filename)
     save_mlb_games(games, filename=filename)
     # --------------------------
@@ -126,33 +125,33 @@ def upload(
         year = datetime.strptime(date, "%m/%d/%Y").year
         reddit_blob = create_blob_name("reddit", team_acronym, date)
         upload_to_azure_blob(
-            filename + f"_comments.parquet",
+            filename + "_comments.parquet",
             reddit_blob,
             subdirectory=f"activeDatabase/comments/{team_acronym}/year={year}",
             remove_local=not keep_local,
         )
         upload_to_azure_blob(
-            filename + f"_posts.parquet",
+            filename + "_posts.parquet",
             reddit_blob,
             subdirectory=f"activeDatabase/posts/{team_acronym}/year={year}",
             remove_local=not keep_local,
         )
         click.echo(
             f"\t Reddit blob names: "
-            f"{reddit_blob.replace('.parquet', f'_comments.parquet')}, "
-            f"{reddit_blob.replace('.parquet', f'_posts.parquet')}"
+            f"{reddit_blob.replace('.parquet', '_comments.parquet')}, "
+            f"{reddit_blob.replace('.parquet', '_posts.parquet')}"
         )
 
         # MLB
         mlb_blob = create_blob_name("mlb", team_acronym, date)
         upload_to_azure_blob(
-            filename + f"_games.parquet",
+            filename + "_games.parquet",
             mlb_blob,
             subdirectory=f"activeDatabase/games/{team_acronym}/year={year}",
             remove_local=not keep_local,
         )
         upload_to_azure_blob(
-            filename + f"_game_events.parquet",
+            filename + "_game_events.parquet",
             mlb_blob,
             subdirectory=f"activeDatabase/gameEvents/{team_acronym}/year={year}",
             remove_local=not keep_local,

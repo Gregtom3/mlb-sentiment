@@ -1,6 +1,5 @@
 import pandas as pd
 from mlb_sentiment.config import load_synapse_engine
-from mlb_sentiment.info import get_team_info
 import streamlit as st
 import time
 
@@ -39,25 +38,6 @@ def safe_read_sql(query, engine, columns=None, retries: int = 3, backoff: float 
 @st.cache_resource
 def get_engine():
     return load_synapse_engine()
-
-
-# -------------------
-# Test load comments
-# -------------------
-# @st.cache_data
-def test_load_comments(team_acronym, _engine):
-    query = f"""
-    SELECT game_id, team
-    FROM dbo.commentsTruncated_{team_acronym}
-    """
-    df = safe_read_sql(
-        query,
-        _engine,
-        columns=[
-            "game_id",
-        ],
-    )
-    return df
 
 
 # -------------------
@@ -126,8 +106,6 @@ def load_sentimentTotals(_engine):
 # -------------------
 @st.cache_data
 def load_games(game_dates, team_acronym, _engine):
-    # old: WHERE SUBSTRING(CAST(game_id AS VARCHAR), 1, 3) = '{team_acronym}'
-    game_id_first_three = get_team_info(team_acronym, "id")
     query = f"""
     SELECT game_id, game_start_time_est, home_team, away_team, game_date, home_score, away_score, wins, losses
     FROM dbo.games_{team_acronym}
@@ -216,21 +194,3 @@ def load_comments(team_acronym, _engine):
     ].abs()
     df["game_id"] = df["game_id"].astype(int)
     return df
-
-
-@st.cache_data
-def compute_sentiment_ts(comments_df):
-    if comments_df.empty:
-        return pd.DataFrame()
-    sentiment_ts = (
-        comments_df.set_index("created_est")
-        .resample("2Min")["sentiment_score"]
-        .mean()
-        .reset_index()
-    )
-    sentiment_ts["sentiment_smooth"] = (
-        sentiment_ts["sentiment_score"]
-        .rolling(window=3, min_periods=1, center=True)
-        .mean()
-    )
-    return sentiment_ts

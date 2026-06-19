@@ -27,7 +27,3 @@ venv/
 
 # Ignore local dev configs
 .env
-
-# Ignore files
-*.csv
-*.db

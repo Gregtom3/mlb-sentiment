@@ -87,7 +87,6 @@ def render_commenter_summary_widget(comments_df: pd.DataFrame) -> None:
     with col2:
         extra = ""
         if not top_positive.empty:
-            top_user = top_positive.index[0]
             user_comments = pos_df.sort_values("sentiment_score", ascending=False).head(
                 8
             )
@@ -109,7 +108,6 @@ def render_commenter_summary_widget(comments_df: pd.DataFrame) -> None:
     with col3:
         extra = ""
         if not top_negative.empty:
-            top_user = top_negative.index[0]
             user_comments = neg_df.sort_values("sentiment_score", ascending=True).head(
                 8
             )

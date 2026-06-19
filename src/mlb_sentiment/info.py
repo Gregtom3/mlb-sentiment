@@ -59,34 +59,40 @@ SUBREDDIT_INFO = {
     "TOR": {
         "subreddit": "https://www.reddit.com/r/Torontobluejays/",
         "game_thread_user": "BlueJaysBaseball",
-    }
+    },
     # TODO: Add additional teams here
 }
+
+
+@lru_cache(maxsize=1)
+def get_all_teams():
+    """Return the raw list of MLB team records from statsapi (cached)."""
+    return statsapi.get("teams", {}).get("teams", [])
 
 
 # Safe access of TEAM_INFO
 def get_team_info(team_acronym, key):
     """Get specific information about a team given its acronym."""
-    team_name = get_team_name_from_team_acronym(team_acronym)
-    if team_name is None:
-        raise ValueError(f"Invalid team acronym: {team_acronym}")
-    team_info = statsapi.lookup_team(team_name)
-
-    if team_info is None:
-        raise ValueError(f"Invalid team acronym: {team_acronym}")
-    else:
-        team_info = team_info[0]  # lookup_team returns a list
-    if key == "subreddit" or key == "game_thread_user":
+    # Subreddit metadata lives locally and needs no statsapi lookup.
+    if key in ("subreddit", "game_thread_user"):
         value = SUBREDDIT_INFO.get(team_acronym, {}).get(key, "")
         if value == "":
             raise ValueError(f"{key} not found for team acronym: {team_acronym}")
         return value
+
+    team_name = get_team_name_from_team_acronym(team_acronym)
+    if team_name is None:
+        raise ValueError(f"Invalid team acronym: {team_acronym}")
+    team_info = statsapi.lookup_team(team_name)
+    if not team_info:
+        raise ValueError(f"Invalid team acronym: {team_acronym}")
+    team_info = team_info[0]  # lookup_team returns a list
+
     if key == "team_id":
         key = "id"  # statsapi uses 'id' instead of 'team_id'
-    if key in ["id", "name", "teamCode", "teamName", "locationName", "shortName"]:
+    if key in ("id", "name", "teamCode", "teamName", "locationName", "shortName"):
         return team_info.get(key)
-    else:
-        raise ValueError(f"Invalid key: {key} for team acronym: {team_acronym}")
+    raise ValueError(f"Invalid key: {key} for team acronym: {team_acronym}")
 
 
 # Get team acronym from game id
@@ -100,8 +106,7 @@ def get_team_acronym_from_game_id(game_id):
 
 # Get team acronym from team name
 def get_team_acronym_from_team_name(team_name):
-    teams = statsapi.get("teams", {})
-    for team in teams.get("teams", []):
+    for team in get_all_teams():
         if team.get("name", "").lower() == team_name.lower():
             abbr = team.get("abbreviation", None)
             if abbr == "AZ":
@@ -112,8 +117,7 @@ def get_team_acronym_from_team_name(team_name):
 
 # Get team name from team acronym
 def get_team_name_from_team_acronym(team_acronym):
-    teams = statsapi.get("teams", {})
-    for team in teams.get("teams", []):
+    for team in get_all_teams():
         if team.get("abbreviation", "") == team_acronym:
             return team.get("name", "")
     return None
@@ -127,10 +131,8 @@ def get_all_team_acronyms(processed=False):
     If processed=True, only return teams with processed sentiment data.
     """
 
-    teams = statsapi.get("teams", {})
     acronyms = []
-    leagues = []
-    for team in teams.get("teams", []):
+    for team in get_all_teams():
         if team["league"].get("name", "") not in ["National League", "American League"]:
             continue
         abbr = team.get("abbreviation", "")
@@ -151,10 +153,8 @@ def get_all_team_names(processed=False):
     If processed=True, only return teams with processed sentiment data.
     """
 
-    teams = statsapi.get("teams", {})
     names = []
-    leagues = []
-    for team in teams.get("teams", []):
+    for team in get_all_teams():
         if team["league"].get("name", "") not in ["National League", "American League"]:
             continue
         name = team.get("name", "")

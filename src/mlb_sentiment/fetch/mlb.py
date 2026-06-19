@@ -1,12 +1,7 @@
 import statsapi
-from datetime import datetime, timedelta
+from datetime import datetime
 from mlb_sentiment import info
 from mlb_sentiment import utility
-import json
-
-
-def print_json(data):
-    print(json.dumps(data, indent=4))
 
 
 def fetch_mlb_events(team_acronym, date=None):
@@ -113,9 +108,13 @@ def fetch_events(TEAM_ID, date):
 
 
 def get_team_abbreviation(team_name):
-    """Get the team abbreviation for a given team name."""
-    teams = statsapi.get("teams", {})
-    for team in teams.get("teams", []):
+    """Return the raw statsapi abbreviation for a team name.
+
+    Unlike ``info.get_team_acronym_from_team_name`` this does not normalize
+    ``AZ`` to ``ARI``, so the value matches the abbreviations stored on game
+    events (which come straight from the statsapi payload).
+    """
+    for team in info.get_all_teams():
         if team.get("name", "").lower() == team_name.lower():
             return team.get("abbreviation", "")
     return None

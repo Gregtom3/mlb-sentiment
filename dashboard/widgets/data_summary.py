@@ -89,4 +89,4 @@ def data_summary(
         )
 
     with col4.container(border=True, key="col4-container"):
-        st.metric(f"🏆 Win-Loss", f"{wins}-{losses} ({win_pct}%)")
+        st.metric("🏆 Win-Loss", f"{wins}-{losses} ({win_pct}%)")

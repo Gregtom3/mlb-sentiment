@@ -1,7 +1,5 @@
 import pandas as pd
-from mlb_sentiment import config
 from mlb_sentiment import utility
-from datetime import date
 import re
 
 
@@ -38,7 +36,7 @@ def format_reddit_text(text: str) -> str:
     return text
 
 
-def save_reddit_comments(comments, limit: int = 5, filename: str = "MyDatabase"):
+def save_reddit_comments(comments, filename: str = "MyDatabase"):
     """
     Save Reddit comments to a Parquet file.
     """
@@ -72,7 +70,7 @@ def save_reddit_comments(comments, limit: int = 5, filename: str = "MyDatabase")
     print(f"Saved {len(all_comments)} comments into Parquet: {comments_file}")
 
 
-def save_reddit_posts(posts, limit: int = 5, filename: str = "MyDatabase"):
+def save_reddit_posts(posts, filename: str = "MyDatabase"):
     """
     Save Reddit posts to a Parquet file.
     """

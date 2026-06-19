@@ -1,4 +1,3 @@
-import pytest
 from mlb_sentiment.info import SUBREDDIT_INFO, get_team_info
 from mlb_sentiment.config import load_reddit_client
 

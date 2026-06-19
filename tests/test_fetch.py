@@ -1,4 +1,3 @@
-import pytest
 from mlb_sentiment.fetch.reddit import fetch_reddit_comments, fetch_reddit_posts
 from mlb_sentiment.fetch.mlb import fetch_mlb_events, fetch_mlb_games
 

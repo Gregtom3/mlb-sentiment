@@ -3,7 +3,6 @@ from datetime import datetime, timezone
 from azure.storage.blob import BlobServiceClient
 import pytz
 import os
-import json
 
 
 def utc_to_est(utc_timestamp):

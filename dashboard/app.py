@@ -1,17 +1,12 @@
 # Standard library
-from datetime import datetime, timedelta, date
+from datetime import datetime, date
 import time
 import logging
 
 # Third-party packages
-import numpy as np
-import pandas as pd
-import plotly.graph_objects as go
 import streamlit as st
-from streamlit_plotly_events2 import plotly_events
 
 # Local modules
-from compute import compute_sentiment_ts
 from dataloader import (
     get_engine,
     load_comments,
@@ -19,7 +14,6 @@ from dataloader import (
     load_games,
     get_total_comments,
     get_total_games,
-    test_load_comments,
     load_sentimentTotals,
 )
 from mlb_sentiment.info import (
@@ -216,9 +210,6 @@ events_df = events_df[events_df["game_id"].isin(games_df["game_id"])]
 comments_df = comments_df[comments_df["game_id"].isin(games_df["game_id"])]
 logger.info(f"Filtered events_df={len(events_df)}, comments_df={len(comments_df)}")
 
-# t = time.time()
-# test_load_comments(team_acronym, engine)
-# t = log_time("Test loaded comments_df", t)
 # -------------------
 # Render data summary metrics
 # -------------------
@@ -295,7 +286,7 @@ with row4_col2:
     t = time.time()
     render_event_pie_chart(
         events_df,
-        title=f"Opponent Batting Events",
+        title="Opponent Batting Events",
         team_acronym=team_acronym,
         do_opponent=True,
     )

@@ -1,6 +1,7 @@
 from mlb_sentiment import info
 from mlb_sentiment import config
 from mlb_sentiment import utility
+from mlb_sentiment.fetch.mlb import fetch_game_ids
 
 from mlb_sentiment.models.process import get_sentiment, SentimentModelType
 from tqdm import tqdm
@@ -29,12 +30,7 @@ def fetch_reddit_posts(team_acronym, date=None):
 
     posts = []
     # Parse date if provided
-    if date:
-        start_dt = end_dt = datetime.strptime(date, "%m/%d/%Y")
-    else:
-        start_dt = end_dt = None
-    # Collapse string without its whitespace
-    test = "I love dogs"
+    start_dt = datetime.strptime(date, "%m/%d/%Y") if date else None
 
     # Collect posts
     for submission in user.submissions.new(limit=MAX_LOOKUP):
@@ -54,12 +50,7 @@ def fetch_reddit_posts(team_acronym, date=None):
             created_est_dt = datetime.strptime(created_est_str, "%Y-%m-%d %H:%M:%S")
             post_date_str = created_est_dt.strftime("%m/%d/%Y")
             post_dt = datetime.strptime(post_date_str, "%m/%d/%Y")
-            match = False
-            if date:
-                match = post_date_str == date
-            else:
-                match = False
-            if match:
+            if date and post_date_str == date:
                 posts.append(
                     {
                         "title": submission.title,
@@ -80,12 +71,7 @@ def fetch_reddit_posts(team_acronym, date=None):
     posts.sort(key=lambda p: p["created_est_dt"])
 
     # Get game_ids for the date/range
-    from mlb_sentiment.fetch.mlb import fetch_game_ids
-
-    if date:
-        game_ids = fetch_game_ids(team_acronym, date=date)
-    else:
-        game_ids = []
+    game_ids = fetch_game_ids(team_acronym, date=date) if date else []
 
     # Assign game_id to each post (chronologically)
     for i, post in enumerate(posts):
