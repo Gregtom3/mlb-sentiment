@@ -1,0 +1,35 @@
+name: Verify Team Info
+# Hand-triggered diagnostic: for every configured club, confirm the Stats API
+# abbreviation, subreddit, and game-thread retrieval all work against a recent
+# game. Results (and the canonical abbreviation list) are written to the run's
+# job summary. No sentiment models needed, so the install is light.
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Lookback window (days) to find a recent game"
+        required: false
+        default: "7"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Verify all teams
+        env:
+          REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+          REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
+          REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT }}
+        run: python pipeline/verify_teams.py --days "${{ github.event.inputs.days }}"

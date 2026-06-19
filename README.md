@@ -136,6 +136,13 @@ previous day's data for each tracked team, writes Parquet under `data/`, and
 commits it back to `main`. That commit triggers the deploy workflow, so the
 published dashboard stays current with no manual steps.
 
+`.github/workflows/verify.yml` is a hand-triggered diagnostic
+(`pipeline/verify_teams.py`): for every configured club it confirms the Stats
+API abbreviation, subreddit, and game-thread retrieval against a recent game,
+and writes a results table plus the canonical abbreviation list to the run's
+job summary — handy for catching a wrong subreddit, missing bot, or
+abbreviation mismatch (e.g. `AZ` vs `ARI`).
+
 ## Development
 
 ```bash

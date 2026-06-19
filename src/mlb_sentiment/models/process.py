@@ -1,7 +1,9 @@
 from enum import Enum
-from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from typing import Any, Tuple, Dict
-from transformers import pipeline
+
+# NOTE: vaderSentiment and transformers are imported lazily inside the scoring
+# helpers so that importing this module (and the fetch pipeline that depends on
+# it) does not pull in torch/transformers unless a model is actually used.
 
 
 # ----------------------------
@@ -23,9 +25,9 @@ HUGGING_FACE_MODELS = [
 ]
 
 # ----------------------------
-# Cached analyzers/pipelines
+# Cached analyzers/pipelines (initialized on first use)
 # ----------------------------
-_vader_analyzer = SentimentIntensityAnalyzer()
+_vader_analyzer = None
 _hf_pipelines: Dict[SentimentModelType, Any] = {}
 
 
@@ -52,6 +54,11 @@ def _get_vader_sentiment(comment: str) -> Tuple[str, float]:
     Analyzes sentiment using VADER.
     Returns (emotion, compound_score).
     """
+    global _vader_analyzer
+    if _vader_analyzer is None:
+        from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+
+        _vader_analyzer = SentimentIntensityAnalyzer()
     sentiment_scores = _vader_analyzer.polarity_scores(comment)
     compound_score = sentiment_scores["compound"]
 
@@ -73,6 +80,8 @@ def _get_hugging_face_sentiment(
     Returns (label, score).
     """
     if model_type not in _hf_pipelines:
+        from transformers import pipeline
+
         _hf_pipelines[model_type] = pipeline(
             "sentiment-analysis", model=model_type.value
         )
