@@ -41,7 +41,9 @@ SUBREDDIT_INFO = {
     # --- AL West ---
     "HOU": {"subreddit": "https://www.reddit.com/r/Astros/"},
     "LAA": {"subreddit": "https://www.reddit.com/r/angelsbaseball/"},
-    "ATH": {"subreddit": "https://www.reddit.com/r/oaklandathletics/"},
+    # NOTE: the relocated Athletics (ATH, id 133) are intentionally omitted —
+    # r/oaklandathletics no longer runs game threads. Re-add once a subreddit
+    # reliably posts them.
     "SEA": {
         "subreddit": "https://www.reddit.com/r/Mariners/",
         "game_thread_user": "Mariners_bot",
