@@ -328,6 +328,18 @@ DRAMATIC_EVENTS = {
 }
 
 
+def _moment_comments(gc, t, W, k=3):
+    """Top-k and bottom-k comments in the window around a moment."""
+    win = gc[(gc["created_est"] >= t - W) & (gc["created_est"] < t + W)]
+    win = win[win["author"] != "None"]
+    top = win.sort_values("sentiment_score", ascending=False).head(k)
+    bottom = win.sort_values("sentiment_score").head(k)
+    return {
+        "top": [_fmt_comment(r) for _, r in top.iterrows()],
+        "bottom": [_fmt_comment(r) for _, r in bottom.iterrows()],
+    }
+
+
 def _biggest_moments(
     gc, ge, window_min=6, min_side=3, min_swing=0.05, shrink_k=8, top=5
 ):
@@ -425,6 +437,7 @@ def _biggest_moments(
             "away_team": m["away_team"],
             "home_score": m["home_score"],
             "away_score": m["away_score"],
+            "comments": _moment_comments(gc, m["t_dt"], W),
         }
         for m in picked
     ]

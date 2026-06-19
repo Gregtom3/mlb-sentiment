@@ -336,15 +336,75 @@ main {
   opacity: 0.55;
 }
 .moment {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 12px;
-  align-items: center;
   padding: 12px 14px;
   background: var(--panel-2);
   border-radius: 10px;
   border-left: 5px solid var(--rule);
   min-width: 0;
+}
+.m-summary {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: center;
+  cursor: pointer;
+}
+.m-caret {
+  color: var(--muted);
+  font-size: 13px;
+  transition: transform 0.15s;
+}
+.moment.open .m-caret {
+  transform: rotate(90deg);
+}
+.m-detail {
+  display: none;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--rule);
+}
+.moment.open .m-detail {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.m-col h5 {
+  margin: 0 0 6px;
+  font-family: var(--display);
+  letter-spacing: 1px;
+  font-size: 14px;
+  text-transform: uppercase;
+}
+.cheer h5 {
+  color: var(--pos);
+}
+.boo h5 {
+  color: var(--neg);
+}
+.mc {
+  display: flex;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+.mc-s {
+  font-family: var(--mono);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.mc-s.pos {
+  color: var(--pos);
+}
+.mc-s.neg {
+  color: var(--neg);
+}
+.mc-x {
+  overflow-wrap: anywhere;
+}
+.mc-x i {
+  color: var(--blue);
+  font-style: normal;
 }
 .moment.surge {
   border-left-color: var(--pos);
@@ -770,6 +830,9 @@ main {
   }
   .lrow {
     grid-template-columns: 22px minmax(90px, 1fr) 1.4fr 54px;
+  }
+  .moment.open .m-detail {
+    grid-template-columns: 1fr;
   }
 }
 

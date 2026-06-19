@@ -64,6 +64,11 @@
         renderComments();
       });
     });
+    // Expand a moment to read its top / bottom comments.
+    $("moments-list").addEventListener("click", (e) => {
+      const card = e.target.closest(".moment");
+      if (card) card.classList.toggle("open");
+    });
     // League metric toggle.
     document.querySelectorAll("#league-metric .tab").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -80,6 +85,10 @@
     }
     renderLeague();
 
+    // Default to the Mets when available, else the first team alphabetically.
+    const haveNYM = manifest.teams.some((t) => t.team === "NYM");
+    const defaultTeam = haveNYM ? "NYM" : sel.options[0] && sel.options[0].value;
+    if (defaultTeam) sel.value = defaultTeam;
     await selectTeam(sel.value || manifest.teams[0].team);
   }
 
@@ -192,6 +201,12 @@
 
   function renderMoments(pg) {
     const m = (pg && pg.moments) || [];
+    const mc = (c) =>
+      `<div class="mc"><span class="mc-s ${scoreClass(c.score)}">${signed(
+        c.score
+      )}</span><span class="mc-x">${escapeHtml(c.text)} <i>u/${escapeHtml(
+        c.author
+      )}</i></span></div>`;
     $("moments-list").innerHTML = m.length
       ? m
           .map((x) => {
@@ -199,12 +214,23 @@
             const arrow = x.swing >= 0 ? "▲" : "▼";
             const low = x.confidence === "low" ? " low" : "";
             const score = `${x.away_team} ${x.away_score}–${x.home_score} ${x.home_team}`;
+            const c = x.comments || { top: [], bottom: [] };
             return (
               `<div class="moment ${cls}${low}">` +
+              `<div class="m-summary">` +
               `<div class="m-swing">${arrow} ${signed(x.swing)}</div>` +
               `<div class="m-body"><div class="m-play">${escapeHtml(x.description)}</div>` +
               `<div class="m-meta">${x.half} ${x.inning} · ${x.t} · ${escapeHtml(score)} · ${x.n} comments</div></div>` +
-              `</div>`
+              `<div class="m-caret">▸</div>` +
+              `</div>` +
+              `<div class="m-detail">` +
+              `<div class="m-col cheer"><h5>Top reactions</h5>${
+                (c.top || []).map(mc).join("") || "<div class='empty'>—</div>"
+              }</div>` +
+              `<div class="m-col boo"><h5>Harshest</h5>${
+                (c.bottom || []).map(mc).join("") || "<div class='empty'>—</div>"
+              }</div>` +
+              `</div></div>`
             );
           })
           .join("")
