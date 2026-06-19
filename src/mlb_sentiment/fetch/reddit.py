@@ -26,14 +26,48 @@ def _is_game_thread(title):
     )
 
 
+def _subreddit_name(team_acronym):
+    """Extract the bare subreddit name (e.g. 'NewYorkMets') from its URL."""
+    return info.get_team_info(team_acronym, "subreddit").split("/r/")[1].strip("/")
+
+
+def _collect_game_threads(submissions, team_acronym, date, start_dt):
+    """Pull game-thread posts for ``date`` from a newest-first submission stream."""
+    posts = []
+    for submission in submissions:
+        if not _is_game_thread(submission.title):
+            continue
+        created_est_str = utility.utc_to_est(submission.created_utc)  # returns str
+        created_est_dt = datetime.strptime(created_est_str, "%Y-%m-%d %H:%M:%S")
+        post_date_str = created_est_dt.strftime("%m/%d/%Y")
+        post_dt = datetime.strptime(post_date_str, "%m/%d/%Y")
+        if date and post_date_str == date:
+            posts.append(
+                {
+                    "title": submission.title,
+                    "url": submission.url,
+                    "created_est": created_est_str,
+                    "score": submission.score,
+                    "subreddit": str(submission.subreddit),
+                    "team_acronym": team_acronym,
+                    "num_comments": submission.num_comments,
+                    "created_est_dt": created_est_dt,
+                    # game_id will be added later
+                }
+            )
+        if start_dt and post_dt < start_dt:
+            break
+    return posts
+
+
 def fetch_reddit_posts(team_acronym, date=None):
     """
     Fetch game thread posts for a team on a specific date (MM/DD/YYYY).
 
-    If the team has a configured ``game_thread_user`` that bot's submissions are
-    read directly; otherwise the team subreddit's recent posts are scanned and
-    matched by title. Both sources return newest-first, so the early ``break``
-    on older posts holds either way.
+    The configured ``game_thread_user`` bot is tried first; if it isn't set or
+    hasn't posted a matching thread, the team subreddit is scanned by title as a
+    fallback. Both sources return newest-first, so the early ``break`` on older
+    posts holds either way.
 
     Args:
         team_acronym (str): Acronym of the MLB team (e.g., "NYM" for New York Mets).
@@ -44,49 +78,26 @@ def fetch_reddit_posts(team_acronym, date=None):
     """
 
     MAX_LOOKUP = 1000
-
-    # Load Reddit client from info.py
     reddit = config.load_reddit_client()
-
-    # Choose the submission stream: the dedicated bot if configured, else a
-    # scan of the team subreddit.
-    game_thread_user = info.get_team_info(team_acronym, "game_thread_user")
-    if game_thread_user:
-        submissions = reddit.redditor(game_thread_user).submissions.new(
-            limit=MAX_LOOKUP
-        )
-    else:
-        subreddit_url = info.get_team_info(team_acronym, "subreddit")
-        subreddit_name = subreddit_url.split("/r/")[1].strip("/")
-        submissions = reddit.subreddit(subreddit_name).new(limit=MAX_LOOKUP)
-
-    posts = []
-    # Parse date if provided
     start_dt = datetime.strptime(date, "%m/%d/%Y") if date else None
 
-    # Collect posts
-    for submission in submissions:
-        if _is_game_thread(submission.title):
-            created_est_str = utility.utc_to_est(submission.created_utc)  # returns str
-            created_est_dt = datetime.strptime(created_est_str, "%Y-%m-%d %H:%M:%S")
-            post_date_str = created_est_dt.strftime("%m/%d/%Y")
-            post_dt = datetime.strptime(post_date_str, "%m/%d/%Y")
-            if date and post_date_str == date:
-                posts.append(
-                    {
-                        "title": submission.title,
-                        "url": submission.url,
-                        "created_est": created_est_str,
-                        "score": submission.score,
-                        "subreddit": str(submission.subreddit),
-                        "team_acronym": team_acronym,
-                        "num_comments": submission.num_comments,
-                        "created_est_dt": created_est_dt,
-                        # game_id will be added later
-                    }
-                )
-            if start_dt and post_dt < start_dt:
-                break
+    posts = []
+    bot = info.get_team_info(team_acronym, "game_thread_user")
+    if bot:
+        posts = _collect_game_threads(
+            reddit.redditor(bot).submissions.new(limit=MAX_LOOKUP),
+            team_acronym,
+            date,
+            start_dt,
+        )
+    if not posts:
+        # No bot configured, or the bot had no matching thread: scan the sub.
+        posts = _collect_game_threads(
+            reddit.subreddit(_subreddit_name(team_acronym)).new(limit=MAX_LOOKUP),
+            team_acronym,
+            date,
+            start_dt,
+        )
 
     # Sort posts chronologically
     posts.sort(key=lambda p: p["created_est_dt"])

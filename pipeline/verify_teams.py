@@ -30,9 +30,26 @@ from mlb_sentiment.info import (
     get_team_name_from_team_acronym,
 )
 from mlb_sentiment.config import load_reddit_client
-from mlb_sentiment.fetch.reddit import fetch_reddit_posts
+from mlb_sentiment.fetch.reddit import fetch_reddit_posts, _is_game_thread
 
 FINISHED = ("final", "game over", "completed early")
+
+
+def recent_posts(reddit, subreddit_url, limit=15):
+    """Recent posts as 'author: title', flagging game-thread matches.
+
+    Surfaces the real game-thread author (so a stale bot can be corrected) or a
+    title format that the matcher misses.
+    """
+    name = subreddit_url.split("/r/")[1].strip("/")
+    out = []
+    try:
+        for s in reddit.subreddit(name).new(limit=limit):
+            flag = "GT" if _is_game_thread(s.title) else "  "
+            out.append(f"[{flag}] u/{s.author}: {s.title[:90]}")
+    except Exception as e:  # noqa: BLE001
+        out.append(f"(could not list subreddit: {e})")
+    return out
 
 
 def canonical_teams():
@@ -81,6 +98,7 @@ def verify_team(team, reddit, canon, days):
         "posts": None,
         "comments": None,
         "note": "",
+        "diag": [],
     }
 
     # 1. abbreviation -> team id
@@ -116,6 +134,7 @@ def verify_team(team, reddit, canon, days):
         else:
             row["game_date"] = dates[0]
             row["posts"] = 0
+            row["diag"] = recent_posts(reddit, meta["subreddit"])
             row["note"] = (
                 row["note"] + f"; 0 threads found across {len(dates)} recent game(s)"
             ).strip("; ")
@@ -176,10 +195,14 @@ def render(rows, canon, days):
             lines.append(f"- `{r['team']}` — {r['note']}")
     if no_thread:
         lines.append(
-            "**Played recently but no game thread found** (check bot name / subreddit / title format):"
+            "**Played recently but no game thread found** — recent posts below "
+            "show the actual game-thread author (`[GT]`) to configure, or a title "
+            "the matcher misses:"
         )
         for r in no_thread:
             lines.append(f"- `{r['team']}` ({r['mode']}) — {r['note']}")
+            for d in r.get("diag", []):
+                lines.append(f"    - {d}")
     if no_game:
         lines.append(
             "**No game in window (inconclusive):** "
