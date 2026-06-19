@@ -1,3 +1,5 @@
+import re
+
 from mlb_sentiment import info
 from mlb_sentiment import config
 from mlb_sentiment import utility
@@ -18,6 +20,8 @@ def _is_game_thread(title):
             or "GAME CHAT" in upper
             or "GDT:" in upper
             or "GAMEDAY THREAD" in upper
+            # e.g. r/Cardinals' bot: "Game 73: St. Louis Cardinals @ ..."
+            or re.match(r"GAME \d+:", upper) is not None
         )
         and "PREGAME" not in collapsed
         and "PRE-GAME" not in collapsed

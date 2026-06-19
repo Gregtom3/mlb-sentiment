@@ -52,7 +52,8 @@ SUBREDDIT_INFO = {
         "subreddit": "https://www.reddit.com/r/Braves/",
         "game_thread_user": "Blooper_Bot",
     },
-    "MIA": {"subreddit": "https://www.reddit.com/r/letsgofish/"},
+    # r/letsgofish was retired; the active Marlins sub is r/MiamiMarlins.
+    "MIA": {"subreddit": "https://www.reddit.com/r/MiamiMarlins/"},
     "NYM": {
         "subreddit": "https://www.reddit.com/r/NewYorkMets/",
         "game_thread_user": "NewYorkMetsBot2",
@@ -70,7 +71,10 @@ SUBREDDIT_INFO = {
         "game_thread_user": "BrewersBot",
     },
     "PIT": {"subreddit": "https://www.reddit.com/r/buccos/"},
-    "STL": {"subreddit": "https://www.reddit.com/r/Cardinals/"},
+    "STL": {
+        "subreddit": "https://www.reddit.com/r/Cardinals/",
+        "game_thread_user": "bravo_delta_bot",
+    },
     # --- NL West ---
     "AZ": {
         "subreddit": "https://www.reddit.com/r/azdiamondbacks/",
