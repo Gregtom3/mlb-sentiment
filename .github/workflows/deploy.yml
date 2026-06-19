@@ -9,6 +9,11 @@ on:
       - "data/**"
       - "pipeline/**"
       - ".github/workflows/deploy.yml"
+  # The daily refresh commits data using GITHUB_TOKEN, whose pushes do not
+  # trigger other workflows — so deploy when the refresh run finishes instead.
+  workflow_run:
+    workflows: ["Daily Data Refresh"]
+    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -23,6 +28,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # When chained from the refresh run, only deploy if it succeeded.
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v4
 
