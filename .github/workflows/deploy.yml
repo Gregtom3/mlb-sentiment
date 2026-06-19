@@ -32,6 +32,8 @@ jobs:
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main # ensure we build the latest committed data, not the trigger SHA
 
       - name: Set up Python
         uses: actions/setup-python@v5
