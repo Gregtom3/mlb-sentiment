@@ -198,11 +198,13 @@
           .map((x) => {
             const cls = x.swing >= 0 ? "surge" : "groan";
             const arrow = x.swing >= 0 ? "▲" : "▼";
+            const low = x.confidence === "low" ? " low" : "";
+            const score = `${x.away_team} ${x.away_score}–${x.home_score} ${x.home_team}`;
             return (
-              `<div class="moment ${cls}">` +
+              `<div class="moment ${cls}${low}">` +
               `<div class="m-swing">${arrow} ${signed(x.swing)}</div>` +
               `<div class="m-body"><div class="m-play">${escapeHtml(x.description)}</div>` +
-              `<div class="m-meta">${x.half} ${x.inning} · ${x.t} · ${x.score}</div></div>` +
+              `<div class="m-meta">${x.half} ${x.inning} · ${x.t} · ${escapeHtml(score)} · ${x.n} comments</div></div>` +
               `</div>`
             );
           })

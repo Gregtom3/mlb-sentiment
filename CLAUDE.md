@@ -89,3 +89,22 @@ Until then, no action needed.
   a charting CDN.
 - `black` runs in CI; keep edits formatted. Avoid triple-quoted-string
   reformatting churn from newer black versions.
+
+## "Biggest Moments" — assumptions & limits
+
+`_biggest_moments` (build_site_data) flags plays with the largest crowd mood
+swing (mean sentiment in the `window_min` after a play minus the window before).
+It is **association, not proven causation**, and inherits these limits — keep
+them in mind before "improving" it:
+
+- It cannot separate a play from other things happening in the same window
+  (another play, a call, a broadcast moment). Reactions also lag the live feed
+  (stream delay) and build during an at-bat, so the before/after split is fuzzy.
+- It rests entirely on the sentiment model, which misreads sarcasm and baseball
+  slang ("filthy slider" = praise) — a swing's *sign* can be wrong.
+- Mitigations already in place: in-game comments only (no pre/post-game leak);
+  candidates = scoring **or** dramatic event types **or** captivatingIndex≥70;
+  `min_side` comments per window + a minimum swing; ranking by a
+  sample-size-shrunk swing so thin windows can't top the list; a `confidence`
+  flag + comment count surfaced in the UI (low-sample cards are faded). Low-
+  volume teams legitimately produce few/no moments — that's correct, not a bug.

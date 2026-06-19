@@ -52,6 +52,16 @@ def test_build_team_from_sample(tmp_path):
     assert isinstance(one_game["sentiment_ts"], list)
     assert all(-1.0 <= p["score"] <= 1.0 for p in one_game["sentiment_ts"])
 
+    # Biggest Moments are hardened: each carries a sample size + confidence,
+    # clears the swing floor, and is sample-aware.
+    moments = [m for pg in payload["per_game"].values() for m in pg["moments"]]
+    assert moments, "sample data should surface at least one moment"
+    for m in moments:
+        assert m["n"] >= 5
+        assert abs(m["swing"]) >= 0.12
+        assert m["confidence"] in ("low", "ok")
+        assert {"home_team", "away_team", "home_score", "away_score"} <= set(m)
+
 
 def test_full_build_writes_manifest(tmp_path):
     data_root = tmp_path / "data"

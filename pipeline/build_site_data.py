@@ -309,25 +309,65 @@ def _top_commenters(comments: pd.DataFrame) -> dict:
     }
 
 
-def _biggest_moments(gc, ge, window_min=6, min_side=3, top=5):
+# Non-scoring plays that still tend to move a crowd (used especially when the
+# Stats API doesn't populate captivatingIndex).
+DRAMATIC_EVENTS = {
+    "home run",
+    "grand slam",
+    "triple",
+    "double play",
+    "triple play",
+    "caught stealing",
+    "wild pitch",
+    "passed ball",
+    "error",
+    "stolen base",
+    "balk",
+    "hit by pitch",
+    "ejection",
+}
+
+
+def _biggest_moments(
+    gc, ge, window_min=6, min_side=5, min_swing=0.12, shrink_k=8, top=5
+):
     """Plays that moved the crowd most: mood right after a notable play minus
-    mood right before it. Candidates are scoring plays or high-drama plays
-    (captivatingIndex); ranked by absolute mood swing, kept time-separated."""
+    mood right before it.
+
+    Hardening over a naive before/after:
+    - only in-game comments (an inning was attached) feed the windows, so
+      pre/post-game chatter doesn't leak in;
+    - candidates are scoring plays, high-``captivatingIndex`` plays, OR known
+      dramatic event types (so non-scoring drama isn't missed);
+    - require ``min_side`` comments per side and a minimum raw swing;
+    - rank by a *sample-size-shrunk* swing so a 5-vs-5 blip can't outrank a
+      50-vs-50 reaction, and flag thin-sample moments as low-confidence.
+
+    This is an association, not proven causation (see the methodology note).
+    """
     if gc.empty or ge.empty:
         return []
+    if "inning" in gc.columns:
+        gc = gc.dropna(subset=["inning"])  # in-game comments only
+    if gc.empty:
+        return []
     ev = ge.copy()
-    ev["est"] = pd.to_datetime(ev["est"])
-    ev = ev.sort_values("est").reset_index(drop=True)
+    ev["est"] = pd.to_datetime(ev["est"], errors="coerce")
+    ev = ev.dropna(subset=["est"]).sort_values("est").reset_index(drop=True)
+    if ev.empty:
+        return []
     home = pd.to_numeric(ev["home_score"], errors="coerce").fillna(0).to_numpy()
     away = pd.to_numeric(ev["away_score"], errors="coerce").fillna(0).to_numpy()
     cap = pd.to_numeric(ev["captivatingIndex"], errors="coerce").fillna(0).to_numpy()
     total = home + away
+    ev_lower = ev["event"].astype(str).str.lower()
 
     W = pd.Timedelta(minutes=window_min)
     found = []
     for i in range(len(ev)):
         scoring = i > 0 and total[i] > total[i - 1]
-        if not scoring and cap[i] < 70:
+        dramatic = any(k in ev_lower.iloc[i] for k in DRAMATIC_EVENTS)
+        if not (scoring or dramatic or cap[i] >= 70):
             continue
         t = ev["est"].iloc[i]
         pre = gc.loc[
@@ -336,23 +376,31 @@ def _biggest_moments(gc, ge, window_min=6, min_side=3, top=5):
         post = gc.loc[
             (gc["created_est"] >= t) & (gc["created_est"] < t + W), "sentiment_score"
         ]
-        if len(pre) < min_side or len(post) < min_side:
+        n = int(min(len(pre), len(post)))
+        if n < min_side:
+            continue
+        swing = float(post.mean() - pre.mean())
+        if abs(swing) < min_swing:
             continue
         found.append(
             {
                 "t_dt": t,
-                "swing": float(post.mean() - pre.mean()),
+                "swing": swing,
+                "adj": swing * n / (n + shrink_k),  # shrink thin-sample swings
+                "n": n,
                 "inning": int(ev["inning"].iloc[i]),
                 "half": str(ev["halfInning"].iloc[i]).title(),
                 "event": str(ev["event"].iloc[i]),
                 "description": str(ev["description"].iloc[i]),
+                "home_team": str(ev["home_team"].iloc[i]),
+                "away_team": str(ev["visiting_team"].iloc[i]),
                 "home_score": int(home[i]),
                 "away_score": int(away[i]),
             }
         )
 
-    # Rank by magnitude, then greedily keep moments at least one window apart.
-    found.sort(key=lambda m: abs(m["swing"]), reverse=True)
+    # Rank by shrunk magnitude, then keep moments at least one window apart.
+    found.sort(key=lambda m: abs(m["adj"]), reverse=True)
     picked = []
     for m in found:
         if all(
@@ -367,11 +415,16 @@ def _biggest_moments(gc, ge, window_min=6, min_side=3, top=5):
         {
             "t": m["t_dt"].strftime("%H:%M"),
             "swing": round(m["swing"], 3),
+            "n": m["n"],
+            "confidence": "low" if m["n"] < 10 else "ok",
             "inning": m["inning"],
             "half": m["half"],
             "event": m["event"],
             "description": m["description"],
-            "score": f"{m['home_score']}-{m['away_score']}",
+            "home_team": m["home_team"],
+            "away_team": m["away_team"],
+            "home_score": m["home_score"],
+            "away_score": m["away_score"],
         }
         for m in picked
     ]
