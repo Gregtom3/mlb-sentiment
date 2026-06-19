@@ -329,7 +329,7 @@ DRAMATIC_EVENTS = {
 
 
 def _biggest_moments(
-    gc, ge, window_min=6, min_side=5, min_swing=0.12, shrink_k=8, top=5
+    gc, ge, window_min=6, min_side=3, min_swing=0.05, shrink_k=8, top=5
 ):
     """Plays that moved the crowd most: mood right after a notable play minus
     mood right before it.

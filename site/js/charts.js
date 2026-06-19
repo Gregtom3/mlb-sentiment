@@ -49,15 +49,47 @@
     }
     return tip;
   }
-  function showTip(html, evt) {
+  function showTip(html, x, y) {
     const t = tooltip();
     t.innerHTML = html;
     t.style.display = "block";
-    t.style.left = evt.clientX + 14 + "px";
-    t.style.top = evt.clientY + 14 + "px";
+    // keep it on-screen (it can be pinned by a touch)
+    const w = t.offsetWidth || 220;
+    t.style.left = Math.min(x + 14, window.innerWidth - w - 8) + "px";
+    t.style.top = y + 14 + "px";
   }
   function hideTip() {
     if (tip) tip.style.display = "none";
+  }
+
+  // Bind hover (desktop) + tap (mobile) tooltips to a node. Returns nothing.
+  let _tapHideBound = false;
+  function bindTip(node, html) {
+    node.setAttribute(
+      "class",
+      ((node.getAttribute("class") || "") + " tipnode").trim()
+    );
+    node.addEventListener("mousemove", (e) => showTip(html, e.clientX, e.clientY));
+    node.addEventListener("mouseleave", hideTip);
+    node.addEventListener(
+      "touchstart",
+      (e) => {
+        const t = e.touches && e.touches[0];
+        if (t) showTip(html, t.clientX, t.clientY);
+      },
+      { passive: true }
+    );
+    if (!_tapHideBound) {
+      _tapHideBound = true;
+      document.addEventListener(
+        "touchstart",
+        (e) => {
+          const tgt = e.target;
+          if (!tgt || !tgt.closest || !tgt.closest(".tipnode")) hideTip();
+        },
+        { passive: true }
+      );
+    }
   }
 
   function niceTicks(min, max, count) {
@@ -145,9 +177,8 @@
       }
       const hit = el("circle", { cx, cy, r: 14, fill: "transparent" }, g);
       const label = `${p.away_team} @ ${p.home_team}<br>${p.game_date} · <b>${p.outcome}</b> ${p.home_score}-${p.away_score}<br>Avg sentiment: <b>${p.avg_sentiment.toFixed(3)}</b>`;
-      hit.addEventListener("mousemove", (e) => showTip(label, e));
-      hit.addEventListener("mouseleave", hideTip);
-      hit.addEventListener("click", () => { hideTip(); onSelect(p.game_id); });
+      bindTip(hit, label); // hover on desktop, tap on mobile
+      hit.addEventListener("click", () => onSelect(p.game_id));
     });
   }
 
@@ -278,8 +309,7 @@
       const dot = el("circle", { cx, cy, r: 6, fill: "rgba(74,144,226,0.85)",
         stroke: "#2b5a8c", "stroke-width": 1 }, s);
       const lbl = `${p.date}<br>Run diff: <b>${p.run_diff}</b><br>Avg sentiment: <b>${p.avg_sentiment.toFixed(3)}</b>`;
-      dot.addEventListener("mousemove", (e) => showTip(lbl, e));
-      dot.addEventListener("mouseleave", hideTip);
+      bindTip(dot, lbl);
     });
     el("text", { x: (x0 + x1) / 2, y: H - 6, "text-anchor": "middle", class: "ax-title" }, s)
       .textContent = "Final run differential";
@@ -326,8 +356,7 @@
       const path = arc(cx, cy, r, ir, ang, a2);
       const seg = el("path", { d: path, fill: color, stroke: "#0A1A33", "stroke-width": 1.5 }, s);
       const lbl = `${it.event}: <b>${it.count}</b> (${(frac * 100).toFixed(0)}%)`;
-      seg.addEventListener("mousemove", (e) => showTip(lbl, e));
-      seg.addEventListener("mouseleave", hideTip);
+      bindTip(seg, lbl);
       ang = a2;
     });
     el("text", { x: cx, y: cy + 4, "text-anchor": "middle", class: "donut-total" }, s).textContent = total;

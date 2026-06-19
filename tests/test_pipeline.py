@@ -57,8 +57,8 @@ def test_build_team_from_sample(tmp_path):
     moments = [m for pg in payload["per_game"].values() for m in pg["moments"]]
     assert moments, "sample data should surface at least one moment"
     for m in moments:
-        assert m["n"] >= 5
-        assert abs(m["swing"]) >= 0.12
+        assert m["n"] >= 3
+        assert abs(m["swing"]) >= 0.05
         assert m["confidence"] in ("low", "ok")
         assert {"home_team", "away_team", "home_score", "away_score"} <= set(m)
 

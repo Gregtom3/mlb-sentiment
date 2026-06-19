@@ -211,7 +211,7 @@ def build_team(team: str = TEAM, seed: int = 7):
         game_end = t + timedelta(minutes=10)
 
         # --- Comments: sentiment tracks the Mets' run differential over time.
-        n_comments = rng.randint(60, 140)
+        n_comments = rng.randint(150, 320)
         span = (game_end - first_pitch).total_seconds()
         # Precompute a timeline of Mets lead from events.
         ev_for_game = [e for e in events if e["game_id"] == game_id]

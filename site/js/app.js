@@ -36,7 +36,7 @@
       $("app").innerHTML =
         `<div class="empty">No data yet — the daily refresh will fill the ` +
         `scoreboard shortly.</div>`;
-      $("footer-generated").textContent = "Data built " + manifest.generated_at;
+      $("footer-updated").textContent = "Latest data · " + manifest.generated_at;
       return;
     }
     const sel = $("team-select");
@@ -49,7 +49,7 @@
         o.textContent = t.team_name; // full name only, no acronym
         sel.appendChild(o);
       });
-    $("footer-generated").textContent = "Data built " + manifest.generated_at;
+    $("footer-updated").textContent = "Latest data · " + manifest.generated_at;
     sel.addEventListener("change", () => selectTeam(sel.value));
 
     // View switcher.
@@ -125,7 +125,6 @@
   function render() {
     const d = state.data;
     $("team-title").textContent = d.team_name; // full name
-    $("generated").textContent = d.generated_at;
 
     const wins = d.games.filter((g) => g.outcome === "Win").length;
     const losses = d.games.filter((g) => g.outcome === "Loss").length;
