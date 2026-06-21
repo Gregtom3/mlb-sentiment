@@ -206,7 +206,7 @@
         c.score
       )}</span><span class="mc-x">${escapeHtml(c.text)} <i>u/${escapeHtml(
         c.author
-      )}</i></span></div>`;
+      )} · ${inn(c.inning)} · ${c.utc} UTC</i></span></div>`;
     $("moments-list").innerHTML = m.length
       ? m
           .map((x) => {
@@ -249,10 +249,10 @@
             (c) =>
               `<div class="crow ${scoreClass(c.score)}">` +
               `<div class="score">${signed(c.score)}</div>` +
-              `<div class="inn">${inn(c.inning)}</div>` +
-              `<div class="body"><div class="who">u/${escapeHtml(c.author)}</div>` +
-              `<div class="said">${escapeHtml(c.text)}</div></div>` +
-              `<div class="when">${c.t || ""}</div></div>`
+              `<div class="body"><div class="who">u/${escapeHtml(c.author)} · ${inn(
+                c.inning
+              )} · ${c.utc} UTC</div>` +
+              `<div class="said">${escapeHtml(c.text)}</div></div></div>`
           )
           .join("")
       : `<div class="empty">No comments.</div>`;
@@ -266,6 +266,7 @@
       ` · u/${escapeHtml(c.author)}` +
       (c.game_date ? ` · ${c.game_date}` : "") +
       (c.inning ? ` · ${inn(c.inning)}` : "") +
+      (c.utc ? ` · ${c.utc} UTC` : "") +
       `</div></div>`;
     $("season-cheers").innerHTML =
       (season.positive || []).map(quote).join("") || `<div class="empty">No comments.</div>`;

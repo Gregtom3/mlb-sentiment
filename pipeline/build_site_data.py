@@ -22,6 +22,9 @@ from datetime import datetime, timezone
 import duckdb
 import numpy as np
 import pandas as pd
+import pytz
+
+EASTERN = pytz.timezone("US/Eastern")  # comments are stored as Eastern wall time
 
 # Full club names keyed by Stats API abbreviation. Hardcoded (not imported from
 # the package) because the deploy job installs only DuckDB/pandas, not
@@ -213,12 +216,19 @@ def _inning_sentiment(comments: pd.DataFrame) -> list:
 
 
 def _fmt_comment(r, with_date=False):
+    est = pd.to_datetime(r["created_est"])  # stored as US/Eastern wall time
+    try:
+        utc = EASTERN.localize(est.to_pydatetime()).astimezone(pytz.utc)
+        utc_s = utc.strftime("%H:%M")
+    except Exception:
+        utc_s = ""
     out = {
         "author": r["author"],
         "score": round(float(r["sentiment_score"]), 3),
         "text": r["text"],
         "inning": None if pd.isna(r["inning"]) else int(r["inning"]),
-        "t": pd.to_datetime(r["created_est"]).strftime("%H:%M"),
+        "t": est.strftime("%H:%M"),
+        "utc": utc_s,
     }
     if with_date:
         out["game_date"] = r.get("game_date")
