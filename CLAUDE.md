@@ -85,6 +85,9 @@ Until then, no action needed.
 - Run **Verify Team Info** after changing any team's subreddit/bot — it confirms
   the subreddit exists and a recent game thread is retrievable, and dumps recent
   post authors/titles for anything that fails.
+- Comments are **clipped to each game's window** (`_clip_to_game_window`, first
+  event −10 min to last event +10 min) before any stat is computed, so pre/post-
+  game chatter never enters totals, distributions, panels, or moments.
 - Charts must stay dependency-free SVG (works offline, no CSP issues). Don't add
   a charting CDN.
 - `black` runs in CI; keep edits formatted. Avoid triple-quoted-string

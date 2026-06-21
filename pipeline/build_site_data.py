@@ -443,6 +443,27 @@ def _biggest_moments(
     ]
 
 
+def _clip_to_game_window(comments, events, pad_min=10):
+    """Keep only comments within [first event − pad, last event + pad] for each
+    game, so pre-game hype and post-game chatter don't skew the analysis.
+    Comments whose game has no usable event timestamps are kept as-is."""
+    if comments.empty or events.empty:
+        return comments
+    ev = events.copy()
+    ev["est"] = pd.to_datetime(ev["est"], errors="coerce")
+    ev = ev.dropna(subset=["est"])
+    if ev.empty:
+        return comments
+    bounds = ev.groupby("game_id")["est"].agg(["min", "max"])
+    pad = pd.Timedelta(minutes=pad_min)
+    merged = comments.merge(bounds, left_on="game_id", right_index=True, how="left")
+    mask = merged["min"].isna() | (
+        (merged["created_est"] >= merged["min"] - pad)
+        & (merged["created_est"] <= merged["max"] + pad)
+    )
+    return merged[mask].drop(columns=["min", "max"]).reset_index(drop=True)
+
+
 def build_team(con, team: str, team_dir: str) -> dict:
     comments = _signed_comments(con, team_dir)
     games = _read(con, team_dir, "games")
@@ -452,6 +473,10 @@ def build_team(con, team: str, team_dir: str) -> dict:
     events["game_id"] = events["game_id"].astype("int64")
     games["game_date"] = pd.to_datetime(games["game_date"])
     games = games.sort_values("game_date").reset_index(drop=True)
+
+    # Clip comments to each game's window (±10 min) before anything else, so
+    # pre/post-game chatter is excluded from every downstream stat.
+    comments = _clip_to_game_window(comments, events, pad_min=10)
 
     # Tag every comment with its inning once; reused by panels + aggregates.
     comments = _attach_innings(comments, events)
